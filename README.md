@@ -38,6 +38,77 @@ Extending the objects with render will add the following methods to all primitiv
 - mark() : adds marks to the current path. See render docs for details.
 - draw() : adds the primitive to the current path;
 
+
+### example
+
+Create a two circles and find the arc from the second circle that intercepts the first;
+
+```JavaScript
+var geom = groover.geom;
+var circle1 = new geom.Circle(new geom.Vec(100,100), 200);
+var circle2 = new geom.Circle(new geom.Vec(200,200), 200);
+// get the arc that is inside circle1
+var arc = new geom.Arc(circle2.copy(), 0 , 0).fromCircleIntercept(circle1).towards(circle1.p);
+// get the arc that is outside circle1
+var arc1 = arc.copy().away(circle1.p);
+```
+
+To render the circle and arc
+
+```JavaScript
+geom.setCtx(ctx);          // set the context for geom to draw to
+ctx.strokeStyle = "black"; // set stroke style
+ctx.lineWidth = 1;
+ctx.beginPath();
+circle1.moveTo();          // move path to the start of the circle
+circle1.draw();            // add the circle to the current ctx path
+arc.moveTo();              // move to the start of the inner arc
+arc.draw();                // add the arc to the current ctx path
+ctx.stroke();              // render the path
+```
+
+
+To get the area of the union of the two circles
+
+```JavaScript
+// get the area of first slice
+var arcArea = new geom.Arc(circle2.copy(), 0 , 0)  // create arc from circle 2
+        .fromCircleIntercept(circle1)              // get the intercept with circle 1
+        .towards(circle1.p)                        // arc towards circle 1
+        .areaOfSlice();                            // get the area of the slice
+        
+// add the area of second slice        
+arcArea += new geom.Arc(circle1.copy(), 0 , 0)     // create arc from circle 1
+        .fromCircleIntercept(circle2)              // get the intercept with circle 2
+        .towards(circle2.p)                        // arc towards circle 2
+        .areaOfSlice();                            // get area of slice
+```
+
+
+To get the bounding box 
+```JavaScript
+// get the area of first slice
+var box = new geom.Arc(circle2.copy(), 0 , 0)      // create arc from circle 2
+        .fromCircleIntercept(circle1)              // get the intercept with circle 1
+        .towards(circle1.p)                        // arc towards circle 1
+        .asBox();                                  // create a bounding box
+
+new geom.Arc(circle2.copy(), 0 , 0)                // create arc from circle 2
+        .fromCircleIntercept(circle1)              // get the intercept with circle 1
+        .towards(circle1.p)                        // arc towards circle 1
+        .asBox(box);                               // Extend the bounding box to inclued the second arc
+        
+// get the top left as a vec
+var topLeft = new geom.Vec(box.l,box.t);
+// get the bottom right as vec
+var bottomRight = new geom.Vec(box.r,box.b);
+
+        
+```
+
+
+
+
 ## Primitives 
 ### Vec
     2D point.
