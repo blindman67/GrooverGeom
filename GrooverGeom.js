@@ -114,6 +114,8 @@ groover.geom = (function (){
         }
     }
     var geom = new Geom();
+    geom.Geom = Geom;  // add geom to geom object for use by extentions or anything that needs to 
+                       // extend the prototype of Geom.
 
 
     function Vec(x,y){

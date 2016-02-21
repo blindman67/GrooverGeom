@@ -1,14 +1,18 @@
-function extendGeom_Render(geom){
-    var ctx;
+groover.geom.Geom.prototype.addRender = function(ctx1){
+    var geom = this;
+    var ctx = ctx1;
     var workVec = new geom.Vec();
-    geom.Geom.prototype.ctx = undefined;
+    geom.Geom.prototype.ctx = ctx;
+    geom.Geom.prototype.size = 1;
     geom.Geom.prototype.setCtx = function(ctx1){
         this.ctx = ctx1;
         ctx = ctx1;        
     };
     var size = 1;
+    geom.Geom.prototype.size = size;
     geom.Geom.prototype.setSize = function(newSize){
         size = newSize;
+        this.size = 1;
     };
     
     geom.Geom.prototype.marks = {

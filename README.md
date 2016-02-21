@@ -31,7 +31,7 @@ All object implement the following
 - type : A string with the name of the primitive. Eg Vec.type = "Vec";
 - copy() : Creates a new copy of the primitive.
 - setAs(obj) : Copy the the properties of obj to this primitive. Obj should be the same primitive.
-- asBox(box) : Returns the bounding box of the primitive. Box is optional. If in clueded then the box will be extened if neeeded to bound this privitive.
+- asBox(box) : Returns the bounding box of the primitive. Box is optional. If inclueded then the box will be extened if neeeded to bound this privitive.
 
 ### Render extentions
 Extending the objects with render will add the following methods to all primitives (exluding Transform).
@@ -41,8 +41,44 @@ Extending the objects with render will add the following methods to all primitiv
 - mark() : adds marks to the current path. See render docs for details.
 - draw() : adds the primitive to the current path;
 
+To extend geom with the render 
 
-### example
+```JavaScript
+groover.geom.addRender(ctx);  // context is optional
+groover.geom.setCtx(ctx);     // sets the 2D contexts use to draw primmitives to.
+groover.geom.setSize(number); // sets the size of marks in pixels
+groover.geom.setMarkShape("circle"); // sets the type of mark used when calling geom.primitive.mark();
+```
+Current avialibe shapes for marks
+- circle 
+- tri (triangle)
+- square 
+- cross
+- crossDiag 
+- vecArray  Use groover.geom.setMarkShape(VecArray) to set the shape to a vecArray. It also set it as the current shape
+
+You can also create your own shape by setting groover.geom.mark to a function that takes the argument Vec and you can access the current 2d context via groover.geom.ctx or you can add the function to groover.geom.marks
+
+Example Adding a marker type
+```JavaScript
+//Adding a dash
+groover.geom.marks.dash = function(vec){
+    groover.geom.ctx.moveTo(vec.x - groover.geom.size/2, vec.y - groover.geom.size/2);
+    groover.geom.ctx.lineTo(vec.x + groover.geom.size/2, vec.y + groover.geom.size/2);
+}
+// to use dash
+groover.geom.setMarkShape("dash");
+// all calls to mark will now use dash.
+ctx.strokeStyle = "red";
+ctx.lineWidth = 2;
+ctx.beginePath();
+groover.geom.setCtx(ctx);
+groover.geom.setSize(8);
+new groover.geom.Vec(100,100).mark();
+ctx.stroke();
+```
+
+### Geom usage examples
 
 Create a two circles and find the arc from the second circle that intercepts the first;
 
