@@ -254,6 +254,12 @@ groover.geom = (function (){
             });
             return this;
         },
+        isEmpty : function (){
+            if(this.vecs.length === 0){
+                return true;
+            }
+            return false;
+        },
         push : function (vec){
             this.vecs[this.vecs.length] = vec;
             return this;
@@ -315,6 +321,9 @@ groover.geom = (function (){
             }
             box.env (this.x, this.y);
             return box;
+        },
+        isEmpty : function (){
+            return false;  
         },
         add : function(v){
             this.x += v.x;
@@ -413,9 +422,9 @@ groover.geom = (function (){
         },
     }
     Arc.prototype = {
-        c : undefined,
-        s : undefined,
-        e : undefined,
+        circle : undefined,
+        start : 0,
+        end : 0,
         type : "Arc",
         copy : function(){
             return new Arc(this.circle.copy(),this.start,this.end);
@@ -453,7 +462,7 @@ groover.geom = (function (){
             return box;
         },
         isEmpty : function(){
-            if(this.start === this.end){
+            if(this.start === this.end || this.circle.radius === 0){
                 return true;
             }
             return false;
@@ -674,8 +683,8 @@ groover.geom = (function (){
 
     }
     Circle.prototype = {
-        p : undefined,
-        r : undefined,
+        center : undefined,
+        radius : 0,
         type : "Circle",
         copy : function(){
             return new Circle(this.center.copy(),this.radius)
@@ -692,6 +701,12 @@ groover.geom = (function (){
             box.env (this.center.x - this.radius,this.center.y - this.radius);
             box.env (this.center.x + this.radius,this.center.y + this.radius);
             return box;
+        },
+        isEmpty : function(){
+            if(this.radius === 0){
+                return true;
+            }
+            return false;
         },
         radius : function (r){
             this.radius = r;
@@ -916,6 +931,12 @@ groover.geom = (function (){
             this.p1.setAs(line.p1);
             this.p2.setAs(line.p2);
             return this;
+        },
+        isEmpty : function(){
+            if(this.leng === 0){
+                return true;
+            }
+            return false;
         },
         swap : function(){
             var t = this.p1;
@@ -1149,8 +1170,8 @@ groover.geom = (function (){
         }
     }
     Rectangle.prototype = {
-        t : undefined,
-        a : 1,
+        top : undefined,
+        aspect : 1,
         type : "Rectangle",
         copy : function () {
             return new Rectangle(this.top.copy(),this.aspect);
@@ -1159,6 +1180,12 @@ groover.geom = (function (){
             this.top.setAs(rectange.top);
             this.aspect = rectange.aspect;
             return this;
+        },
+        isEmpty : function(){
+            if(this.aspect === 0 || this.top.leng() === 0){
+                return true;
+            }
+            return false;
         },
         width : function (){
             return this.top.leng();
@@ -1289,10 +1316,10 @@ groover.geom = (function (){
         }
     }
     Box.prototype = {
-        t : 0,
-        b : 0,
-        l : 0,
-        r : 0,
+        top : 0,
+        bottom : 0,
+        left : 0,
+        right : 0,
         type : "Box",
         copy : function (){
             return new Box (this.left,this.top,this.right,this.bottom);
@@ -1311,7 +1338,13 @@ groover.geom = (function (){
             box.env(this.left,this.top);
             box.env(this.right,this.bottom);
             return box;
-        },            
+        },      
+        isEmpty : function(){
+            if(this.top >= this.bottom || this.left >= this.right){
+                return true;
+            }
+            return false;
+        },
         asRectange : function () {
             var a = (this.bottom- this.top)  / (this.right- this.left);
             return new Rectangle ( new Line( new Vec(this.left,this.top)), a)

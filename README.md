@@ -21,8 +21,13 @@ Currently supporting the following primitives
 - Circle
 - Arc
 - Box
-- Transform 
 - Empty
+
+### Non Primitives
+These object are helper objects though there inclusion in this namespace is still questionable. There are currently used for testing 
+
+- Transform 
+
 
 All functions are chainable where posible
 
@@ -33,6 +38,7 @@ All object implement the following
 - copy() : Creates a new copy of the primitive.
 - setAs(obj) : Copy the the properties of obj to this primitive. Obj should be the same primitive.
 - asBox(box) : Returns the bounding box of the primitive. Box is optional. If inclueded then the box will be extened if neeeded to bound this privitive.
+- isEmpty() : Returns true for an invalid, zero length, zero size or area. Some functions will set the returned object in an empty state rather than return nothing at all.
 
 ### Render extentions
 Extending the objects with render will add the following methods to all primitives (exluding Transform).
@@ -179,6 +185,7 @@ Functions
 - Vec.copy()
 - Vec.setAs(v)
 - Vec.asBox()
+- Vec.isEmpty()  Vecs are never empty and this always returns true
 - Vec.add(v)
 - Vec.sub(v)
 - Vec.mult(m)
@@ -223,6 +230,7 @@ Properties
 Functions
 - Box.copy()
 - Box.setAs(box)
+- Box.isEmpty()  if the box has no size or is a negative size returns true
 - Box.asRectange() 
 - Box.normalise()  Fixes bounds. Good idea to call this if you are unsure any primitives have been tested
 - Box.max() 
@@ -245,6 +253,7 @@ Properties
 Functions    
 - Line.copy()
 - Line.setAs(line)
+- Line.isEmpty()  Returns true if the line has zero length
 - Line.swap()
 - Line.reverse()
 - Line.asVec()
@@ -301,6 +310,7 @@ Properties
 Functions
 - Arc.copy()
 - Arc.setAs(arc)
+- Arc.isEmpty()  Returns true if the arc has zero length or the radius is zero
 - Arc.asBox()
 - Arc.asCircle()
 - Arc.sweap()
@@ -346,6 +356,7 @@ Functions
 - Circle.copy()
 - Circle.setAs(circle)
 - Circle.asBox() 
+- Circle.isEmpty()  Returns true if the radius is zero
 - Circle.radius(r)
 - Circle.circumferance()
 - Circle.area()
@@ -389,6 +400,7 @@ Properties
 Functions
 - Rectangle.copy() 
 - Rectangle.setAs(rectange)
+- Rectangle.isEmpty()  Returns true if the width or heigh (aspect === 0) are zero length
 - Rectangle.width()
 - Rectangle.height() 
 - Rectangle.aspect()
@@ -432,6 +444,7 @@ Properties
 Functions
 - VecArray.each(func)
 - VecArray.cull(func)  
+  VecArray.isEmpty()  Returns true if there are no vectors in the array
 - VecArray.copy()
 - VecArray.setAs(vecArray)
 - VecArray.push(vec)
