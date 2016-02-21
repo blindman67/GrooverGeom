@@ -88,11 +88,10 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     };
     geom.Line.prototype.lineTo = function () {
         this.p1.lineTo();
-        this.p2.lineTo();
         return this;
     };
     geom.Line.prototype.draw = function () {
-        this.p1.moveTo();
+        this.p1.lineTo();
         this.p2.lineTo();
         return this;
     };
@@ -115,12 +114,8 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         return this;
     };
     geom.VecArray.prototype.draw = function(){
-        this.each(function(vec,i){
-            if(i === 0){
-                vec.moveTo();
-            }else{
-                vec.lineTo();
-            }
+        this.each(function(vec){
+            vec.lineTo();
         });
         return this;
     };

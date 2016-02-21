@@ -152,7 +152,7 @@ groover.geom = (function (){
             this.p1 = new Vec(0,0);
             this.p2 = new Vec(); // vec defualts to unit vec
         }else
-        if(vec2.type !== undefined && vec2.type === "Vec" && vec2.type !== undefined && vec2.type === "Vec"){
+        if(vec1 !== undefined && vec1.type !== undefined && vec1.type === "Vec" && vec2 !== undefined &&  vec2.type !== undefined && vec2.type === "Vec"){
             this.p1 = vec1;
             this.p2 = vec2;
         }else{
@@ -668,10 +668,10 @@ groover.geom = (function (){
         },
         fromTangentsToPoint : function(vec){
             var tp = this.circle.tangentsPointsForPoint(vec);
-            if(tp.length === 0){
+            if(tp.vecs.length === 0){
                 return this;
             }
-            this.fromPoints(tp[0],tp[1]);
+            this.fromPoints(tp.vecs[0],tp.vecs[1]);
             
             return this;   
         },
@@ -708,7 +708,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        radius : function (r){
+        setRadius : function (r){
             this.radius = r;
             return this;
         },
@@ -796,22 +796,9 @@ groover.geom = (function (){
         lineSegInside : function(line){
             var pa = this.lineIntercept(line);
             if(pa.vecs.length > 0){
-                var v1 = pa.vecs[0];
-                var v2 = pa.vecs[1];
-                var s = line.getUnitDistOfPoint(v1);
-                var e = line.getUnitDistOfPoint(v2);
-                if((s > 1 && e > 1) || (s < 0 && e < 0)){
-                    return undefined;
-                }
-                if(e > 1 || e < 0){
-                    v2 = line.p2.copy();
-                }
-                if(s > 1 || s < 0){
-                    v1 = line.p1.copy();
-                }
-                return new Line(v1,v2);
+                return line.copy().sliceToPoints(pa.vecs[0],pa.vecs[1]);
             }
-            return undefined
+            return line.createEmpty();
         },
         lineSegIntercept : function(l){
             var va = new VecArray();
@@ -938,6 +925,9 @@ groover.geom = (function (){
             }
             return false;
         },
+        createEmpty : function (){
+            return new Line(this.p1.copy(),this.p1.copy());
+        },
         swap : function(){
             var t = this.p1;
             this.p1 = this.p2;
@@ -1051,6 +1041,76 @@ groover.geom = (function (){
         setTransformToLine :function(ctx){
             var xa = new Vec(null,this.dir());
             ctx.setTransform(xa.x, xa.y, -xa.y, xa.x, this.p1.x, this.p1.y)
+        },
+        sliceOffEnd : function ( line ){
+            var p = this.intercept(line);
+            var u = this.getUnitDistOfPoint(p);
+            if(u > 0 && u < 1){
+                var u1 = line.getUnitDistOfPoint(p);
+                if(u1 >= 0 && u1 <= 1){
+                    this.p2 = p;
+                }
+            }
+            return this;
+        },
+        sliceOffStart : function ( line ){
+            var p = this.intercept(line);
+            var u = this.getUnitDistOfPoint(p);
+            if(u > 0 && u < 1){
+                var u1 = line.getUnitDistOfPoint(p);
+                if(u1 >= 0 && u1 <= 1){
+                    this.p1 = p;
+                }
+            }
+            return this;
+        },
+        sliceOffEnd : function ( line ){
+            var p = this.intercept(line);
+            var u = this.getUnitDistOfPoint(p);
+            if(u > 0 && u < 1){
+                var u1 = line.getUnitDistOfPoint(p);
+                if(u1 >= 0 && u1 <= 1){
+                    this.p2 = p;
+                }
+            }
+            return this;
+        },
+        sliceOffStart : function ( line ){
+            var p = this.intercept(line);
+            var u = this.getUnitDistOfPoint(p);
+            if(u > 0 && u < 1){
+                var u1 = line.getUnitDistOfPoint(p);
+                if(u1 >= 0 && u1 <= 1){
+                    this.p1 = p;
+                }
+            }
+            return this;
+        },
+        sliceToPoints : function (p1,p2){
+            var pp1 = this.closestPoint(p1);
+            var pp2 = this.closestPoint(p2);
+            var u = this.getUnitDistOfPoint(pp1);
+            var u1 = this.getUnitDistOfPoint(pp2);
+            if(u1 < u){
+                var t = pp1;
+                pp2 = pp1;
+                pp1 = t;
+                t = u;
+                u = u1;
+                u1 = t;
+            }
+            if((u <= 0 && u1 < 0) || (u > 1 && u1 > 1)){
+                this.p2 = this.p1.copy();
+                return this;
+            }
+            if(u >= 0 && u <= 1){
+                this.p1 = pp1;
+            }
+            if(u1 >= 0 && u1 <= 1){
+                this.p2 = pp2;
+            }
+            return this;
+                
         },
         intercept : function(l2){
             var v1 = new Vec(this.p2,this.p1);
