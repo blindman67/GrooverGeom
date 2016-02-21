@@ -2,6 +2,9 @@
 
 Work in progress.
 
+## Warning Refactoring in progress
+The document dose not fully reflect the current refactoring.
+
 This is part of the Groover name space and can be located as groover.geom. 
 
 You can also extend the object with render functions for rendering  on the 2D canvas context

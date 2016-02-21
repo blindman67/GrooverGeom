@@ -35,6 +35,16 @@ groover.geom = (function (){
             "VecArray",
             "Transform",
         ];
+        this.properties = {
+            Vec : ["x","y","type"],
+            Box : ["t","l","b","r","type"],
+            Line: ["p1","p1","type"],
+            Arc: ["c","s","e","type"],
+            Circle: ["p","r","type"],
+            Rectangle: ["t","a","type"],
+            VecArray: ["vecs","type"],
+            Transform: ["xa","ya","o","type"],
+        };
         this.Vec = Vec;
         this.Line = Line;
         this.Circle = Circle;
@@ -57,23 +67,50 @@ groover.geom = (function (){
         getDetails : function(){
             var s = this;
             var str = "";
+             
             this.objectNames.forEach(function(n){
-                str += "Object name: " + n + "\n";
+                var desc = "### " + n + "\n";
+                var methods = "Functions.\n";
+                var propDesc = "Properties.\n";
+                var pr = s.properties[n];
+                
                 
                 for(var i in s[n].prototype){
-                    str += n + "." + i;
-                    var st = s[n].prototype[i].toString();
-                    var f = st.split("\n").shift();
-                    if(f.indexOf("function") > -1){
-                        
+                   
+                    if(typeof s[n].prototype[i] === "function"){
+                        st = s[n].prototype[i].toString();
+                        f = st.split("\n").shift();
                         f = f.replace("function ","").replace("{","") ;
+                        f = f.replace(/\/\/.*/g,"");
+                        if(pr.indexOf(i) > -1){
+                            propDesc += "- "+n + "." + i+f + "\n";
+                        }else{
+                            methods += "- "+n + "." + i+f + "\n";
+                        }
+                    }else
+                    if(typeof s[n].prototype[i] === "string"){
+                        st = s[n].prototype[i].toString();
+                        f = st.split("\n").shift();
                         f = f.replace(/\/\/.*/g,"")
-                        str += f + "\n";
+                        if(pr.indexOf(i) > -1){
+                            propDesc += "- "+n + "." + i+" = '" +st+"'\n";
+                        }else{
+                            methods += "- "+n + "." + i+" = '" +st+"'\n";
+                        }
                     }else{
-                        str += " = '" +st+"'\n";
+                        st = typeof s[n].prototype[i];
+                        if(pr.indexOf(i) > -1){
+                            propDesc += "- "+n + "." + i+" = " +st+"\n";
+                        }else{
+                            methods += "- "+n + "." + i+" = " +st+"\n";
+                        }
                     }
                 }
+                str += desc + "\n";
+                str += propDesc + "\n";
+                str += methods + "\n";
             });
+            console.log(str)
         }
     }
     var geom = new Geom();
@@ -120,35 +157,35 @@ groover.geom = (function (){
     }
     function Circle(vec,num){
         if((vec === undefined || vec === null) && (num === undefined || num === null)){
-            this.p = new Vec(0,0);
-            this.r = 1;
+            this.center = new Vec(0,0);
+            this.radius = 1;
         }else 
         if(vec.type !== undefined && vec.type === "Vec" && typeof num === "number"){
-            this.p = vec;
-            this.r = num;
+            this.center = vec;
+            this.radius = num;
         }else{
-            this.p = new Vec(0,0);
-            this.r = 1;
+            this.center = new Vec(0,0);
+            this.radius = 1;
         }
     }
     function Arc(circle,start,end){
-        this.c = circle;
-        this.s = start;
-        this.e = end;
+        this.circle = circle;
+        this.start = start;
+        this.end = end;
     }
     function Rectangle(top,aspect){
-        this.t = top;
-        this.a = aspect;
+        this.top = top;
+        this.aspect = aspect;
     }
     function Box(left,top,right,bottom){
         if((left === undefined || left === null) && (top === undefined || top === null)  && (right === undefined || right === null) && (bottom === undefined || bottom === null)){
             this.irrate();
             return;
         }
-        this.l = left;
-        this.t = top;
-        this.r = right;
-        this.b = bottom;
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
     }
     function Transform(xAxis,yAxis,origin){
         this.xa = xAxis;
@@ -360,12 +397,12 @@ groover.geom = (function (){
         e : undefined,
         type : "Arc",
         copy : function(){
-            return new Arc(this.c.copy(),this.s,this.e);
+            return new Arc(this.circle.copy(),this.start,this.end);
         },
         setAs : function (arc){
-            this.c.setAs(arc.c);
-            this.s = arc.s;
-            this.e = arc.e;
+            this.circle.setAs(arc.circle);
+            this.start = arc.start;
+            this.end = arc.end;
             return this;            
         },
         asBox : function(box){
@@ -373,106 +410,120 @@ groover.geom = (function (){
                 var box = new Box();
             }
             var a = this.copy().normalise();
-            box.env (a.c.p.x + Math.cos(a.s) * a.c.r, a.c.p.y + Math.sin(a.s) * a.c.r );
-            box.env (a.c.p.x + Math.cos(a.e) * a.c.r, a.c.p.y + Math.sin(a.e) * a.c.r );
-            if(a.s <= 0 && a.e >= 0){
-                box.env ( a.c.p.x + a.c.r)
+            box.env (a.circle.center.x + Math.cos(a.start) * a.circle.radius, a.circle.center.y + Math.sin(a.start) * a.circle.radius );
+            box.env (a.circle.center.x + Math.cos(a.end) * a.circle.radius, a.circle.center.y + Math.sin(a.end) * a.circle.radius );
+            var s = a.start;
+            var e = a.end;
+            if(s > e){
+                s -= MPI2;
+            }            
+            if(s <= 0 && e >= 0){
+                box.env ( a.circle.center.x + a.circle.radius)
             }
-            if(a.s <= MPI && a.e >= MPI){
-                box.env ( a.c.p.x - a.c.r);
+            if((s <= -MPI && e >= -MPI) || (s <= MPI && e >= MPI)){
+                box.env ( a.circle.center.x - a.circle.radius);
             }
-            if(a.s <= MPI90 && a.e >= MPI90){
-                box.env (undefined, a.c.p.y + a.c.r)
+            if(s <= MPI90 && e >= MPI90){
+                box.env (undefined, a.circle.center.y + a.circle.radius)
             }
-            if(a.s <= MPI270 && a.e >= MPI270){
-                box.env (undefined, a.c.p.y - a.c.r)
+            if((s <= MPI270 && e >= MPI270) || (s <= -MPI90 && e >= -MPI90)){
+                box.env (undefined, a.circle.center.y - a.circle.radius)
             }
             return box;
         },
         asCircle : function(){
-            return this.c.copy();
+            return this.circle.copy();
         },
         sweap : function (){
-            var s  = ((this.s % MPI2) + MPI2) % MPI2;
-            var e = ((this.e % MPI2) + MPI2) % MPI2;            
+            var s  = ((this.start % MPI2) + MPI2) % MPI2;
+            var e = ((this.end % MPI2) + MPI2) % MPI2;            
             if( s > e){
                 s -= MPI2;
             }
             return (e-s);
         },
         fromCircleIntercept : function(circle){
-            var pa = this.c.circleIntercept(circle);
+            var pa = this.circle.circleIntercept(circle);
             if(pa.vecs.length > 0){
                 this.fromPoints(pa.vecs[0],pa.vecs[1]);
             }else{
-                this.s = 0;
-                this.e = 0;
+                this.start = 0;
+                this.end = 0;
             }
             return this;
         },
         areaOfPie : function (){
-            var s  = ((this.s % MPI2) + MPI2) % MPI2;
-            var e = ((this.e % MPI2) + MPI2) % MPI2;            
+            var s  = ((this.start % MPI2) + MPI2) % MPI2;
+            var e = ((this.end % MPI2) + MPI2) % MPI2;            
             if( s > e){
                 s -= MPI2;
             }
-            return this.c.r * this.c.r * (e-s);
+            return this.circle.radius * this.circle.radius * (e-s);
         },
         areaOfSlice : function (){
-            var s  = ((this.s % MPI2) + MPI2) % MPI2;
-            var e = ((this.e % MPI2) + MPI2) % MPI2;            
+            var swap = false;
+            var s  = ((this.start % MPI2) + MPI2) % MPI2;
+            var e = ((this.end % MPI2) + MPI2) % MPI2;            
             if( s > e){
                 s -= MPI2;
             }
             var a = (e-s); // angle 
-            var p =  this.c.r * this.c.r * a; // area of the pie shape
-            var c = Math.sin(a/2) * this.c.r; // lenght of half the cord;
-            var d = Math.sqrt(this.c.r * this.c.r - c * c); // length of line from center to cord
-            return  p - c * d; // area is Pie area - triangle *2
+            if(a > MPI){
+                a = MPI2-a;
+                swap = true;
+            }
+            var p =  this.circle.radius * this.circle.radius * a; // area of the pie shape
+            var c = Math.sin(a/2) * this.circle.radius; // lenght of half the cord;
+            var d = Math.sqrt(this.circle.radius * this.circle.radius - c * c); // length of line from center to cord
+            if(swap){
+                return  (this.circle.radius * this.circle.radius * MPI2 ) - (p - c * d); // area is Pie area - triangle *2
+            }else{
+                return  p - c * d; // area is Pie area - triangle *2
+            }
         },
         swap : function(){
-            var s = this.s;
-            this.s = this.e;
-            this.e = s;
+            var s = this.start;
+            this.start = this.end;
+            this.end = s;
             return this;
         },
         fromPoints : function(p1,p2,p3){
             if(p3 === undefined){
-                this.s = this.c.angleOfPoint(p1);
-                this.e = this.c.angleOfPoint(p2);
+                this.start = this.circle.angleOfPoint(p1);
+                this.end = this.circle.angleOfPoint(p2);
                 return this;
             }
-            var a1 = ((this.c.angleOfPoint(p1) % MPI2) + MPI2) % MPI2;
-            var a2 = ((this.c.angleOfPoint(p2) % MPI2) + MPI2) % MPI2;
-            var a3 = ((this.c.angleOfPoint(p3) % MPI2) + MPI2) % MPI2;
-            this.s = Math.min(a1,a2,a3);
-            this.e = Math.max(a1,a2,a3);
+            var a1 = ((this.circle.angleOfPoint(p1) % MPI2) + MPI2) % MPI2;
+            var a2 = ((this.circle.angleOfPoint(p2) % MPI2) + MPI2) % MPI2;
+            var a3 = ((this.circle.angleOfPoint(p3) % MPI2) + MPI2) % MPI2;
+            this.start = Math.min(a1,a2,a3);
+            this.end = Math.max(a1,a2,a3);
             return this;
         },
         setRadius : function (r){
-            this.c.r = r;
+            this.circle.radius = r;
             return this;
         },
         setCenter : function (p){
-            this.c.p.x = p.x;
-            this.c.p.y = p.y;
+            this.circle.center.x = p.x;
+            this.circle.center.y = p.y;
             return this;
         },
         setCircle : function (c){
-            this.c.p.x = c.p.x;
-            this.c.p.y = c.p.y;
-            this.c.r = c.r;
+            this.circle.center.x = c.center.x;
+            this.circle.center.y = c.center.y;
+            this.circle.radius = c.radius;
             return this;
         },
         normalise : function(){
-            this.s = ((this.s % MPI2) + MPI2) % MPI2;
-            this.e = ((this.e % MPI2) + MPI2) % MPI2;
+            this.start = ((this.start % MPI2) + MPI2) % MPI2;
+            this.end = ((this.end % MPI2) + MPI2) % MPI2;
             return this;
         },
         towards : function(vec){
-            var a = ((this.c.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
-            var s = ((this.s % MPI2) + MPI2) % MPI2;
-            var e = ((this.e % MPI2) + MPI2) % MPI2;
+            var a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
+            var s = ((this.start % MPI2) + MPI2) % MPI2;
+            var e = ((this.end % MPI2) + MPI2) % MPI2;
             if(s > e){
                 s -= MPI2;
             }
@@ -486,9 +537,9 @@ groover.geom = (function (){
             return this.swap();
         },
         away : function(vec){
-            var a = ((this.c.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
-            var s = ((this.s % MPI2) + MPI2) % MPI2;
-            var e = ((this.e % MPI2) + MPI2) % MPI2;
+            var a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
+            var s = ((this.start % MPI2) + MPI2) % MPI2;
+            var e = ((this.end % MPI2) + MPI2) % MPI2;
             if(s > e){
                 s -= MPI2;
             }
@@ -503,75 +554,80 @@ groover.geom = (function (){
         },    
         endsAsVec : function() { 
             return new VecArray()
-                .push(new Vec(this.c.p.x + Math.cos(this.s) * this.c.r,this.c.p.y + Math.sin(this.s) * this.c.r))
-                .push(new Vec(this.c.p.x + Math.cos(this.e) * this.c.r,this.c.p.y + Math.sin(this.e) * this.c.r))
+                .push(new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius))
+                .push(new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius))
         },
         startAsVec : function() { 
-            return new Vec(this.c.p.x + Math.cos(this.s) * this.c.r,this.c.p.y + Math.sin(this.s) * this.c.r);
+            return new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius);
         },
         endAsVec : function() { 
-            return new Vec(this.c.p.x + Math.cos(this.e) * this.c.r,this.c.p.y + Math.sin(this.e) * this.c.r);
+            return new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius);
         },
         sweapLeng : function(){
-            return (this.e - this.s) * this.c.r;
+            var s = ((this.start % MPI2) + MPI2) % MPI2;
+            var e = ((this.end % MPI2) + MPI2) % MPI2;
+            if(s > e){
+                s -= MPI2;
+            }            
+            return Math.abs(e - s) * this.circle.radius;
         },
-        setcircumferanceLeng : function(leng){ 
-            this.e = this.s  + (leng / (this.c.r ));
+        setCircumference : function(leng){ 
+            this.end = this.start  + (leng / (this.circle.radius ));
             return this;
         },
         cordLeng : function(){
             return Math.hypot(
-                (this.c.p.x + Math.cos(this.s) * this.c.r) - (this.c.p.x + Math.cos(this.e) * this.c.r),
-                (this.c.p.y + Math.sin(this.s) * this.c.r) - (this.c.p.y + Math.sin(this.e) * this.c.r)
+                (this.circle.center.x + Math.cos(this.start) * this.circle.radius) - (this.circle.center.x + Math.cos(this.end) * this.circle.radius),
+                (this.circle.center.y + Math.sin(this.start) * this.circle.radius) - (this.circle.center.y + Math.sin(this.end) * this.circle.radius)
             );
         },
         cordAsLine : function(){
             return new Line(
-                new Vec(this.c.p.x + Math.cos(this.s) * this.c.r,this.c.p.y + Math.sin(this.s) * this.c.r),
-                new Vec(this.c.p.x + Math.cos(this.e) * this.c.r,this.c.p.y + Math.sin(this.e) * this.c.r)
+                new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius),
+                new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius)
             );
         },
         great : function(){
-            var s = ((this.s % MPI2) + MPI2) % MPI2;
-            var e = ((this.e % MPI2) + MPI2) % MPI2;
+            var s = ((this.start % MPI2) + MPI2) % MPI2;
+            var e = ((this.end % MPI2) + MPI2) % MPI2;
             if(s > e){
                 var ang = s - e;
                 if(ang  < MPI){
-                    this.s = s;
-                    this.e = e;
+                    this.start = s;
+                    this.end = e;
                 }else{
-                    this.s = e;
-                    this.e = s;
+                    this.start = e;
+                    this.end = s;
                 }
             }else{
                 var ang = e - s;
                 if(ang  < MPI){
-                    this.s = e;
-                    this.e = s;
+                    this.start = e;
+                    this.end = s;
                 }else{
-                    this.s = s;
-                    this.e = e;
+                    this.start = s;
+                    this.end = e;
                 }
             }
             return this;
         },
         minor : function(){
             this.great();
-            var t = this.s;
-            this.s = this.e;
-            this.e = t;
+            var t = this.start;
+            this.start = this.end;
+            this.end = t;
             return this;
         },
         isPointOn : function(p){
-            var a = this.c.angleOfPoint(p1);
-            if(a >= this.s && a <= this.e){
+            var a = this.circle.angleOfPoint(p1);
+            if(a >= this.start && a <= this.end){
                 return true;
             }
             return false;
             
         },
         fromTangentsToPoint : function(vec){
-            var tp = this.c.tangentsPointsForPoint(vec);
+            var tp = this.circle.tangentsPointsForPoint(vec);
             if(tp.length === 0){
                 return this;
             }
@@ -580,7 +636,7 @@ groover.geom = (function (){
             return this;   
         },
         roundCorner : function(l1,l2){
-            this.c.fitCorner(l1,l2);
+            this.circle.fitCorner(l1,l2);
             this.fromTangentsToPoint(l1.p2).towards(l1.p2);
             return this;
         },
@@ -591,39 +647,39 @@ groover.geom = (function (){
         r : undefined,
         type : "Circle",
         copy : function(){
-            return new Circle(this.p.copy(),this.r)
+            return new Circle(this.center.copy(),this.radius)
         },
         setAs : function (circle){
-            this.p.setAs(circle.p);
-            this.r = circle.r;
+            this.center.setAs(circle.center);
+            this.radius = circle.radius;
             return this;
         },
         asBox : function(box){
             if(box === undefined){
                 var box = new Box();
             }
-            box.env (this.p.x - this.r,this.p.y - this.r);
-            box.env (this.p.x + this.r,this.p.y + this.r);
+            box.env (this.center.x - this.radius,this.center.y - this.radius);
+            box.env (this.center.x + this.radius,this.center.y + this.radius);
             return box;
         },
         radius : function (r){
-            this.r = r;
+            this.radius = r;
             return this;
         },
-        circumferance : function(){
-            return this.r * Math.PI * 2;
+        circumference : function(){
+            return this.radius * Math.PI * 2;
         },
         area : function(){
-            return this.r * this.r * Math.PI * 2;
+            return this.radius * this.radius * Math.PI * 2;
         },
         fromLine : function (line){
             this.fromPoints2(line.midPoint(),line.p2);
             return this
         },
         fromPoints2 : function (vec1, vec2){
-            this.p.x = vec1.x;
-            this.p.y = vec1.y;
-            this.r = vec2.copy().sub(vec1).leng();
+            this.center.x = vec1.x;
+            this.center.y = vec1.y;
+            this.radius = vec2.copy().sub(vec1).leng();
             return this;
         },
         fromPoints3 : function (vec1, vec2, vec3){
@@ -638,32 +694,32 @@ groover.geom = (function (){
                 return false;  // points are in a line 
             }else 
             if(a.y == vec2.y){
-                this.p = new Vec(m1.x, f2 * m1.x + g2);  
+                this.center = new Vec(m1.x, f2 * m1.x + g2);  
             }else
             if(vec2.y == vec3.y){
-                this.p = new Vec(m2.x, f1*m2.x + g1);
+                this.center = new Vec(m2.x, f1*m2.x + g1);
             } else{
                 var x = (g2-g1) / (f1 - f2);
-                this.p = new Vec(x, f1*x + g1);
+                this.center = new Vec(x, f1*x + g1);
             }
 
-            this.r = vec1.copy().sub(this.p).leng();
+            this.radius = vec1.copy().sub(this.center).leng();
             return this;
         },
         fromArea : function(area){
-            this.r = Math.sqrt(area / (Math.PI * 2));
+            this.radius = Math.sqrt(area / (Math.PI * 2));
         },
-        fromCircumferance : function(leng){
-            this.r = leng / (Math.PI * 2);
+        fromCircumference  : function(leng){
+            this.radius = leng / (Math.PI * 2);
         },
         touching : function(c){
-            if(this.p.copy().sub(c.p).leng() > this.r + c.r){
+            if(this.center.copy().sub(c.center).leng() > this.radius + c.radius){
                 return false;
             }
             return true;
         },
         touchingLine : function(l){
-            if(l.distFrom(this.p) > this.r){
+            if(l.distFrom(this.center) > this.radius){
                 return false
             }
             return true;
@@ -677,19 +733,19 @@ groover.geom = (function (){
             return inside;
         },
         isCircleInside : function(circle){
-            return (this.distFrom(circle.p) + circle.r < 0);
+            return (this.distFrom(circle.center) + circle.radius < 0);
         },
         isLineInside : function(line){
             return (this.isPointInside(line.p1) && this.isPointInside(line.p2) );;
         },
         isPointInside : function(vec){
-            return  this.p.distFrom(vec) < this.r;
+            return  this.center.distFrom(vec) < this.radius;
         },
         distFrom : function(vec){
-            return  this.p.distFrom(vec)-this.r;
+            return  this.center.distFrom(vec)-this.radius;
         },
         closestPoint : function(vec){
-            return  vec.copy().sub(this.p).setLeng(this.r).add(this.p);
+            return  vec.copy().sub(this.center).setLeng(this.radius).add(this.center);
         },
         lineSegInside : function(line){
             var pa = this.lineIntercept(line);
@@ -713,10 +769,10 @@ groover.geom = (function (){
         },
         lineSegIntercept : function(l){
             var va = new VecArray();
-            var d =  l.distFrom(this.p); // dist from line
-            if(d <= this.r){
-                var p = l.closestPoint(this.p);  // closest point on line
-                var d1 = Math.sqrt(this.r*this.r- d*d);
+            var d =  l.distFrom(this.center); // dist from line
+            if(d <= this.radius){
+                var p = l.closestPoint(this.center);  // closest point on line
+                var d1 = Math.sqrt(this.radius*this.radius- d*d);
                 var v1 = l.asVec().setLeng(d1);
                 var v2 = p.copy().sub(v1);
                 var pos = line.getUnitDistOfPoint(v2);
@@ -734,10 +790,10 @@ groover.geom = (function (){
         },
         lineIntercept : function(l){
             var va = new VecArray();
-            var d =  l.distFrom(this.p); // dist from line
-            if(d <= this.r){
-                var p = l.closestPoint(this.p);  // closest point on line
-                var d1 = Math.sqrt(this.r*this.r- d*d);
+            var d =  l.distFrom(this.center); // dist from line
+            if(d <= this.radius){
+                var p = l.closestPoint(this.center);  // closest point on line
+                var d1 = Math.sqrt(this.radius*this.radius- d*d);
                 var v1 = l.asVec().setLeng(d1);
                 return va.push(p.copy().sub(v1)).push(p.add(v1));
             }
@@ -745,17 +801,17 @@ groover.geom = (function (){
         },
         circleIntercept : function(circle){
             var va = new VecArray();
-            var l = circle.p.copy().sub(this.p);
+            var l = circle.center.copy().sub(this.center);
             var d = l.leng();
-            if(d > this.r + circle.r){
+            if(d > this.radius + circle.radius){
                 return va;
             }
 
-            var x = (d * d - this.r * this.r + circle.r * circle.r) / ( 2 * d);
-            var a = Math.sqrt(circle.r*circle.r - x * x);
+            var x = (d * d - this.radius * this.radius + circle.radius * circle.radius) / ( 2 * d);
+            var a = Math.sqrt(circle.radius*circle.radius - x * x);
             l.setLeng(x);
 
-            var mid = circle.p.copy().sub(l);
+            var mid = circle.center.copy().sub(l);
             l.r90().setLeng(a);
             va.push(mid.copy().add(l))
             va.push(mid.sub(l));      
@@ -763,25 +819,25 @@ groover.geom = (function (){
             return va
         },
         tangentAtPoint : function(p){
-            var l = p.copy().sub(this.p);
-            var at = l.copy().setLeng(this.r).add(this.p);
+            var l = p.copy().sub(this.center);
+            var at = l.copy().setLeng(this.radius).add(this.center);
             l.r90();
             return new Line(at,at.copy().add(l));
         },
         angleOfPoint : function(p){
-            return p.copy().sub(this.p).dir();
+            return p.copy().sub(this.center).dir();
         },
         tangentsPointsForPoint : function(vec){  // finds where on the circle the tangents are for the point vec. In valid if point is inside the circle
             var va = new VecArray();
-            var d = this.p.distFrom(vec);
-            if(d <= this.r){  // point is inside so no tangents exist
+            var d = this.center.distFrom(vec);
+            if(d <= this.radius){  // point is inside so no tangents exist
                 return va;  
             }
-            var a = Math.acos(this.r / d);
-            var a1 = this.p.angleTo(vec);
+            var a = Math.acos(this.radius / d);
+            var a1 = this.center.angleTo(vec);
             return va
-                .push(new Vec(null,a1-a).mult(this.r).add(this.p))
-                .push(new Vec(null,a1+a).mult(this.r).add(this.p))
+                .push(new Vec(null,a1-a).mult(this.radius).add(this.center))
+                .push(new Vec(null,a1+a).mult(this.radius).add(this.center))
         },
         reflectLine : function(line){ // WTF sorry will fix in time
             var va = new VecArray();
@@ -811,9 +867,9 @@ groover.geom = (function (){
             var v2 = l2.asVec();
             var v3 = v1.mid(v2);
             var angle = v3.angleBetween(v2);
-            var d = this.r / Math.sin(angle);
+            var d = this.radius / Math.sin(angle);
             
-            this.p.setAs(v3.norm().mult(d).add(l2.p1));
+            this.center.setAs(v3.norm().mult(d).add(l2.p1));
             return this;
         },    
             
@@ -1066,99 +1122,99 @@ groover.geom = (function (){
         a : 1,
         type : "Rectangle",
         copy : function () {
-            return new Rectangle(this.t.copy(),this.a);
+            return new Rectangle(this.top.copy(),this.aspect);
         },
         setAs : function(rectange){
-            this.t.setAs(rectange.t);
-            this.a = rectange.a;
+            this.top.setAs(rectange.top);
+            this.aspect = rectange.aspect;
             return this;
         },
         width : function (){
-            return this.t.leng();
+            return this.top.leng();
         },
         height : function () {
-            return this.t.leng() * this.a;
+            return this.top.leng() * this.aspect;
         },
         aspect : function (){
-            return this.a;
+            return this.aspect;
         },
         setWidth : function (num){
-            var h = this.t.leng() * this.a;
-            this.t.setLeng(num);
-            this.a = h / num;
+            var h = this.top.leng() * this.aspect;
+            this.top.setLeng(num);
+            this.aspect = h / num;
         },
         setHeight : function (num){
-            this.a = num / this.t.leng()
+            this.aspect = num / this.top.leng()
         },
         topLine : function(){
-            return this.t.copy();
+            return this.top.copy();
         },
         leftLine : function(){
-            return new Line(this.t.p1.copy().add(this.t.asVec().r90().mult(this.a)),this.t.p1.copy());
+            return new Line(this.top.p1.copy().add(this.top.asVec().r90().mult(this.aspect)),this.top.p1.copy());
         },
         rightLine : function(){
-            return new Line(this.t.p2.copy(),this.t.p2.copy().add(this.t.asVec().r90().mult(this.a)));
+            return new Line(this.top.p2.copy(),this.top.p2.copy().add(this.top.asVec().r90().mult(this.aspect)));
         },
         bottomLine : function(){
-            return this.t.copy().add(this.t.asVec().r90().mult(this.a)).reverse();
+            return this.top.copy().add(this.top.asVec().r90().mult(this.aspect)).reverse();
         },
         getCorners : function () {
-            var v = this.t.asVec().r90().mult(this.a);
+            var v = this.top.asVec().r90().mult(this.aspect);
             var vecA = new VecArray();
-            vecA.push(this.t.p1.copy());
-            vecA.push(this.t.p2.copy());
-            vecA.push(this.t.p2.copy().add(v));
-            vecA.push(this.t.p1.copy().add(v));
+            vecA.push(this.top.p1.copy());
+            vecA.push(this.top.p2.copy());
+            vecA.push(this.top.p2.copy().add(v));
+            vecA.push(this.top.p1.copy().add(v));
             return vecA;
         },
         asBox : function(box){
             if(box === undefined){
                 var box = new Box();
             }
-            box.env ( this.t.p1.x, this.t.p1.y);
-            box.env ( this.t.p2.x, this.t.p2.y);
-            var v = this.t.asVec().r90().mult(this.a);
-            box.env ( this.t.p1.x + v.x, this.t.p1.y + v.y);
-            box.env ( this.t.p2.x + v.x, this.t.p2.y + v.y);
+            box.env ( this.top.p1.x, this.top.p1.y);
+            box.env ( this.top.p2.x, this.top.p2.y);
+            var v = this.top.asVec().r90().mult(this.aspect);
+            box.env ( this.top.p1.x + v.x, this.top.p1.y + v.y);
+            box.env ( this.top.p2.x + v.x, this.top.p2.y + v.y);
             return box;
         },
         area : function () {
-            var l = this.t.leng();
-            return l * l * this.a;
+            var l = this.top.leng();
+            return l * l * this.aspect;
         },
         heightFromArea : function (area){
-            var l = this.t.leng();
-            this.a  = (area / l) / l;
+            var l = this.top.leng();
+            this.aspect  = (area / l) / l;
             return this;
         },
         widthFromArea : function (area){
-            var l = this.t.leng() * this.a;
-            this.t.setLeng(Math.sqrt(area / (l * l)) / l);
+            var l = this.top.leng() * this.aspect;
+            this.top.setLeng(Math.sqrt(area / (l * l)) / l);
             return this;
         },
         perimiter : function() {
-            var l = this.t.leng();
-            return l * 2 + l* this.a * 2;
+            var l = this.top.leng();
+            return l * 2 + l* this.aspect * 2;
         },
         diagonalLength : function () {
-            var l = this.t.leng();
-            return Math.hypot(l,l* this.a);
+            var l = this.top.leng();
+            return Math.hypot(l,l* this.aspect);
         },
         getCenter : function () {
-            var v = this.t.asVec().r90().mult(this.a * (1/2));
-            return this.t.midPoint().add(v);
+            var v = this.top.asVec().r90().mult(this.aspect * (1/2));
+            return this.top.midPoint().add(v);
         },
         getDiagonalLine : function (){
-            var v = this.t.asVec().r90().mult(this.a);
-            return new Line(this.t.p1.copy(),this.t.p2.copy().add(v));
+            var v = this.top.asVec().r90().mult(this.aspect);
+            return new Line(this.top.p1.copy(),this.top.p2.copy().add(v));
         },
         getBottomRight : function (){
-            return this.t.p2.copy().add(this.t.asVec().r90().mult(this.a));
+            return this.top.p2.copy().add(this.top.asVec().r90().mult(this.aspect));
         },
         isPointInside : function (vec){
             var v = vec.copy().sub(this.getBottomRight());
-            var v1 = vec.copy().sub(this.t.p1);
-            var v2 = this.t.asVec();
+            var v1 = vec.copy().sub(this.top.p1);
+            var v2 = this.top.asVec();
             var c = v2.cross(v1);
             if(v2.cross(v1) >= 0 && v2.cross(v) <= 0 && v2.r90().cross(v1) <= 0 && v2.cross(v) >= 0){
                 return true;
@@ -1169,24 +1225,24 @@ groover.geom = (function (){
             return (this.isPointInside(line.p1) && this.isPointInside(line.p2));
         },
         setTransform :function(ctx){   // temp location of this function
-            var xa = new Vec(null,this.t.dir());
-            ctx.setTransform(xa.x, xa.y, -xa.y * this.a, xa.x * this.a, this.t.p1.x, this.t.p1.y);
+            var xa = new Vec(null,this.top.dir());
+            ctx.setTransform(xa.x, xa.y, -xa.y * this.aspect, xa.x * this.aspect, this.top.p1.x, this.top.p1.y);
         },    
         setTransformArea : function (width, height){ // temp location of this function
-            var l = this.t.leng();
-            var xa = new Vec(null,this.t.dir()).mult(l/width);
-            var ya = new Vec(null,this.t.dir()).mult((l* this.a)/width);
-            ctx.setTransform(xa.x, xa.y, -ya.y, ya.x, this.t.p1.x, this.t.p1.y);
+            var l = this.top.leng();
+            var xa = new Vec(null,this.top.dir()).mult(l/width);
+            var ya = new Vec(null,this.top.dir()).mult((l* this.aspect)/width);
+            ctx.setTransform(xa.x, xa.y, -ya.y, ya.x, this.top.p1.x, this.top.p1.y);
         },
         getPointAt : function(point){  // point is a relative unit coordinate on the rectangle
-            var v = this.t.asVec();
-            return this.t.p1.copy().add(v.copy().mult(point.x)).add(v.r90().mult(this.a * point.y));
+            var v = this.top.asVec();
+            return this.top.p1.copy().add(v.copy().mult(point.x)).add(v.r90().mult(this.aspect * point.y));
         },
         getLocalPoint : function(vec){
-            var dy = this.t.distFromDir(vec);
+            var dy = this.top.distFromDir(vec);
             var dx = this.leftLine().distFromDir(vec);
-            var lw = this.t.leng();
-            var lh = lw * this.a;
+            var lw = this.top.leng();
+            var lh = lw * this.aspect;
             return new Vec(dx/lw,dy/lh);
         },
         scaleToFitIn : function(obj){
@@ -1208,69 +1264,69 @@ groover.geom = (function (){
         r : 0,
         type : "Box",
         copy : function (){
-            return new Box (this.l,this.t,this.r,this.b);
+            return new Box (this.left,this.top,this.right,this.bottom);
         },
         setAs : function(box){
-            this.t = box.t;
-            this.l = box.l;
-            this.r = box.r;
-            this.b = box.b;
+            this.top = box.top;
+            this.left = box.left;
+            this.right = box.right;
+            this.bottom = box.bottom;
             return this;
         },      
         asBox : function(box){
             if(box === undefined){
                 var box = new Box();
             }
-            box.env(this.l,this.t);
-            box.env(this.r,this.b);
+            box.env(this.left,this.top);
+            box.env(this.right,this.bottom);
             return box;
         },            
         asRectange : function () {
-            var a = (this.b- this.t)  / (this.r- this.l);
-            return new Rectangle ( new Line( new Vec(this.l,this.t)), a)
+            var a = (this.bottom- this.top)  / (this.right- this.left);
+            return new Rectangle ( new Line( new Vec(this.left,this.top)), a)
         },
         normalise : function (){
             var t,r,l,b;
-            t = Math.min(this.t,this.b);
-            b = Math.max(this.t,this.b);
-            l = Math.min(this.l,this.r);
-            r = Math.max(this.l,this.r);
-            this.t = t;
-            this.b = b;
-            this.l = l;
-            this.r = r;
+            t = Math.min(this.top,this.bottom);
+            b = Math.max(this.top,this.bottom);
+            l = Math.min(this.left,this.right);
+            r = Math.max(this.left,this.right);
+            this.top = t;
+            this.bottom = b;
+            this.left = l;
+            this.right = r;
             return this;
         },
         max : function () {
-            this.t = -Infinity;
-            this.b = Infinity;
-            this.l = -Infinity;
-            this.r = Infinity;
+            this.top = -Infinity;
+            this.bottom = Infinity;
+            this.left = -Infinity;
+            this.right = Infinity;
             return this;
         },
         irrate : function () {
-            this.t = Infinity;
-            this.b = -Infinity;
-            this.l = Infinity;
-            this.r = -Infinity;
+            this.top = Infinity;
+            this.bottom = -Infinity;
+            this.left = Infinity;
+            this.right = -Infinity;
             return this;
         },
         env : function ( x, y){
             if(y !== undefined && y !== null){
-                this.t = Math.min(y,this.t);
-                this.b = Math.max(y,this.b);
+                this.top = Math.min(y,this.top);
+                this.bottom = Math.max(y,this.bottom);
             }
             if(x !== undefined && x !== null){
-                this.l = Math.min(x,this.l);
-                this.r = Math.max(x,this.r);
+                this.left = Math.min(x,this.left);
+                this.right = Math.max(x,this.right);
             }
             return this;
         },
         envBox : function (box){
-            this.t = Math.min(box.t,this.t);
-            this.b = Math.max(box.b,this.b);
-            this.l = Math.min(box.l,this.l);
-            this.r = Math.max(box.r,this.r);
+            this.top = Math.min(box.top,this.top);
+            this.bottom = Math.max(box.bottom,this.bottom);
+            this.left = Math.min(box.left,this.left);
+            this.right = Math.max(box.right,this.right);
             return this;
         },
         envelop : function (obj){
@@ -1314,4 +1370,3 @@ groover.geom = (function (){
     return geom
 })();
 
-/** FrameUpdate.js end **/
