@@ -22,6 +22,7 @@ Currently supporting the following primitives
 - Arc
 - Box
 - Transform 
+- Empty
 
 All functions are chainable where posible
 
@@ -149,6 +150,23 @@ var bottomRight = new geom.Vec(box.r,box.b);
 
 
 ## Primitives 
+### Empty  
+     This is nothing. It is returned by some functions if there is no solution.
+Properties    
+- Empty.type = 'Empty'
+- Empty.copy()     Returns new Empty
+- Empty.setAs(v)   Returns self
+- Empty.asBox()    Returns a new Box that is irrational
+- Empty.isEmpty()  Returns true
+
+Render Extention 
+- Empty.moveTo()   Does nothing
+- Empty.lineTo()   Does nothing
+- Empty.mark()     Does nothing
+- Empty.draw()     Does nothing
+
+     
+
 ### Vec
     2D point.
 
@@ -194,32 +212,34 @@ Render Extention
 
 
 ### Box
-
+  A box aligned to the x and y axies. Used to get bounding box for primitives.
 Properties    
-- Box.t = Number
-- Box.b = Number
-- Box.l = Number
-- Box.r = Number
+- Box.top = Number 
+- Box.bottom = Number
+- Box.left = Number
+- Box.right = Number
 - Box.type = 'Box'
 
 Functions
 - Box.copy()
 - Box.setAs(box)
 - Box.asRectange() 
-- Box.normalise()
+- Box.normalise()  Fixes bounds. Good idea to call this if you are unsure any primitives have been tested
 - Box.max() 
-- Box.irrate() 
-- Box.env( x, y)
-- Box.envBox(box)
+- Box.irrate()    irrationalization ?? want a better name. Sets bounds to infinit ready for bound test
+- Box.env( x, y)  envelop x,y. Sets the bound to include the point x,y
+- Box.envBox(box)  
 - Box.envelop(obj)
 
 Currently missing render
 
 ### Line
+  A line with two Vecs reprsenting the start and end coordinates of the line. Most calcs will view the line as
+  an infinitly long line. Will be posfixing Seg if the function deals with only the line between the start and end.
 
 Properties
-- Line.p1 = Vec
-- Line.p2 = Vec
+- Line.p1 = Vec   Start of the line
+- Line.p2 = Vec   End of the line
 - Line.type = 'Line'
 
 Functions    

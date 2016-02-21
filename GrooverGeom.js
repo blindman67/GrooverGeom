@@ -34,6 +34,7 @@ groover.geom = (function (){
             "Rectangle",
             "VecArray",
             "Transform",
+            "Empty",
         ];
         this.properties = {
             Vec : ["x","y","type"],
@@ -44,6 +45,7 @@ groover.geom = (function (){
             Rectangle: ["t","a","type"],
             VecArray: ["vecs","type"],
             Transform: ["xa","ya","o","type"],
+            Empty : ["type"],
         };
         this.Vec = Vec;
         this.Line = Line;
@@ -54,6 +56,7 @@ groover.geom = (function (){
         this.Transform = Transform;
         this.VecArray = VecArray;
         this.Geom = Geom;
+        this.Empty = Empty;
     }
     Geom.prototype = {
         isGeom : function (obj){
@@ -117,7 +120,7 @@ groover.geom = (function (){
     geom.Geom = Geom;  // add geom to geom object for use by extentions or anything that needs to 
                        // extend the prototype of Geom.
 
-
+    function Empty(){};
     function Vec(x,y){
         if(x === undefined && y === undefined){
             return;
@@ -140,10 +143,10 @@ groover.geom = (function (){
             this.x = x;
             this.y = y;
         }
-    }
+    };
     function VecArray(){
         this.vecs = [];
-    }
+    };
     function Line(vec1,vec2){
         if((vec1 === undefined || vec1 === null) && (vec2 === undefined || vec2 === null)){
             this.p1 = new Vec(0,0);
@@ -156,7 +159,7 @@ groover.geom = (function (){
             this.p1 = new Vec(0,0);
             this.p2 = new Vec(); // vec defualts to unit vec            
         }
-    }
+    };
     function Circle(vec,num){
         if((vec === undefined || vec === null) && (num === undefined || num === null)){
             this.center = new Vec(0,0);
@@ -169,16 +172,16 @@ groover.geom = (function (){
             this.center = new Vec(0,0);
             this.radius = 1;
         }
-    }
+    };
     function Arc(circle,start,end){
         this.circle = circle;
         this.start = start;
         this.end = end;
-    }
+    };
     function Rectangle(top,aspect){
         this.top = top;
         this.aspect = aspect;
-    }
+    };
     function Box(left,top,right,bottom){
         if((left === undefined || left === null) && (top === undefined || top === null)  && (right === undefined || right === null) && (bottom === undefined || bottom === null)){
             this.irrate();
@@ -188,13 +191,29 @@ groover.geom = (function (){
         this.top = top;
         this.right = right;
         this.bottom = bottom;
-    }
+    };
     function Transform(xAxis,yAxis,origin){
         this.xa = xAxis;
         this.ya = yAxis;
         this.o = origin;
-    }
-
+    };
+    
+    Empty.prototype = {
+        type : "Empty",
+        copy : function(){ return new Empty(); },
+        asBox : function(box){
+            if(box === undefined){
+                box = new Box();
+            }
+            return box;
+        },
+        setAs : function(){
+            return this;
+        },
+        isEmpty : function(){
+            return true;
+        },
+    },
     VecArray.prototype =  {
         vecs : [],
         type :"VecArray",
@@ -433,6 +452,12 @@ groover.geom = (function (){
             }
             return box;
         },
+        isEmpty : function(){
+            if(this.start === this.end){
+                return true;
+            }
+            return false;
+        },
         asCircle : function(){
             return this.circle.copy();
         },
@@ -454,7 +479,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        areaOfPie : function (){
+        areaOfSector : function (){
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
             if( s > e){
@@ -462,7 +487,7 @@ groover.geom = (function (){
             }
             return this.circle.radius * this.circle.radius * (e-s);
         },
-        areaOfSlice : function (){
+        areaOfSegment : function (){
             var swap = false;
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
@@ -584,6 +609,10 @@ groover.geom = (function (){
             );
         },
         cordAsLine : function(){
+            if(this.start === this.end){
+                return new Empty();
+                
+            }
             return new Line(
                 new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius),
                 new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius)
@@ -805,7 +834,7 @@ groover.geom = (function (){
             var va = new VecArray();
             var l = circle.center.copy().sub(this.center);
             var d = l.leng();
-            if(d > this.radius + circle.radius){
+            if(d > this.radius + circle.radius || d < Math.abs(this.radius - circle.radius)){
                 return va;
             }
 

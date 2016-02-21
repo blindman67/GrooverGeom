@@ -66,42 +66,53 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         }
     }
     geom.Vec.prototype.moveTo = function (){
-        ctx.moveTo(this.x,this.y);        
+        ctx.moveTo(this.x,this.y);   
+        return this;
+        
     };
     geom.Vec.prototype.lineTo = function (){
         ctx.lineTo(this.x,this.y);
+        return this;
     };
     geom.Vec.prototype.mark = function (){
         mark(this);
+        return this;
     };
     geom.Vec.prototype.draw = function (){
+        return this;
     };
     
     geom.Line.prototype.moveTo = function () {
         this.p1.moveTo();
+        return this;
     };
     geom.Line.prototype.lineTo = function () {
         this.p1.lineTo();
         this.p2.lineTo();
+        return this;
     };
     geom.Line.prototype.draw = function () {
         this.p1.moveTo();
         this.p2.lineTo();
+        return this;
     };
     geom.Line.prototype.mark = function(){
         this.p1.mark();
         this.p2.mark();
+        return this;
     };
     
     geom.VecArray.prototype.moveTo = function(){
         if(this.vecs.length > 0){
             this.vecs[0].moveTo();
         }
+        return this;
     };
     geom.VecArray.prototype.lineTo = function(){
         this.each(function(vec,i){
             vec.lineTo();
         });
+        return this;
     };
     geom.VecArray.prototype.draw = function(){
         this.each(function(vec,i){
@@ -111,69 +122,86 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
                 vec.lineTo();
             }
         });
+        return this;
     };
     geom.VecArray.prototype.mark = function(){
         this.each(function(vec,i){
             vec.mark();
         });
+        return this;
     };
     
     geom.Circle.prototype.moveTo = function(){
         ctx.moveTo(this.center.x + this.radius, this.center.y);
+        return this;
     }
     geom.Circle.prototype.lineTo = function(){
         ctx.lineTo(this.center.x + this.radius, this.center.y);
+        return this;
     }
-    geom.Circle.prototype.draw = function(){
-        ctx.arc(this.center.x, this.center.y, this.radius, 0, Math.PI * 2);
+    geom.Circle.prototype.draw = function(direction){
+        ctx.arc(this.center.x, this.center.y, this.radius, 0, Math.PI * 2, direction);
+        return this;
     }
     geom.Circle.prototype.mark = function(){
         this.center.mark();
+        return this;
     }
     
     geom.Arc.prototype.moveTo = function(){
         if(this.start !== this.end){
             this.startAsVec().moveTo();
         }
+        return this;
     };
     geom.Arc.prototype.lineTo = function(){
         if(this.start !== this.end){
             this.startAsVec().lineTo();
         }
+        return this;
     };
-    geom.Arc.prototype.draw = function(){
+    geom.Arc.prototype.draw = function(direction){
         if(this.start !== this.end){
-            ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end);
+            ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, direction);
         }
+        return this;
     };
     geom.Arc.prototype.mark = function(){
         if(this.start !== this.end){
             this.endsAsVec().mark();
         }
+        return this;
     };
     
     geom.Rectangle.prototype.moveTo = function(){
         this.top.p1.moveTo();
+        return this;
     };
     geom.Rectangle.prototype.lineTo = function(){
         this.top.p1.lineTo();
+        return this;
     };
     geom.Rectangle.prototype.draw = function(){
         this.getCorners().draw();
+        return this;
     };
     geom.Rectangle.prototype.mark = function(){
         this.getCorners().mark();
+        return this;
     };
     
     
     geom.Box.prototype.moveTo = function(){
         ctx.moveTo(this.left, this.top);
+        return this;
     };
     geom.Box.prototype.lineTo = function(){
         ctx.lineTo(this.left, this.top);
+        return this;
     };
     geom.Box.prototype.draw = function(){
         ctx.rect(this.left, this.top, this.right - this.left, this.bottom - this.top);
+        return this;
     };
     geom.Box.prototype.mark = function(){
         workVec.x = this.left;
@@ -185,5 +213,10 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         workVect.mark();
         workVec.x = this.left;
         workVect.mark();
+        return this;
     };    
+    geom.Empty.prototype.moveTo = function(){return this;};
+    geom.Empty.prototype.lineTo = function(){return this;};
+    geom.Empty.prototype.draw = function(){return this;};
+    geom.Empty.prototype.mark = function(){return this;};
 }
