@@ -187,7 +187,7 @@ groover.geom = (function (){
     function VecArray(){
         this.vecs = [];
     };
-    function Line(vec1,vec2){
+    function Line(vec1,vec2){  
         if((vec1 === undefined || vec1 === null) && (vec2 === undefined || vec2 === null)){
             this.p1 = new Vec(0,0);
             this.p2 = new Vec(); // vec defualts to unit vec
@@ -257,90 +257,103 @@ groover.geom = (function (){
     VecArray.prototype =  {
         vecs : [],
         type :"VecArray",
-        each : function (func){
+        each : function (callback){ // Itterates the vecs in this. The itterater can break if the {acallback} returns false.
+                                 // The {acallback} in the form
+                                 // ```JavaScript
+                                 // var callback = function(vec, i){
+                                 // return boolean    
+                                 // }
+                                 // ```
             var i;
-            var l = this.vecs.length; // do not be tempted to put length in the for statement
-                                      // doing so will cause an infinit loop if appending to self
+            var l = this.vecs.length;                                       
             for(i =0; i < l; i ++){
-                if(func(this.vecs[i],i) === false){
+                if(callback(this.vecs[i],i) === false){
                     break;
                 }
             }
-            return this;
+            return this; // returns this
         },
-        cull : function (func){  // func return true to keep
+        cull : function (callback){  // Itterate all vecs culling those vecs that the {acallback} returns false for.
+                                 // Callback {acallback} in the form
+                                 // ```JavaScript
+                                 // var callback = function(vec, i){
+                                 // return boolean    
+                                 // }
+                                 // ```
             var i;
             var l = this.vecs.length; 
             for(i =0; i < l; i ++){
-                if(func(this.vecs[i],i) === false){
+                if(callback(this.vecs[i],i) === false){
                     this.vecs.splice(i,1);
                     i -= 1;
                     l -= 1;
                 }
             }
-            return this;
+            return this;  // returns this
         },
-        copy : function (){
+        copy : function (){  // Creates a new VecArray with a copy of the vecs in this.
             var va = new VecArray();
             this.each(function(vec){
                 va.push(vec.copy());
             });
-            return va;
+            return va;  // returns new VecArray
         },
-        setAs :function (vecArray){
+        setAs :function (vecArray){  // sets the array of vecs to that of the {avecArray} will only set existing vecs in this Extra items in the {avecArray} are ignored. If the {avecArray} is smaller than this items then 
+                                     
             this.each(function(vec,i){
                 vec.x = vecArray[i].x;
                 vec.y = vecArray[i].y;
             });
-            return this;
+            return this; // returns this
         },
-        isEmpty : function (){
+        isEmpty : function (){ // Returns whether this is empty (has items)
             if(this.vecs.length === 0){
-                return true;
+                return true;  // returns true if there are one or more vecs in this
             }
-            return false;
+            return false;  // returns false if there are no vecs in this
         },
-        push : function (vec){
+        push : function (vec){ // Push the {avec} onto the array of vecs
             this.vecs[this.vecs.length] = vec;
-            return this;
+            return this;  // returns this
         },
-        append : function(vecArray){  // this is safe becasue each() only loops a set count
-            vecArray.each(function(vec){
+        append : function(vecArray){  // append the {avecArray} to the end of the list of vecs
+            vecArray.each(function(vec){  
                 this.push(vec);
             })
+            return this;  // returns this
         },
-        asBox : function(box){
+        asBox : function(box){ // gets the bounding box that envelops all the vecs in the list. The {obox} is used or a new Box is created. Box may be irrational if there are no items in vecArray.
             if(box === undefined){
                 var box = new Box();
             }
             this.each(function(vec){
                box.env(vec.x,vec.y);
             });
-            return box;
+            return box; // returns the {obox} or a new box.
         },
-        mult : function (num){
+        mult : function (number){  // Multiply each vec in the list by the {anumber}
             this.each(function(vec){
-               vec.mult(num);
+               vec.mult(number);
             });
-            return this;
+            return this; // returns this.
         },
-        add : function (v){
+        add : function (vec){ // add the {avec} to each vec in the list
+            this.each(function(vec1){
+               vec1.add(v);
+            });
+            return this; // returns this
+        },
+        rotate : function(number){  // rotates each vec bu {anumber}
             this.each(function(vec){
-               vec.add(v);
+               vec.rotate(number); 
             });
-            return this;
+            return this; //returns this.
         },
-        rotate : function(num){
-            this.each(function(vec){
-               vec.rotate(num); 
-            });
-            return this;
+        getLast : function(){ // returns the last vec on the list
+            return this.vecs[this.vecs.length-1]; // returns Vec
         },
-        getLast : function(){
-            return this.vecs[this.vecs.length-1];
-        },
-        getCount : function(){
-            return this.vec.length;
+        getCount : function(){ 
+            return this.vec.length; // Returns the number of vecs in the list
         }
     }
     Vec.prototype = {

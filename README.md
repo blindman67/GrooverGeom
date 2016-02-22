@@ -199,7 +199,19 @@ Auto doc.
 runtime: 24.428ms
 GrooverUtils.js:32 
 
-## Vec
+
+Regex
+
+Hide network messages
+All
+Errors
+Warnings
+Info
+Logs
+Debug
+Handled
+?
+GrooverUtils.js:32 ## Vec
 
 Properties.
 - Vec.x = number  
@@ -262,23 +274,57 @@ Properties.
 - VecArray.type = 'VecArray'  
 
 Functions.
-- VecArray.each(func)  
-	Do not be tempted to put length in the for statement
-	Doing so will cause an infinit loop if appending to self
-- VecArray.cull(func)    
-	Func return true to keep
-- VecArray.copy()  
-- VecArray.setAs(vecArray)  
-- VecArray.isEmpty()  
-- VecArray.push(vec)  
+- VecArray.each(callback)   
+	Itterates the [vec](#vec)s in this. The itterater can break if the requiered argument callback returns false.
+	The requiered argument callback in the form
+	```JavaScript
+	Var callback = function([vec](#vec), i){
+	Return boolean
+	}
+	```
+	Returns this
+- VecArray.cull(callback)    
+	Itterate all [vec](#vec)s culling those [vec](#vec)s that the requiered argument callback returns false for.
+	Callback requiered argument callback in the form
+	```JavaScript
+	Var callback = function([vec](#vec), i){
+	Return boolean
+	}
+	```
+	Returns this
+- VecArray.copy()    
+	Creates a new [Vec](#vec)Array with a copy of the [vec](#vec)s in this.
+	Returns new [Vec](#vec)Array
+- VecArray.setAs(vecArray)    
+	Sets the array of [vec](#vec)s to that of the requiered argument [vec](#vec)Array will only set existing [vec](#vec)s in this Extra items in the requiered argument [vec](#vec)Array are ignored. If the requiered argument [vec](#vec)Array is smaller than this items then
+	Returns this
+- VecArray.isEmpty()   
+	Returns whether this is [empty](#empty) (has items)
+	Returns true if there are one or more [vec](#vec)s in this
+	Returns false if there are no [vec](#vec)s in this
+- VecArray.push(vec)   
+	Push the requiered argument [vec](#vec) onto the array of [vec](#vec)s
+	Returns this
 - VecArray.append(vecArray)    
-	This is safe becasue each() only loops a set count
-- VecArray.asBox(box)  
-- VecArray.mult(num)  
-- VecArray.add(v)  
-- VecArray.rotate(num)  
-- VecArray.getLast()  
-- VecArray.getCount()  
+	Append the requiered argument [vec](#vec)Array to the end of the list of [vec](#vec)s
+	Returns this
+- VecArray.asBox(box)   
+	Gets the bounding [box](#box) that envelops all the [vec](#vec)s in the list. The optional argument [box](#box) is used or a new [Box](#box) is created. [Box](#box) may be irrational if there are no items in [vec](#vec)Array.
+	Returns the optional argument [box](#box) or a new [box](#box).
+- VecArray.mult(number)    
+	Multiply each [vec](#vec) in the list by the requiered argument number
+	Returns this.
+- VecArray.add(vec)   
+	Add the requiered argument [vec](#vec) to each [vec](#vec) in the list
+	Returns this
+- VecArray.rotate(number)    
+	Rotates each [vec](#vec) bu requiered argument number
+	Returns this.
+- VecArray.getLast()   
+	Returns the last [vec](#vec) on the list
+	Returns [Vec](#vec)
+- VecArray.getCount()   
+	Returns the number of [vec](#vec)s in the list
 
 render extention.
 - VecArray.moveTo()  
@@ -575,4 +621,5 @@ Functions.
 - Transform.setYxis(vec)  
 
 [Back to top.](#contents)
+
 
