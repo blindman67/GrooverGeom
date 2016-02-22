@@ -114,7 +114,7 @@ groover.geom = (function (){
                                 }
                                 ce = k;
                                 break;
-                            }
+                            } 
                         }
                         st = s[n].prototype[i].toString();
                         f = st.replace(/\r/g,"").split("\n");
