@@ -80,9 +80,9 @@ groover.geom = (function (){
                             l = l.replace( /\{a(.*?)\}/g, "requiered argument `$1`");
                             l = l.replace( /\{o(.*?)\}/g, "optional argument `$1`");
                             s.objectNames.forEach(function(n){
-                                l = l.replace(new RegExp("("+n+")","gi"),"[$1](#"+n+")");
+                                l = l.replace(new RegExp("("+n+")","gi"),"[$1](#"+n.toLowerCase()+")");
                             })
-                            l = l.replace( /\`(this*?)`/g, "[$1](#"+currentObj+")");
+                            l = l.replace( /\`(this*?)`/g, "[$1](#"+currentObj.toLowerCase()+")");
                             l = l[0].toUpperCase() + l.substr(1);
                             cLines.push("    " +l);
                         }
@@ -149,6 +149,7 @@ groover.geom = (function (){
                 for(var k in extentions){
                     str += extentions[k] + "\n";
                 }
+                str += "[Back to top.](#contents)\n\n"
             });
             console.log(str)
         }

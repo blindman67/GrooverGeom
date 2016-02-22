@@ -13,12 +13,16 @@
 1. [Line](#line)
 1. [Rectangle](#rectangle)
 1. [Circle](#circle)
-1. [Arc](arc)
-1. [Box](box)
-1. [Empty](Empty)
+1. [Arc](#arc)
+1. [Box](#box)
+1. [Empty](#Empty)
 
 
 ## Work in progress.
+
+This is currently very much a work in progress
+
+[Back to top.](#contents)
 
 ## Warning Refactoring in progress
 The document dose not fully reflect the current refactoring.
@@ -31,15 +35,19 @@ Geom provides a wide range of functions to aid with 2D geometric objects.
 
 Currently supporting the following primitives
 
+[Back to top.](#contents)
+
 ## Current Primitives
-- Vec
-- VecArray
-- Line
-- Rectangle
-- Circle
-- Arc
-- Box
-- Empty
+- [Vec](#vec)
+- [VecArray](#Vecarray)
+- [Line](#line)
+- [Rectangle](#rectangle)
+- [Circle](#circle)
+- [Arc](arc)
+- [Box](box)
+- [Empty](Empty)
+
+[Back to top.](#contents)
 
 ## Non Primitives
 These object are helper objects though there inclusion in this namespace is still questionable. There are currently used for testing 
@@ -49,6 +57,8 @@ These object are helper objects though there inclusion in this namespace is stil
 
 All functions are chainable where posible
 
+[Back to top.](#contents)
+
 ## Common Methods
 All object implement the following
 
@@ -57,6 +67,8 @@ All object implement the following
 - setAs(obj) : Copy the the properties of obj to this primitive. Obj should be the same primitive.
 - asBox(box) : Returns the bounding box of the primitive. Box is optional. If inclueded then the box will be extened if neeeded to bound this privitive.
 - isEmpty() : Returns true for an invalid, zero length, zero size or area. Some functions will set the returned object in an empty state rather than return nothing at all.
+
+[Back to top.](#contents)
 
 ## Render extentions
 Extending the objects with render will add the following methods to all primitives (exluding Transform).
@@ -102,6 +114,8 @@ groover.geom.setSize(8);
 new groover.geom.Vec(100,100).mark();
 ctx.stroke();
 ```
+
+[Back to top.](#contents)
 
 ## Geom usage examples
 
@@ -173,11 +187,14 @@ var bottomRight = new geom.Vec(box.r,box.b);
 
 
 
+[Back to top.](#contents)
+
 ##Primitives 
 
 The following documentation is auto generated from within the Geom object. This Auto generation eaxtracts the comments found in the source code to construct this list. It is currently experimental so please excuse the occasional hicup.
 
-##Vec
+[Back to top.](#contents)
+## Vec
 
 Properties.
 - Vec.x = number
@@ -187,21 +204,21 @@ Properties.
 Functions.
 - Vec.copy()  
     Creates a copy of this
-    Returns a new [this](#Vec)
+    Returns a new [this](#vec)
 - Vec.setAs(vec)  
-    Sets this [vec](#Vec) to the values in the requiered argument `[vec](#vec)`
-    Returns the existing [this](#Vec)
+    Sets this [vec](#vec) to the values in the requiered argument `[vec](#vec)`
+    Returns the existing [this](#vec)
 - Vec.asBox(box)  
     Returns the bounding [box](#box) that envelops this [vec](#vec)
     Optional argument `[box](#box)` is created if not supplied
     Returns `[box](#box)`
 - Vec.isEmpty()  
-    [Vec](#Vec) can not be [empty](#Empty) so always returns true
+    [Vec](#vec) can not be [empty](#empty) so always returns true
 - Vec.add(vec) 
-    Adds requiered argument `[vec](#Vec)` to this.
-    Returns [this](#Vec)
+    Adds requiered argument `[vec](#vec)` to this.
+    Returns [this](#vec)
 - Vec.sub(v)  
-    Subtracts requiered argument `[vec](#Vec)` from this.
+    Subtracts requiered argument `[vec](#vec)` from this.
 - Vec.mult(m)
 - Vec.div(m)
 - Vec.rev() 
@@ -230,6 +247,8 @@ render extention.
 - Vec.lineTo()
 - Vec.mark()
 - Vec.draw()
+
+[Back to top.](#contents)
 
 ## VecArray
 
@@ -261,6 +280,8 @@ render extention.
 - VecArray.lineTo()
 - VecArray.draw()
 - VecArray.mark()
+
+[Back to top.](#contents)
 
 ## Line
 
@@ -321,6 +342,8 @@ render extention.
 - Line.draw() 
 - Line.mark()
 
+[Back to top.](#contents)
+
 ## Rectangle
 
 Properties.
@@ -357,7 +380,7 @@ Functions.
 - Rectangle.setTransformArea(width, height) 
     Temp location of this function
 - Rectangle.getPointAt(point)  
-    Point is a relative unit coordinate on the [rectangle](#Rectangle)
+    Point is a relative unit coordinate on the [rectangle](#rectangle)
 - Rectangle.getLocalPoint(vec)
 - Rectangle.scaleToFitIn(obj)
 
@@ -366,6 +389,8 @@ render extention.
 - Rectangle.lineTo()
 - Rectangle.draw()
 - Rectangle.mark()
+
+[Back to top.](#contents)
 
 ## Circle
 
@@ -377,12 +402,12 @@ Properties.
 Functions.
 - Circle.copy()
 - Circle.setAs(circle)  
-    Sets this [circle](#Circle) to the argument requiered argument `[circle](#Circle)`.
-    Return [this](#Circle)
+    Sets this [circle](#circle) to the argument requiered argument `[circle](#circle)`.
+    Return [this](#circle)
 - Circle.asBox(box)     
-    Returns the bounding [box](#Box)
-    Requiered argument `[box](#Box)` is option
-    Returns `[Box](#Box)`
+    Returns the bounding [box](#box)
+    Requiered argument `[box](#box)` is option
+    Returns `[Box](#box)`
 - Circle.isEmpty()
 - Circle.setRadius(r)
 - Circle.circumference()
@@ -390,7 +415,7 @@ Functions.
 - Circle.fromLine(line)
 - Circle.fromPoints2(vec1, vec2)
 - Circle.fromPoints3(vec1, vec2, vec3)
-    Points are in a [line](#Line)
+    Points are in a [line](#line)
 - Circle.fromArea(area)
 - Circle.fromCircumference(leng)
 - Circle.touching(c)
@@ -403,16 +428,16 @@ Functions.
 - Circle.closestPoint(vec)
 - Circle.lineSegInside(line)
 - Circle.lineSegIntercept(l)
-    Dist from [line](#Line)
-    Closest point on [line](#Line)
+    Dist from [line](#line)
+    Closest point on [line](#line)
 - Circle.lineIntercept(l)
-    Dist from [line](#Line)
-    Closest point on [line](#Line)
+    Dist from [line](#line)
+    Closest point on [line](#line)
 - Circle.circleIntercept(circle)
 - Circle.tangentAtPoint(p)
 - Circle.angleOfPoint(p)
 - Circle.tangentsPointsForPoint(vec)  
-    Finds where on the [circle](#Circle) the tangents are for the point [vec](#Vec). In valid if point is inside the [circle](#Circle)
+    Finds where on the [circle](#circle) the tangents are for the point [vec](#vec). In valid if point is inside the [circle](#circle)
     Point is inside so no tangents exist
 - Circle.reflectLine(line) 
     WTF sorry will fix in time
@@ -423,6 +448,8 @@ render extention.
 - Circle.lineTo()
 - Circle.draw(direction)
 - Circle.mark()
+
+[Back to top.](#contents)
 
 ## Arc
 
@@ -445,7 +472,7 @@ Functions.
     Angle
     Area of the pie shape
     Lenght of half the cord;
-    Length of [line](#Line) from center to cord
+    Length of [line](#line) from center to cord
     Area is Pie area - triangle *2
     Area is Pie area - triangle *2
 - Arc.swap()
@@ -475,6 +502,8 @@ render extention.
 - Arc.draw(direction)
 - Arc.mark()
 
+[Back to top.](#contents)
+
 ## Box
 
 Properties.
@@ -503,6 +532,8 @@ render extention.
 - Box.draw()
 - Box.mark()
 
+[Back to top.](#contents)
+
 ## Empty
 
 Properties.
@@ -520,6 +551,8 @@ render extention.
 - Empty.draw()return this;}
 - Empty.mark()return this;}
 
+[Back to top.](#contents)
+
 ## Transform
 
 Properties.
@@ -536,4 +569,4 @@ Functions.
 - Transform.setXAxis(vec)
 - Transform.setYxis(vec)
 
-Currently does not have render extentions.
+[Back to top.](#contents)

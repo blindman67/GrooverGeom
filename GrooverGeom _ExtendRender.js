@@ -4,6 +4,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     var workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
     this.extentions.render = {   // add extentions for self documenter
         functions : ["lineTo","moveTo","draw","mark"],
+        info : "Provides helper functions to render primitives to the canvas 2D context."
     };
     
     
