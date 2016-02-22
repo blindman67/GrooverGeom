@@ -156,38 +156,34 @@ var bottomRight = new geom.Vec(box.r,box.b);
 
 
 ## Primitives 
-### Empty  
-     This is nothing. It is returned by some functions if there is no solution.
-Properties    
-- Empty.type = 'Empty'
-- Empty.copy()     Returns new Empty
-- Empty.setAs(v)   Returns self
-- Empty.asBox()    Returns a new Box that is irrational
-- Empty.isEmpty()  Returns true
 
-Render Extention 
-- Empty.moveTo()   Does nothing
-- Empty.lineTo()   Does nothing
-- Empty.mark()     Does nothing
-- Empty.draw()     Does nothing
-
-     
+The following documentation is auto generated from within the Geom object. This Auto generation eaxtracts the comments found in the source code to construct this list. It is currently experimental so please excuse the occasional hicup.
 
 ### Vec
-    2D point.
 
-Properties    
-- Vec.x = Number
-- Vec.y = Number
+Properties.
+- Vec.x = number
+- Vec.y = number
 - Vec.type = 'Vec'
 
-Functions
-- Vec.copy()
-- Vec.setAs(v)
-- Vec.asBox()
-- Vec.isEmpty()  Vecs are never empty and this always returns true
-- Vec.add(v)
-- Vec.sub(v)
+Functions.
+- Vec.copy()  
+    Creates a copy of this
+    Returns a new [this](#Vec)
+- Vec.setAs(vec)  
+    Sets this [vec](#Vec) to the values in the requiered argument `[vec](#Vec)`
+    Returns the existing [this](#Vec)
+- Vec.asBox(box)  
+    Returns the bounding [box](#Box) that envelops this [vec](#Vec)
+    Optional argument `[box](#Box)` is created if not supplied
+    Returns `[box](#Box)`
+- Vec.isEmpty()  
+    [Vec](#Vec) can not be [empty](#Empty) so always returns true
+- Vec.add(vec) 
+    Adds requiered argument `[vec](#Vec)` to this.
+    Returns [this](#Vec)
+- Vec.sub(v)  
+    Subtracts requiered argument `[vec](#Vec)` from this.
 - Vec.mult(m)
 - Vec.div(m)
 - Vec.rev() 
@@ -211,54 +207,60 @@ Functions
 - Vec.distFrom(vec)
 - Vec.angleTo(vec)
 
-Render Extention 
+render extention.
 - Vec.moveTo()
 - Vec.lineTo()
 - Vec.mark()
 - Vec.draw()
 
+### VecArray
 
-### Box
-  A box aligned to the x and y axies. Used to get bounding box for primitives.
-Properties    
-- Box.top = Number 
-- Box.bottom = Number
-- Box.left = Number
-- Box.right = Number
-- Box.type = 'Box'
+Properties.
+- VecArray.vecs = object
+- VecArray.type = 'VecArray'
 
-Functions
-- Box.copy()
-- Box.setAs(box)
-- Box.isEmpty()  if the box has no size or is a negative size returns true
-- Box.asRectange() 
-- Box.normalise()  Fixes bounds. Good idea to call this if you are unsure any primitives have been tested
-- Box.max() 
-- Box.irrate()    irrationalization ?? want a better name. Sets bounds to infinit ready for bound test
-- Box.env( x, y)  envelop x,y. Sets the bound to include the point x,y
-- Box.envBox(box)  
-- Box.envelop(obj)
+Functions.
+- VecArray.each(func)
+    Do not be tempted to put length in the for statement
+    Doing so will cause an infinit loop if appending to self
+- VecArray.cull(func)  
+    Func return true to keep
+- VecArray.copy()
+- VecArray.setAs(vecArray)
+- VecArray.isEmpty()
+- VecArray.push(vec)
+- VecArray.append(vecArray)  
+    This is safe becasue each() only loops a set count
+- VecArray.asBox(box)
+- VecArray.mult(num)
+- VecArray.add(v)
+- VecArray.rotate(num)
+- VecArray.getLast()
+- VecArray.getCount()
 
-Currently missing render
+render extention.
+- VecArray.moveTo()
+- VecArray.lineTo()
+- VecArray.draw()
+- VecArray.mark()
 
 ### Line
-  A line with two Vecs reprsenting the start and end coordinates of the line. Most calcs will view the line as
-  an infinitly long line. Will be posfixing Seg if the function deals with only the line between the start and end.
 
-Properties
-- Line.p1 = Vec   Start of the line
-- Line.p2 = Vec   End of the line
+Properties.
+- Line.p1 = undefined
+- Line.p2 = undefined
 - Line.type = 'Line'
 
-Functions    
+Functions.
 - Line.copy()
 - Line.setAs(line)
-- Line.isEmpty()  Returns true if the line has zero length
+- Line.isEmpty()
+- Line.createEmpty()
 - Line.swap()
 - Line.reverse()
 - Line.asVec()
 - Line.asVecArray()
-- Line.asBox()
+- Line.asBox(box)
 - Line.leng()
 - Line.dir()
 - Line.extend(factor)
@@ -277,10 +279,12 @@ Functions
 - Line.angleBetween(line)
 - Line.angleFromNormal(line)
 - Line.setTransformToLine(ctx)
+- Line.sliceOffEnd( line )
+- Line.sliceOffStart( line )
+- Line.sliceToPoints(p1,p2)
 - Line.intercept(l2)
 - Line.distFrom(p)
 - Line.distFromDir(p) 
-- Line.lineTo() 
 - Line.getDistOfPoint(vec)
 - Line.getUnitDistOfPoint(vec)
 - Line.getDistOfPointSafe(vec)
@@ -291,32 +295,141 @@ Functions
 - Line.mirrorLine(line)
 - Line.centerOnStart()
 - Line.midLine(l1) 
+    This is bad must find a better way
 
-Render Extention 
-- Line.moveTo() 
+render extention.
 - Line.lineTo() 
+- Line.moveTo() 
 - Line.draw() 
 - Line.mark()
 
+### Rectangle
+
+Properties.
+- Rectangle.top = undefined
+- Rectangle.type = 'Rectangle'
+
+Functions.
+- Rectangle.aspect()
+- Rectangle.copy() 
+- Rectangle.setAs(rectange)
+- Rectangle.isEmpty()
+- Rectangle.width()
+- Rectangle.height() 
+- Rectangle.setWidth(num)
+- Rectangle.setHeight(num)
+- Rectangle.topLine()
+- Rectangle.leftLine()
+- Rectangle.rightLine()
+- Rectangle.bottomLine()
+- Rectangle.getCorners() 
+- Rectangle.asBox(box)
+- Rectangle.area() 
+- Rectangle.heightFromArea(area)
+- Rectangle.widthFromArea(area)
+- Rectangle.perimiter() 
+- Rectangle.diagonalLength() 
+- Rectangle.getCenter() 
+- Rectangle.getDiagonalLine()
+- Rectangle.getBottomRight()
+- Rectangle.isPointInside(vec)
+- Rectangle.isLineInside(line)
+- Rectangle.setTransform(ctx)   
+    Temp location of this function
+- Rectangle.setTransformArea(width, height) 
+    Temp location of this function
+- Rectangle.getPointAt(point)  
+    Point is a relative unit coordinate on the [rectangle](#Rectangle)
+- Rectangle.getLocalPoint(vec)
+- Rectangle.scaleToFitIn(obj)
+
+render extention.
+- Rectangle.moveTo()
+- Rectangle.lineTo()
+- Rectangle.draw()
+- Rectangle.mark()
+
+### Circle
+
+Properties.
+- Circle.center = undefined
+- Circle.radius = number
+- Circle.type = 'Circle'
+
+Functions.
+- Circle.copy()
+- Circle.setAs(circle)  
+    Sets this [circle](#Circle) to the argument requiered argument `[circle](#Circle)`.
+    Return [this](#Circle)
+- Circle.asBox(box)     
+    Returns the bounding [box](#Box)
+    Requiered argument `[box](#Box)` is option
+    Returns `[Box](#Box)`
+- Circle.isEmpty()
+- Circle.setRadius(r)
+- Circle.circumference()
+- Circle.area()
+- Circle.fromLine(line)
+- Circle.fromPoints2(vec1, vec2)
+- Circle.fromPoints3(vec1, vec2, vec3)
+    Points are in a [line](#Line)
+- Circle.fromArea(area)
+- Circle.fromCircumference(leng)
+- Circle.touching(c)
+- Circle.touchingLine(l)
+- Circle.isRectangleInside(rectangle)
+- Circle.isCircleInside(circle)
+- Circle.isLineInside(line)
+- Circle.isPointInside(vec)
+- Circle.distFrom(vec)
+- Circle.closestPoint(vec)
+- Circle.lineSegInside(line)
+- Circle.lineSegIntercept(l)
+    Dist from [line](#Line)
+    Closest point on [line](#Line)
+- Circle.lineIntercept(l)
+    Dist from [line](#Line)
+    Closest point on [line](#Line)
+- Circle.circleIntercept(circle)
+- Circle.tangentAtPoint(p)
+- Circle.angleOfPoint(p)
+- Circle.tangentsPointsForPoint(vec)  
+    Finds where on the [circle](#Circle) the tangents are for the point [vec](#Vec). In valid if point is inside the [circle](#Circle)
+    Point is inside so no tangents exist
+- Circle.reflectLine(line) 
+    WTF sorry will fix in time
+- Circle.fitCorner(l1,l2)
+
+render extention.
+- Circle.moveTo()
+- Circle.lineTo()
+- Circle.draw(direction)
+- Circle.mark()
 
 ### Arc
 
-Properties    
-- Arc.c = Circle
-- Arc.s = Number
-- Arc.e = Number
+Properties.
+- Arc.circle = undefined
+- Arc.start = number
+- Arc.end = number
 - Arc.type = 'Arc'
 
-Functions
+Functions.
 - Arc.copy()
 - Arc.setAs(arc)
-- Arc.isEmpty()  Returns true if the arc has zero length or the radius is zero
-- Arc.asBox()
+- Arc.asBox(box)
+- Arc.isEmpty()
 - Arc.asCircle()
 - Arc.sweap()
 - Arc.fromCircleIntercept(circle)
-- Arc.areaOfPie()
-- Arc.areaOfSlice()
+- Arc.areaOfSector()
+- Arc.areaOfSegment()
+    Angle
+    Area of the pie shape
+    Lenght of half the cord;
+    Length of [line](#Line) from center to cord
+    Area is Pie area - triangle *2
+    Area is Pie area - triangle *2
 - Arc.swap()
 - Arc.fromPoints(p1,p2,p3)
 - Arc.setRadius(r)
@@ -329,7 +442,7 @@ Functions
 - Arc.startAsVec()  
 - Arc.endAsVec()  
 - Arc.sweapLeng()
-- Arc.setcircumferanceLeng(leng) 
+- Arc.setCircumference(leng) 
 - Arc.cordLeng()
 - Arc.cordAsLine()
 - Arc.great()
@@ -338,140 +451,66 @@ Functions
 - Arc.fromTangentsToPoint(vec)
 - Arc.roundCorner(l1,l2)
 
-Render Extention 
+render extention.
 - Arc.moveTo()
 - Arc.lineTo()
-- Arc.draw()
+- Arc.draw(direction)
 - Arc.mark()
 
+### Box
 
-### Circle
+Properties.
+- Box.top = number
+- Box.bottom = number
+- Box.left = number
+- Box.right = number
+- Box.type = 'Box'
 
-Properties
-- Circle.p = Circle
-- Circle.r = Number
-- Circle.type = 'Circle'
+Functions.
+- Box.copy()
+- Box.setAs(box)
+- Box.asBox(box)
+- Box.isEmpty()
+- Box.asRectange() 
+- Box.normalise()
+- Box.max() 
+- Box.irrate() 
+- Box.env( x, y)
+- Box.envBox(box)
+- Box.envelop(obj)
 
-Functions 
-- Circle.copy()
-- Circle.setAs(circle)
-- Circle.asBox() 
-- Circle.isEmpty()  Returns true if the radius is zero
-- Circle.radius(r)
-- Circle.circumferance()
-- Circle.area()
-- Circle.fromLine(line)
-- Circle.fromPoints2(a, b)
-- Circle.fromPoints3(a, b, c)
-- Circle.fromArea(area)
-- Circle.fromCircumferance(leng)
-- Circle.touching(c)
-- Circle.touchingLine(l)
-- Circle.isRectangleInside(rectangle)
-- Circle.isCircleInside(circle)
-- Circle.isLineInside(line)
-- Circle.isPointInside(vec)
-- Circle.distFrom(vec)
-- Circle.closestPoint(vec)
-- Circle.lineSegInside(line)
-- Circle.lineSegIntercept(l)
-- Circle.lineIntercept(l)
-- Circle.circleIntercept(circle)
-- Circle.tangentAtPoint(p)
-- Circle.angleOfPoint(p)
-- Circle.tangentsPointsForPoint(vec)  
-- Circle.reflectLine(line) 
-- Circle.fitCorner(l1,l2)
+render extention.
+- Box.moveTo()
+- Box.lineTo()
+- Box.draw()
+- Box.mark()
 
-Render Extention 
-- Circle.moveTo()
-- Circle.lineTo()
-- Circle.draw()
-- Circle.mark()
+### Empty
 
+Properties.
+- Empty.type = 'Empty'
 
-### Rectangle
+Functions.
+- Empty.copy() return new Empty(); }
+- Empty.asBox(box)
+- Empty.setAs()
+- Empty.isEmpty()
 
-Properties    
-- Rectangle.t = Line
-- Rectangle.a = 1
-- Rectangle.type = 'Rectangle'
-
-Functions
-- Rectangle.copy() 
-- Rectangle.setAs(rectange)
-- Rectangle.isEmpty()  Returns true if the width or heigh (aspect === 0) are zero length
-- Rectangle.width()
-- Rectangle.height() 
-- Rectangle.aspect()
-- Rectangle.setWidth(num)
-- Rectangle.setHeight(num)
-- Rectangle.topLine()
-- Rectangle.leftLine()
-- Rectangle.rightLine()
-- Rectangle.bottomLine()
-- Rectangle.getCorners() 
-- Rectangle.asBox()
-- Rectangle.area() 
-- Rectangle.heightFromArea(area)
-- Rectangle.widthFromArea(area)
-- Rectangle.perimiter() 
-- Rectangle.diagonalLength() 
-- Rectangle.getCenter() 
-- Rectangle.getDiagonalLine()
-- Rectangle.getBottomRight()
-- Rectangle.isPointInside(vec)
-- Rectangle.isLineInside(line)
-- Rectangle.setTransform(ctx)   
-- Rectangle.setTransformArea(width, height) 
-- Rectangle.getPointAt(point)  
-- Rectangle.getLocalPoint(vec)
-- Rectangle.scaleToFitIn(obj)
-
-Render Extention 
-- Rectangle.moveTo()
-- Rectangle.lineTo()
-- Rectangle.draw()
-- Rectangle.mark()
-
-
-### VecArray
-
-Properties    
-- VecArray.vecs = Array
-- VecArray.type = 'VecArray'
-
-Functions
-- VecArray.each(func)
-- VecArray.cull(func)  
-  VecArray.isEmpty()  Returns true if there are no vectors in the array
-- VecArray.copy()
-- VecArray.setAs(vecArray)
-- VecArray.push(vec)
-- VecArray.append(vecArray)  
-- VecArray.asBox()
-- VecArray.mult(num)
-- VecArray.add(v)
-- VecArray.rotate(num)
-- VecArray.getLast()
-- VecArray.getCount()
-
-Render Extention 
-- VecArray.moveTo()
-- VecArray.lineTo()
-- VecArray.draw()
-- VecArray.mark()
-
+render extention.
+- Empty.moveTo()return this;}
+- Empty.lineTo()return this;}
+- Empty.draw()return this;}
+- Empty.mark()return this;}
 
 ### Transform
 
-Properties
-- Transform.xa = Vec
-- Transform.ya = Vec
-- Transform.o = Vec
+Properties.
+- Transform.xa = undefined
+- Transform.ya = undefined
+- Transform.o = undefined
 - Transform.type = 'Transform'
 
-Functions
+Functions.
 - Transform.copy()
 - Transform.setAs(transform) 
 - Transform.setCtx()

@@ -27,15 +27,18 @@ groover.geom = (function (){
 
         this.objectNames = [
             "Vec",
-            "Box",
-            "Line",
-            "Arc",
-            "Circle",
-            "Rectangle",
             "VecArray",
-            "Transform",
+            "Line",
+            "Rectangle",
+            "Circle",
+            "Arc",
+            "Box",
             "Empty",
+            "Transform",
         ];
+        this.extentions = {
+            
+        },
         this.properties = {
             Vec : ["x","y","type"],
             Box : ["t","l","b","r","type"],
@@ -68,6 +71,26 @@ groover.geom = (function (){
             return false;
         },
         getDetails : function(){
+            function getComments(lines,currentObj){
+                cLines = [];
+                lines.forEach(function(line){
+                    if(line.indexOf("//") > -1){
+                        var l = (line.split("//").pop().trim());
+                        if(l !== ""){
+                            l = l.replace( /\{a(.*?)\}/g, "requiered argument `$1`");
+                            l = l.replace( /\{o(.*?)\}/g, "optional argument `$1`");
+                            s.objectNames.forEach(function(n){
+                                l = l.replace(new RegExp("("+n+")","gi"),"[$1](#"+n+")");
+                            })
+                            l = l.replace( /\`(this*?)`/g, "[$1](#"+currentObj+")");
+                            l = l[0].toUpperCase() + l.substr(1);
+                            cLines.push("    " +l);
+                        }
+                        
+                    }
+                });
+                return cLines;
+            }
             var s = this;
             var str = "";
              
@@ -76,45 +99,60 @@ groover.geom = (function (){
                 var methods = "Functions.\n";
                 var propDesc = "Properties.\n";
                 var pr = s.properties[n];
+                var extentions = {};
                 
                 
                 for(var i in s[n].prototype){
                    
                     if(typeof s[n].prototype[i] === "function"){
+                        var ce = "";
+                        for(var k in s.extentions){
+                            if(s.extentions[k].functions.indexOf(i) > -1){
+                                if(extentions[k] === undefined){
+                                    extentions[k] = k + " extention.\n"
+                                }
+                                ce = k;
+                                break;
+                            }
+                        }
                         st = s[n].prototype[i].toString();
-                        f = st.split("\n").shift();
+                        f = st.split("\n");
+                        var com = getComments(f,n);
+                        f = f.shift();
                         f = f.replace("function ","").replace("{","") ;
                         f = f.replace(/\/\/.*/g,"");
-                        if(pr.indexOf(i) > -1){
-                            propDesc += "- "+n + "." + i+f + "\n";
+
+                        if(ce !== ""){
+                            extentions[ce] += "- "+n + "." + i+f + "\n";
+                            if(com.length > 0){
+                                extentions[ce] += com.join("\n")+"\n";
+                            }
                         }else{
                             methods += "- "+n + "." + i+f + "\n";
+                            if(com.length > 0){
+                                methods += com.join("\n")+"\n";
+                            }
                         }
                     }else
                     if(typeof s[n].prototype[i] === "string"){
                         st = s[n].prototype[i].toString();
                         f = st.split("\n").shift();
-                        f = f.replace(/\/\/.*/g,"")
-                        if(pr.indexOf(i) > -1){
-                            propDesc += "- "+n + "." + i+" = '" +st+"'\n";
-                        }else{
-                            methods += "- "+n + "." + i+" = '" +st+"'\n";
-                        }
+                        propDesc += "- "+n + "." + i+" = '" +st+"'\n";
                     }else{
                         st = typeof s[n].prototype[i];
-                        if(pr.indexOf(i) > -1){
-                            propDesc += "- "+n + "." + i+" = " +st+"\n";
-                        }else{
-                            methods += "- "+n + "." + i+" = " +st+"\n";
-                        }
+                        propDesc += "- "+n + "." + i+" = " +st+"\n";
                     }
                 }
                 str += desc + "\n";
                 str += propDesc + "\n";
                 str += methods + "\n";
+                for(var k in extentions){
+                    str += extentions[k] + "\n";
+                }
             });
             console.log(str)
         }
+
     }
     var geom = new Geom();
     geom.Geom = Geom;  // add geom to geom object for use by extentions or anything that needs to 
@@ -307,30 +345,30 @@ groover.geom = (function (){
         x : 1,
         y : 0,
         type : "Vec",
-        copy : function(){
-            return new Vec(this.x,this.y);
+        copy : function(){  // Creates a copy of this
+            return new Vec(this.x,this.y);  // returns a new `this`
         },
-        setAs : function(v){
-            this.x = v.x;
-            this.y = v.y;
-            return this;
-        },
-        asBox : function(box){
+        setAs : function(vec){  // Sets this vec to the values in the {avec}
+            this.x = vec.x;
+            this.y = vec.y;
+            return this;  // Returns the existing `this`
+        }, 
+        asBox : function(box){  // returns the bounding box that envelops this vec
             if(box === undefined){
-                var box = new Box();
+                var box = new Box();  // {obox} is created if not supplied
             }
             box.env (this.x, this.y);
-            return box;
+            return box;  // returns `box`
         },
-        isEmpty : function (){
+        isEmpty : function (){  // Vec can not be empty so always returns true
             return false;  
         },
-        add : function(v){
-            this.x += v.x;
-            this.y += v.y;
-            return this;
+        add : function(vec){ // adds {avec} to this.
+            this.x += vec.x;
+            this.y += vec.y;
+            return this;    // returns `this`
         },
-        sub : function(v){
+        sub : function(v){  // subtracts {avec} from this.
             this.x -= v.x;
             this.y -= v.y;
             return this;
@@ -689,12 +727,15 @@ groover.geom = (function (){
         copy : function(){
             return new Circle(this.center.copy(),this.radius)
         },
-        setAs : function (circle){
+        setAs : function (circle){  // Sets this circle to the argument {acircle}.
+                                    // Return `this`
             this.center.setAs(circle.center);
             this.radius = circle.radius;
             return this;
         },
-        asBox : function(box){
+        asBox : function(box){     // Returns the bounding box 
+                                   // {abox} is option
+                                   // Returns `Box`
             if(box === undefined){
                 var box = new Box();
             }

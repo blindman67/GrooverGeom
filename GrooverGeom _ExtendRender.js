@@ -1,7 +1,13 @@
 groover.geom.Geom.prototype.addRender = function(ctx1){
     var geom = this;
     var ctx = ctx1;
-    var workVec = new geom.Vec();
+    var workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
+    this.extentions.render = {   // add extentions for self documenter
+        functions : ["lineTo","moveTo","draw","mark"],
+    };
+    
+    
+    
     geom.Geom.prototype.ctx = ctx;
     geom.Geom.prototype.size = 1;
     geom.Geom.prototype.setCtx = function(ctx1){
