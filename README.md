@@ -1,6 +1,24 @@
 ### GrooverGeom
 
-Work in progress.
+## Contents
+1. [Work in progress](#work-in-progress)
+1. [Current Primitives](#current-primitives)
+1. [Non Primitives](#non-primitives)
+1. [Common Methods](#common-Methods)
+1. [Render extentions](#render-extentions)
+1. [Geom usage examples](#geom-usage-examples)
+1. [Primitives](#primitives)
+1. [Vec](#vec)
+1. [VecArray](#Vecarray)
+1. [Line](#line)
+1. [Rectangle](#rectangle)
+1. [Circle](#circle)
+1. [Arc](arc)
+1. [Box](box)
+1. [Empty](Empty)
+
+
+## Work in progress.
 
 ## Warning Refactoring in progress
 The document dose not fully reflect the current refactoring.
@@ -13,7 +31,7 @@ Geom provides a wide range of functions to aid with 2D geometric objects.
 
 Currently supporting the following primitives
 
-### Primitives
+## Current Primitives
 - Vec
 - VecArray
 - Line
@@ -23,7 +41,7 @@ Currently supporting the following primitives
 - Box
 - Empty
 
-### Non Primitives
+## Non Primitives
 These object are helper objects though there inclusion in this namespace is still questionable. There are currently used for testing 
 
 - Transform 
@@ -31,7 +49,7 @@ These object are helper objects though there inclusion in this namespace is stil
 
 All functions are chainable where posible
 
-### Common Methods
+## Common Methods
 All object implement the following
 
 - type : A string with the name of the primitive. Eg Vec.type = "Vec";
@@ -40,7 +58,7 @@ All object implement the following
 - asBox(box) : Returns the bounding box of the primitive. Box is optional. If inclueded then the box will be extened if neeeded to bound this privitive.
 - isEmpty() : Returns true for an invalid, zero length, zero size or area. Some functions will set the returned object in an empty state rather than return nothing at all.
 
-### Render extentions
+## Render extentions
 Extending the objects with render will add the following methods to all primitives (exluding Transform).
 
 - moveTo() : moves the current path to the start of the primitive. For circles this is at 0 deg. For arcs this is the start of the sweap.
@@ -85,7 +103,7 @@ new groover.geom.Vec(100,100).mark();
 ctx.stroke();
 ```
 
-### Geom usage examples
+## Geom usage examples
 
 Create a two circles and find the arc from the second circle that intercepts the first;
 
@@ -155,11 +173,11 @@ var bottomRight = new geom.Vec(box.r,box.b);
 
 
 
-## Primitives 
+##Primitives 
 
 The following documentation is auto generated from within the Geom object. This Auto generation eaxtracts the comments found in the source code to construct this list. It is currently experimental so please excuse the occasional hicup.
 
-### Vec
+##Vec
 
 Properties.
 - Vec.x = number
@@ -171,12 +189,12 @@ Functions.
     Creates a copy of this
     Returns a new [this](#Vec)
 - Vec.setAs(vec)  
-    Sets this [vec](#Vec) to the values in the requiered argument `[vec](#Vec)`
+    Sets this [vec](#Vec) to the values in the requiered argument `[vec](#vec)`
     Returns the existing [this](#Vec)
 - Vec.asBox(box)  
-    Returns the bounding [box](#Box) that envelops this [vec](#Vec)
-    Optional argument `[box](#Box)` is created if not supplied
-    Returns `[box](#Box)`
+    Returns the bounding [box](#box) that envelops this [vec](#vec)
+    Optional argument `[box](#box)` is created if not supplied
+    Returns `[box](#box)`
 - Vec.isEmpty()  
     [Vec](#Vec) can not be [empty](#Empty) so always returns true
 - Vec.add(vec) 
@@ -213,7 +231,7 @@ render extention.
 - Vec.mark()
 - Vec.draw()
 
-### VecArray
+## VecArray
 
 Properties.
 - VecArray.vecs = object
@@ -244,7 +262,7 @@ render extention.
 - VecArray.draw()
 - VecArray.mark()
 
-### Line
+## Line
 
 Properties.
 - Line.p1 = undefined
@@ -303,7 +321,7 @@ render extention.
 - Line.draw() 
 - Line.mark()
 
-### Rectangle
+## Rectangle
 
 Properties.
 - Rectangle.top = undefined
@@ -349,7 +367,7 @@ render extention.
 - Rectangle.draw()
 - Rectangle.mark()
 
-### Circle
+## Circle
 
 Properties.
 - Circle.center = undefined
@@ -406,7 +424,7 @@ render extention.
 - Circle.draw(direction)
 - Circle.mark()
 
-### Arc
+## Arc
 
 Properties.
 - Arc.circle = undefined
@@ -457,7 +475,7 @@ render extention.
 - Arc.draw(direction)
 - Arc.mark()
 
-### Box
+## Box
 
 Properties.
 - Box.top = number
@@ -485,7 +503,7 @@ render extention.
 - Box.draw()
 - Box.mark()
 
-### Empty
+## Empty
 
 Properties.
 - Empty.type = 'Empty'
@@ -502,7 +520,7 @@ render extention.
 - Empty.draw()return this;}
 - Empty.mark()return this;}
 
-### Transform
+## Transform
 
 Properties.
 - Transform.xa = undefined

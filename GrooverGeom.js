@@ -95,7 +95,7 @@ groover.geom = (function (){
             var str = "";
              
             this.objectNames.forEach(function(n){
-                var desc = "### " + n + "\n";
+                var desc = "## " + n + "\n";
                 var methods = "Functions.\n";
                 var propDesc = "Properties.\n";
                 var pr = s.properties[n];
