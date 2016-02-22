@@ -124,14 +124,14 @@ groover.geom = (function (){
                         f = f.replace(/\/\/.*/g,"");
 
                         if(ce !== ""){
-                            extentions[ce] += "- "+n + "." + i+f + "  " + newLine;
+                            extentions[ce] += "- **"+n + "." + i+f + "**  " + newLine;
                             if(com.length > 0){
-                                extentions[ce] += com.join(newLine)+newLine;
+                                extentions[ce] += com.join("  "+newLine)+newLine;
                             }
                         }else{
-                            methods += "- "+n + "." + i+f + "  " + newLine;
+                            methods += "- **"+n + "." + i+f + "**  " + newLine;
                             if(com.length > 0){
-                                methods += com.join(newLine)+newLine;
+                                methods += com.join("  "+newLine)+newLine;
                             }
                         }
                     }else
