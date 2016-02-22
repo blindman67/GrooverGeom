@@ -71,6 +71,7 @@ groover.geom = (function (){
             return false;
         },
         getDetails : function(){
+            var newLine = "\r\n";
             function getComments(lines,currentObj){
                 cLines = [];
                 lines.forEach(function(line){
@@ -84,7 +85,7 @@ groover.geom = (function (){
                             })
                             l = l.replace( /(`this`)/g, "[this](#"+currentObj.toLowerCase()+")");
                             l = l[0].toUpperCase() + l.substr(1);
-                            cLines.push("    " +l);
+                            cLines.push("\t" +l);
                         }
                         
                     }
@@ -95,9 +96,9 @@ groover.geom = (function (){
             var str = "";
              
             this.objectNames.forEach(function(n){
-                var desc = "## " + n + "\n";
-                var methods = "Functions.\n";
-                var propDesc = "Properties.\n";
+                var desc = "## " + n + newLine;
+                var methods = "Functions."+newLine;
+                var propDesc = "Properties."+newLine;
                 var pr = s.properties[n];
                 var extentions = {};
                 
@@ -109,47 +110,47 @@ groover.geom = (function (){
                         for(var k in s.extentions){
                             if(s.extentions[k].functions.indexOf(i) > -1){
                                 if(extentions[k] === undefined){
-                                    extentions[k] = k + " extention.\n"
+                                    extentions[k] = k + " extention."+newLine;
                                 }
                                 ce = k;
                                 break;
                             }
                         }
                         st = s[n].prototype[i].toString();
-                        f = st.split("\n");
+                        f = st.replace(/\r/g,"").split("\n");
                         var com = getComments(f,n);
                         f = f.shift();
                         f = f.replace("function ","").replace("{","") ;
                         f = f.replace(/\/\/.*/g,"");
 
                         if(ce !== ""){
-                            extentions[ce] += "- "+n + "." + i+f + "\n";
+                            extentions[ce] += "- "+n + "." + i+f + newLine;
                             if(com.length > 0){
-                                extentions[ce] += com.join("\n")+"\n";
+                                extentions[ce] += com.join(newLine)+newLine;
                             }
                         }else{
-                            methods += "- "+n + "." + i+f + "\n";
+                            methods += "- "+n + "." + i+f + newLine;
                             if(com.length > 0){
-                                methods += com.join("\n")+"\n";
+                                methods += com.join(newLine)+newLine;
                             }
                         }
                     }else
                     if(typeof s[n].prototype[i] === "string"){
                         st = s[n].prototype[i].toString();
-                        f = st.split("\n").shift();
-                        propDesc += "- "+n + "." + i+" = '" +st+"'\n";
+                        f = st.split(newLine).shift();
+                        propDesc += "- "+n + "." + i+" = '" +st+"'"+newLine;
                     }else{
                         st = typeof s[n].prototype[i];
-                        propDesc += "- "+n + "." + i+" = " +st+"\n";
+                        propDesc += "- "+n + "." + i+" = " +st+newLine;
                     }
                 }
-                str += desc + "\n";
-                str += propDesc + "\n";
-                str += methods + "\n";
+                str += desc + newLine;
+                str += propDesc + newLine;
+                str += methods + newLine;
                 for(var k in extentions){
-                    str += extentions[k] + "\n";
+                    str += extentions[k] + newLine;
                 }
-                str += "[Back to top.](#contents)\n\n"
+                str += "[Back to top.](#contents)"+newLine+newLine
             });
             console.log(str)
         }

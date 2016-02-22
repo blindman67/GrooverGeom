@@ -198,7 +198,6 @@ The following documentation is auto generated from within the Geom object. This 
 Auto doc.
 runtime: 24.428ms
 GrooverUtils.js:32 
-
 ## Vec
 
 Properties.
@@ -208,22 +207,22 @@ Properties.
 
 Functions.
 - Vec.copy()  
-    Creates a copy of this
-    Returns a new [this](#vec)
+	Creates a copy of this
+	Returns a new [this](#vec)
 - Vec.setAs(vec)  
-    Sets this [vec](#vec) to the values in the requiered argument [vec](#vec)
-    Returns the existing [this](#vec)
+	Sets this [vec](#vec) to the values in the requiered argument [vec](#vec)
+	Returns the existing this
 - Vec.asBox(box)  
-    Returns the bounding [box](#box) that envelops this [vec](#vec)
-    Optional argument [box](#box) is created if not supplied
-    Returns [box](#box)
+	Returns the bounding [box](#box) that envelops this [vec](#vec)
+	Optional argument [box](#box) is created if not supplied
+	Returns [box](#box)
 - Vec.isEmpty()  
-    [Vec](#vec) can not be [empty](#empty) so always returns true
+	[Vec](#vec) can not be [empty](#empty) so always returns true
 - Vec.add(vec) 
-    Adds requiered argument [vec](#vec) to this.
-    Returns [this](#vec)
-- Vec.sub(v)  
-    Subtracts requiered argument [vec](#vec) from this.
+	Adds requiered argument [vec](#vec) to this.
+	Returns [this](#vec)
+- Vec.sub(vec)  
+	Subtracts requiered argument [vec](#vec) from this.
 - Vec.mult(m)
 - Vec.div(m)
 - Vec.rev() 
@@ -263,16 +262,16 @@ Properties.
 
 Functions.
 - VecArray.each(func)
-    Do not be tempted to put length in the for statement
-    Doing so will cause an infinit loop if appending to self
+	Do not be tempted to put length in the for statement
+	Doing so will cause an infinit loop if appending to self
 - VecArray.cull(func)  
-    Func return true to keep
+	Func return true to keep
 - VecArray.copy()
 - VecArray.setAs(vecArray)
 - VecArray.isEmpty()
 - VecArray.push(vec)
 - VecArray.append(vecArray)  
-    This is safe becasue each() only loops a set count
+	This is safe becasue each() only loops a set count
 - VecArray.asBox(box)
 - VecArray.mult(num)
 - VecArray.add(v)
@@ -339,7 +338,7 @@ Functions.
 - Line.mirrorLine(line)
 - Line.centerOnStart()
 - Line.midLine(l1) 
-    This is bad must find a better way
+	This is bad must find a better way
 
 render extention.
 - Line.lineTo() 
@@ -381,11 +380,11 @@ Functions.
 - Rectangle.isPointInside(vec)
 - Rectangle.isLineInside(line)
 - Rectangle.setTransform(ctx)   
-    Temp location of this function
+	Temp location of this function
 - Rectangle.setTransformArea(width, height) 
-    Temp location of this function
+	Temp location of this function
 - Rectangle.getPointAt(point)  
-    Point is a relative unit coordinate on the [rectangle](#rectangle)
+	Point is a relative unit coordinate on the [rectangle](#rectangle)
 - Rectangle.getLocalPoint(vec)
 - Rectangle.scaleToFitIn(obj)
 
@@ -407,12 +406,12 @@ Properties.
 Functions.
 - Circle.copy()
 - Circle.setAs(circle)  
-    Sets this [circle](#circle) to the argument requiered argument [circle](#circle).
-    Return [this](#circle)
+	Sets this [circle](#circle) to the argument requiered argument [circle](#circle).
+	Return [this](#circle)
 - Circle.asBox(box)     
-    Returns the bounding [box](#box)
-    Requiered argument [box](#box) is option
-    Returns `[Box](#box)`
+	Returns the bounding [box](#box)
+	Requiered argument [box](#box) is option
+	Returns `[Box](#box)`
 - Circle.isEmpty()
 - Circle.setRadius(r)
 - Circle.circumference()
@@ -420,7 +419,7 @@ Functions.
 - Circle.fromLine(line)
 - Circle.fromPoints2(vec1, vec2)
 - Circle.fromPoints3(vec1, vec2, vec3)
-    Points are in a [line](#line)
+	Points are in a [line](#line)
 - Circle.fromArea(area)
 - Circle.fromCircumference(leng)
 - Circle.touching(c)
@@ -433,19 +432,19 @@ Functions.
 - Circle.closestPoint(vec)
 - Circle.lineSegInside(line)
 - Circle.lineSegIntercept(l)
-    Dist from [line](#line)
-    Closest point on [line](#line)
+	Dist from [line](#line)
+	Closest point on [line](#line)
 - Circle.lineIntercept(l)
-    Dist from [line](#line)
-    Closest point on [line](#line)
+	Dist from [line](#line)
+	Closest point on [line](#line)
 - Circle.circleIntercept(circle)
 - Circle.tangentAtPoint(p)
 - Circle.angleOfPoint(p)
 - Circle.tangentsPointsForPoint(vec)  
-    Finds where on the [circle](#circle) the tangents are for the point [vec](#vec). In valid if point is inside the [circle](#circle)
-    Point is inside so no tangents exist
+	Finds where on the [circle](#circle) the tangents are for the point [vec](#vec). In valid if point is inside the [circle](#circle)
+	Point is inside so no tangents exist
 - Circle.reflectLine(line) 
-    WTF sorry will fix in time
+	WTF sorry will fix in time
 - Circle.fitCorner(l1,l2)
 
 render extention.
@@ -474,12 +473,12 @@ Functions.
 - Arc.fromCircleIntercept(circle)
 - Arc.areaOfSector()
 - Arc.areaOfSegment()
-    Angle
-    Area of the pie shape
-    Lenght of half the cord;
-    Length of [line](#line) from center to cord
-    Area is Pie area - triangle *2
-    Area is Pie area - triangle *2
+	Angle
+	Area of the pie shape
+	Lenght of half the cord;
+	Length of [line](#line) from center to cord
+	Area is Pie area - triangle *2
+	Area is Pie area - triangle *2
 - Arc.swap()
 - Arc.fromPoints(p1,p2,p3)
 - Arc.setRadius(r)
