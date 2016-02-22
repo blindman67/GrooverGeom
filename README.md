@@ -5,6 +5,7 @@
 1. [Current Primitives](#current-primitives)
 1. [Non Primitives](#non-primitives)
 1. [Common Methods](#common-Methods)
+1. [Shapes extention](#Shapes-extention)
 1. [Render extentions](#render-extentions)
 1. [Geom usage examples](#geom-usage-examples)
 1. [Primitives](#primitives)
@@ -64,9 +65,54 @@ All object implement the following
 
 - type : A string with the name of the primitive. Eg Vec.type = "Vec";
 - copy() : Creates a new copy of the primitive.
+- toString() : Returns a string representing the primitive. (not finnished)
 - setAs(obj) : Copy the the properties of obj to this primitive. Obj should be the same primitive.
 - asBox(box) : Returns the bounding box of the primitive. Box is optional. If inclueded then the box will be extened if neeeded to bound this privitive.
 - isEmpty() : Returns true for an invalid, zero length, zero size or area. Some functions will set the returned object in an empty state rather than return nothing at all.
+
+[Back to top.](#contents)
+
+## Shapes extention
+
+Extends groover.geom to provide complex shapes. Still in the design stage.
+
+Some of the common methods will be added
+- area()
+- perimiter()
+- isPointInside()
+- isRectangelInside()
+- isLineInside()  and other shapes 
+- asBox(box)
+
+
+Example useage
+
+```JavaScript
+groover.geom.addShapes(); // adds the extention
+var shape = new groover.geom.Shape(); // creates a new shape
+shape.roundedPill(
+    new groover.geom.Vec(100,100),  // center pos of first circle
+    new groover.geom.Vec(200,200),  // center pos of second circle
+    50, // start radius
+    40  // end radius 
+);
+```
+If you have added the render extentions then you can draw it via the common render extention functions 
+
+```JavaScript
+shape.moveTo();
+shape.draw();
+ctx.stroke();
+```
+
+Currently I have provided the following functions
+
+```JavaScript
+var area = shape.area();
+var perimiter = shape.perimiter();
+
+
+```
 
 [Back to top.](#contents)
 
