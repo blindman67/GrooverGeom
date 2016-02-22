@@ -198,379 +198,381 @@ The following documentation is auto generated from within the Geom object. This 
 Auto doc.
 runtime: 24.428ms
 GrooverUtils.js:32 
+
 ## Vec
 
 Properties.
-- Vec.x = number
-- Vec.y = number
-- Vec.type = 'Vec'
+- Vec.x = number  
+- Vec.y = number  
+- Vec.type = 'Vec'  
 
 Functions.
-- Vec.copy()  
+- Vec.copy()    
 	Creates a copy of this
 	Returns a new [this](#vec)
-- Vec.setAs(vec)  
+- Vec.setAs(vec)    
 	Sets this [vec](#vec) to the values in the requiered argument [vec](#vec)
 	Returns the existing this
-- Vec.asBox(box)  
+- Vec.asBox(box)    
 	Returns the bounding [box](#box) that envelops this [vec](#vec)
 	Optional argument [box](#box) is created if not supplied
 	Returns [box](#box)
-- Vec.isEmpty()  
+- Vec.isEmpty()    
 	[Vec](#vec) can not be [empty](#empty) so always returns true
-- Vec.add(vec) 
+- Vec.add(vec)   
 	Adds requiered argument [vec](#vec) to this.
 	Returns [this](#vec)
-- Vec.sub(vec)  
+- Vec.sub(vec)    
 	Subtracts requiered argument [vec](#vec) from this.
-- Vec.mult(m)
-- Vec.div(m)
-- Vec.rev() 
-- Vec.r90()
-- Vec.rN90()
-- Vec.r180()
-- Vec.half()
-- Vec.setLeng(len)
-- Vec.setDir(dir)
-- Vec.rotate(ang)
-- Vec.leng()
-- Vec.leng2()
-- Vec.dir()
-- Vec.mid(v)
-- Vec.norm()
-- Vec.dot(v)
-- Vec.cross(v)
-- Vec.dotNorm(v)
-- Vec.crossNorm(v)
-- Vec.angleBetween(v)
-- Vec.distFrom(vec)
-- Vec.angleTo(vec)
+- Vec.mult(m)  
+- Vec.div(m)  
+- Vec.rev()   
+- Vec.r90()  
+- Vec.rN90()  
+- Vec.r180()  
+- Vec.half()  
+- Vec.setLeng(len)  
+- Vec.setDir(dir)  
+- Vec.rotate(ang)  
+- Vec.leng()  
+- Vec.leng2()  
+- Vec.dir()  
+- Vec.mid(v)  
+- Vec.norm()  
+- Vec.dot(v)  
+- Vec.cross(v)  
+- Vec.dotNorm(v)  
+- Vec.crossNorm(v)  
+- Vec.angleBetween(v)  
+- Vec.distFrom(vec)  
+- Vec.angleTo(vec)  
 
 render extention.
-- Vec.moveTo()
-- Vec.lineTo()
-- Vec.mark()
-- Vec.draw()
+- Vec.moveTo()  
+- Vec.lineTo()  
+- Vec.mark()  
+- Vec.draw()  
 
 [Back to top.](#contents)
 
 ## VecArray
 
 Properties.
-- VecArray.vecs = object
-- VecArray.type = 'VecArray'
+- VecArray.vecs = object  
+- VecArray.type = 'VecArray'  
 
 Functions.
-- VecArray.each(func)
+- VecArray.each(func)  
 	Do not be tempted to put length in the for statement
 	Doing so will cause an infinit loop if appending to self
-- VecArray.cull(func)  
+- VecArray.cull(func)    
 	Func return true to keep
-- VecArray.copy()
-- VecArray.setAs(vecArray)
-- VecArray.isEmpty()
-- VecArray.push(vec)
-- VecArray.append(vecArray)  
+- VecArray.copy()  
+- VecArray.setAs(vecArray)  
+- VecArray.isEmpty()  
+- VecArray.push(vec)  
+- VecArray.append(vecArray)    
 	This is safe becasue each() only loops a set count
-- VecArray.asBox(box)
-- VecArray.mult(num)
-- VecArray.add(v)
-- VecArray.rotate(num)
-- VecArray.getLast()
-- VecArray.getCount()
+- VecArray.asBox(box)  
+- VecArray.mult(num)  
+- VecArray.add(v)  
+- VecArray.rotate(num)  
+- VecArray.getLast()  
+- VecArray.getCount()  
 
 render extention.
-- VecArray.moveTo()
-- VecArray.lineTo()
-- VecArray.draw()
-- VecArray.mark()
+- VecArray.moveTo()  
+- VecArray.lineTo()  
+- VecArray.draw()  
+- VecArray.mark()  
 
 [Back to top.](#contents)
 
 ## Line
 
 Properties.
-- Line.p1 = undefined
-- Line.p2 = undefined
-- Line.type = 'Line'
+- Line.p1 = undefined  
+- Line.p2 = undefined  
+- Line.type = 'Line'  
 
 Functions.
-- Line.copy()
-- Line.setAs(line)
-- Line.isEmpty()
-- Line.createEmpty()
-- Line.swap()
-- Line.reverse()
-- Line.asVec()
-- Line.asVecArray()
-- Line.asBox(box)
-- Line.leng()
-- Line.dir()
-- Line.extend(factor)
-- Line.setLeng(len)
-- Line.setDir(num)
-- Line.cross()
-- Line.crossBack()
-- Line.mult(num)
-- Line.add(vec)
-- Line.translate(vec)
-- Line.rotate(num)
-- Line.scale(num)
-- Line.midPoint()
-- Line.unitAlong( unitDist)
-- Line.distanceAlong( dist) 
-- Line.angleBetween(line)
-- Line.angleFromNormal(line)
-- Line.setTransformToLine(ctx)
-- Line.sliceOffEnd( line )
-- Line.sliceOffStart( line )
-- Line.sliceToPoints(p1,p2)
-- Line.intercept(l2)
-- Line.distFrom(p)
-- Line.distFromDir(p) 
-- Line.getDistOfPoint(vec)
-- Line.getUnitDistOfPoint(vec)
-- Line.getDistOfPointSafe(vec)
-- Line.getUnitDistOfPointSafe(vec)
-- Line.closestPoint(vec)
-- Line.reflect(l)
-- Line.reflectLine(l)
-- Line.mirrorLine(line)
-- Line.centerOnStart()
-- Line.midLine(l1) 
+- Line.copy()  
+- Line.setAs(line)  
+- Line.isEmpty()  
+- Line.createEmpty()  
+- Line.swap()  
+- Line.reverse()  
+- Line.asVec()  
+- Line.asVecArray()  
+- Line.asBox(box)  
+- Line.leng()  
+- Line.dir()  
+- Line.extend(factor)  
+- Line.setLeng(len)  
+- Line.setDir(num)  
+- Line.cross()  
+- Line.crossBack()  
+- Line.mult(num)  
+- Line.add(vec)  
+- Line.translate(vec)  
+- Line.rotate(num)  
+- Line.scale(num)  
+- Line.midPoint()  
+- Line.unitAlong( unitDist)  
+- Line.distanceAlong( dist)   
+- Line.angleBetween(line)  
+- Line.angleFromNormal(line)  
+- Line.setTransformToLine(ctx)  
+- Line.sliceOffEnd( line )  
+- Line.sliceOffStart( line )  
+- Line.sliceToPoints(p1,p2)  
+- Line.intercept(l2)  
+- Line.distFrom(p)  
+- Line.distFromDir(p)   
+- Line.getDistOfPoint(vec)  
+- Line.getUnitDistOfPoint(vec)  
+- Line.getDistOfPointSafe(vec)  
+- Line.getUnitDistOfPointSafe(vec)  
+- Line.closestPoint(vec)  
+- Line.reflect(l)  
+- Line.reflectLine(l)  
+- Line.mirrorLine(line)  
+- Line.centerOnStart()  
+- Line.midLine(l1)   
 	This is bad must find a better way
 
 render extention.
-- Line.lineTo() 
-- Line.moveTo() 
-- Line.draw() 
-- Line.mark()
+- Line.lineTo()   
+- Line.moveTo()   
+- Line.draw()   
+- Line.mark()  
 
 [Back to top.](#contents)
 
 ## Rectangle
 
 Properties.
-- Rectangle.top = undefined
-- Rectangle.type = 'Rectangle'
+- Rectangle.top = undefined  
+- Rectangle.type = 'Rectangle'  
 
 Functions.
-- Rectangle.aspect()
-- Rectangle.copy() 
-- Rectangle.setAs(rectange)
-- Rectangle.isEmpty()
-- Rectangle.width()
-- Rectangle.height() 
-- Rectangle.setWidth(num)
-- Rectangle.setHeight(num)
-- Rectangle.topLine()
-- Rectangle.leftLine()
-- Rectangle.rightLine()
-- Rectangle.bottomLine()
-- Rectangle.getCorners() 
-- Rectangle.asBox(box)
-- Rectangle.area() 
-- Rectangle.heightFromArea(area)
-- Rectangle.widthFromArea(area)
-- Rectangle.perimiter() 
-- Rectangle.diagonalLength() 
-- Rectangle.getCenter() 
-- Rectangle.getDiagonalLine()
-- Rectangle.getBottomRight()
-- Rectangle.isPointInside(vec)
-- Rectangle.isLineInside(line)
-- Rectangle.setTransform(ctx)   
+- Rectangle.aspect()  
+- Rectangle.copy()   
+- Rectangle.setAs(rectange)  
+- Rectangle.isEmpty()  
+- Rectangle.width()  
+- Rectangle.height()   
+- Rectangle.setWidth(num)  
+- Rectangle.setHeight(num)  
+- Rectangle.topLine()  
+- Rectangle.leftLine()  
+- Rectangle.rightLine()  
+- Rectangle.bottomLine()  
+- Rectangle.getCorners()   
+- Rectangle.asBox(box)  
+- Rectangle.area()   
+- Rectangle.heightFromArea(area)  
+- Rectangle.widthFromArea(area)  
+- Rectangle.perimiter()   
+- Rectangle.diagonalLength()   
+- Rectangle.getCenter()   
+- Rectangle.getDiagonalLine()  
+- Rectangle.getBottomRight()  
+- Rectangle.isPointInside(vec)  
+- Rectangle.isLineInside(line)  
+- Rectangle.setTransform(ctx)     
 	Temp location of this function
-- Rectangle.setTransformArea(width, height) 
+- Rectangle.setTransformArea(width, height)   
 	Temp location of this function
-- Rectangle.getPointAt(point)  
+- Rectangle.getPointAt(point)    
 	Point is a relative unit coordinate on the [rectangle](#rectangle)
-- Rectangle.getLocalPoint(vec)
-- Rectangle.scaleToFitIn(obj)
+- Rectangle.getLocalPoint(vec)  
+- Rectangle.scaleToFitIn(obj)  
 
 render extention.
-- Rectangle.moveTo()
-- Rectangle.lineTo()
-- Rectangle.draw()
-- Rectangle.mark()
+- Rectangle.moveTo()  
+- Rectangle.lineTo()  
+- Rectangle.draw()  
+- Rectangle.mark()  
 
 [Back to top.](#contents)
 
 ## Circle
 
 Properties.
-- Circle.center = undefined
-- Circle.radius = number
-- Circle.type = 'Circle'
+- Circle.center = undefined  
+- Circle.radius = number  
+- Circle.type = 'Circle'  
 
 Functions.
-- Circle.copy()
-- Circle.setAs(circle)  
+- Circle.copy()  
+- Circle.setAs(circle)    
 	Sets this [circle](#circle) to the argument requiered argument [circle](#circle).
 	Return [this](#circle)
-- Circle.asBox(box)     
+- Circle.asBox(box)       
 	Returns the bounding [box](#box)
 	Requiered argument [box](#box) is option
 	Returns `[Box](#box)`
-- Circle.isEmpty()
-- Circle.setRadius(r)
-- Circle.circumference()
-- Circle.area()
-- Circle.fromLine(line)
-- Circle.fromPoints2(vec1, vec2)
-- Circle.fromPoints3(vec1, vec2, vec3)
+- Circle.isEmpty()  
+- Circle.setRadius(r)  
+- Circle.circumference()  
+- Circle.area()  
+- Circle.fromLine(line)  
+- Circle.fromPoints2(vec1, vec2)  
+- Circle.fromPoints3(vec1, vec2, vec3)  
 	Points are in a [line](#line)
-- Circle.fromArea(area)
-- Circle.fromCircumference(leng)
-- Circle.touching(c)
-- Circle.touchingLine(l)
-- Circle.isRectangleInside(rectangle)
-- Circle.isCircleInside(circle)
-- Circle.isLineInside(line)
-- Circle.isPointInside(vec)
-- Circle.distFrom(vec)
-- Circle.closestPoint(vec)
-- Circle.lineSegInside(line)
-- Circle.lineSegIntercept(l)
+- Circle.fromArea(area)  
+- Circle.fromCircumference(leng)  
+- Circle.touching(c)  
+- Circle.touchingLine(l)  
+- Circle.isRectangleInside(rectangle)  
+- Circle.isCircleInside(circle)  
+- Circle.isLineInside(line)  
+- Circle.isPointInside(vec)  
+- Circle.distFrom(vec)  
+- Circle.closestPoint(vec)  
+- Circle.lineSegInside(line)  
+- Circle.lineSegIntercept(l)  
 	Dist from [line](#line)
 	Closest point on [line](#line)
-- Circle.lineIntercept(l)
+- Circle.lineIntercept(l)  
 	Dist from [line](#line)
 	Closest point on [line](#line)
-- Circle.circleIntercept(circle)
-- Circle.tangentAtPoint(p)
-- Circle.angleOfPoint(p)
-- Circle.tangentsPointsForPoint(vec)  
+- Circle.circleIntercept(circle)  
+- Circle.tangentAtPoint(p)  
+- Circle.angleOfPoint(p)  
+- Circle.tangentsPointsForPoint(vec)    
 	Finds where on the [circle](#circle) the tangents are for the point [vec](#vec). In valid if point is inside the [circle](#circle)
 	Point is inside so no tangents exist
-- Circle.reflectLine(line) 
+- Circle.reflectLine(line)   
 	WTF sorry will fix in time
-- Circle.fitCorner(l1,l2)
+- Circle.fitCorner(l1,l2)  
 
 render extention.
-- Circle.moveTo()
-- Circle.lineTo()
-- Circle.draw(direction)
-- Circle.mark()
+- Circle.moveTo()  
+- Circle.lineTo()  
+- Circle.draw(direction)  
+- Circle.mark()  
 
 [Back to top.](#contents)
 
 ## Arc
 
 Properties.
-- Arc.circle = undefined
-- Arc.start = number
-- Arc.end = number
-- Arc.type = 'Arc'
+- Arc.circle = undefined  
+- Arc.start = number  
+- Arc.end = number  
+- Arc.type = 'Arc'  
 
 Functions.
-- Arc.copy()
-- Arc.setAs(arc)
-- Arc.asBox(box)
-- Arc.isEmpty()
-- Arc.asCircle()
-- Arc.sweap()
-- Arc.fromCircleIntercept(circle)
-- Arc.areaOfSector()
-- Arc.areaOfSegment()
+- Arc.copy()  
+- Arc.setAs(arc)  
+- Arc.asBox(box)  
+- Arc.isEmpty()  
+- Arc.asCircle()  
+- Arc.sweap()  
+- Arc.fromCircleIntercept(circle)  
+- Arc.areaOfSector()  
+- Arc.areaOfSegment()  
 	Angle
 	Area of the pie shape
 	Lenght of half the cord;
 	Length of [line](#line) from center to cord
 	Area is Pie area - triangle *2
 	Area is Pie area - triangle *2
-- Arc.swap()
-- Arc.fromPoints(p1,p2,p3)
-- Arc.setRadius(r)
-- Arc.setCenter(p)
-- Arc.setCircle(c)
-- Arc.normalise()
-- Arc.towards(vec)
-- Arc.away(vec)
-- Arc.endsAsVec()  
-- Arc.startAsVec()  
-- Arc.endAsVec()  
-- Arc.sweapLeng()
-- Arc.setCircumference(leng) 
-- Arc.cordLeng()
-- Arc.cordAsLine()
-- Arc.great()
-- Arc.minor()
-- Arc.isPointOn(p)
-- Arc.fromTangentsToPoint(vec)
-- Arc.roundCorner(l1,l2)
+- Arc.swap()  
+- Arc.fromPoints(p1,p2,p3)  
+- Arc.setRadius(r)  
+- Arc.setCenter(p)  
+- Arc.setCircle(c)  
+- Arc.normalise()  
+- Arc.towards(vec)  
+- Arc.away(vec)  
+- Arc.endsAsVec()    
+- Arc.startAsVec()    
+- Arc.endAsVec()    
+- Arc.sweapLeng()  
+- Arc.setCircumference(leng)   
+- Arc.cordLeng()  
+- Arc.cordAsLine()  
+- Arc.great()  
+- Arc.minor()  
+- Arc.isPointOn(p)  
+- Arc.fromTangentsToPoint(vec)  
+- Arc.roundCorner(l1,l2)  
 
 render extention.
-- Arc.moveTo()
-- Arc.lineTo()
-- Arc.draw(direction)
-- Arc.mark()
+- Arc.moveTo()  
+- Arc.lineTo()  
+- Arc.draw(direction)  
+- Arc.mark()  
 
 [Back to top.](#contents)
 
 ## Box
 
 Properties.
-- Box.top = number
-- Box.bottom = number
-- Box.left = number
-- Box.right = number
-- Box.type = 'Box'
+- Box.top = number  
+- Box.bottom = number  
+- Box.left = number  
+- Box.right = number  
+- Box.type = 'Box'  
 
 Functions.
-- Box.copy()
-- Box.setAs(box)
-- Box.asBox(box)
-- Box.isEmpty()
-- Box.asRectange() 
-- Box.normalise()
-- Box.max() 
-- Box.irrate() 
-- Box.env( x, y)
-- Box.envBox(box)
-- Box.envelop(obj)
+- Box.copy()  
+- Box.setAs(box)  
+- Box.asBox(box)  
+- Box.isEmpty()  
+- Box.asRectange()   
+- Box.normalise()  
+- Box.max()   
+- Box.irrate()   
+- Box.env( x, y)  
+- Box.envBox(box)  
+- Box.envelop(obj)  
 
 render extention.
-- Box.moveTo()
-- Box.lineTo()
-- Box.draw()
-- Box.mark()
+- Box.moveTo()  
+- Box.lineTo()  
+- Box.draw()  
+- Box.mark()  
 
 [Back to top.](#contents)
 
 ## Empty
 
 Properties.
-- Empty.type = 'Empty'
+- Empty.type = 'Empty'  
 
 Functions.
-- Empty.copy() return new Empty(); }
-- Empty.asBox(box)
-- Empty.setAs()
-- Empty.isEmpty()
+- Empty.copy() return new Empty(); }  
+- Empty.asBox(box)  
+- Empty.setAs()  
+- Empty.isEmpty()  
 
 render extention.
-- Empty.moveTo()return this;}
-- Empty.lineTo()return this;}
-- Empty.draw()return this;}
-- Empty.mark()return this;}
+- Empty.moveTo()return this;}  
+- Empty.lineTo()return this;}  
+- Empty.draw()return this;}  
+- Empty.mark()return this;}  
 
 [Back to top.](#contents)
 
 ## Transform
 
 Properties.
-- Transform.xa = undefined
-- Transform.ya = undefined
-- Transform.o = undefined
-- Transform.type = 'Transform'
+- Transform.xa = undefined  
+- Transform.ya = undefined  
+- Transform.o = undefined  
+- Transform.type = 'Transform'  
 
 Functions.
-- Transform.copy()
-- Transform.setAs(transform) 
-- Transform.setCtx()
-- Transform.setOrigin(vec)
-- Transform.setXAxis(vec)
-- Transform.setYxis(vec)
+- Transform.copy()  
+- Transform.setAs(transform)   
+- Transform.setCtx()  
+- Transform.setOrigin(vec)  
+- Transform.setXAxis(vec)  
+- Transform.setYxis(vec)  
 
 [Back to top.](#contents)
+

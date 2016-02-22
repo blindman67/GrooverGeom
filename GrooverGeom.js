@@ -124,12 +124,12 @@ groover.geom = (function (){
                         f = f.replace(/\/\/.*/g,"");
 
                         if(ce !== ""){
-                            extentions[ce] += "- "+n + "." + i+f + newLine;
+                            extentions[ce] += "- "+n + "." + i+f + "  " + newLine;
                             if(com.length > 0){
                                 extentions[ce] += com.join(newLine)+newLine;
                             }
                         }else{
-                            methods += "- "+n + "." + i+f + newLine;
+                            methods += "- "+n + "." + i+f + "  " + newLine;
                             if(com.length > 0){
                                 methods += com.join(newLine)+newLine;
                             }
@@ -138,10 +138,10 @@ groover.geom = (function (){
                     if(typeof s[n].prototype[i] === "string"){
                         st = s[n].prototype[i].toString();
                         f = st.split(newLine).shift();
-                        propDesc += "- "+n + "." + i+" = '" +st+"'"+newLine;
+                        propDesc += "- "+n + "." + i+" = '" +st+"'"+"  " + newLine;
                     }else{
                         st = typeof s[n].prototype[i];
-                        propDesc += "- "+n + "." + i+" = " +st+newLine;
+                        propDesc += "- "+n + "." + i+" = " +st+"  " + newLine;
                     }
                 }
                 str += desc + newLine;
