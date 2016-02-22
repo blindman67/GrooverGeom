@@ -77,12 +77,12 @@ groover.geom = (function (){
                     if(line.indexOf("//") > -1){
                         var l = (line.split("//").pop().trim());
                         if(l !== ""){
-                            l = l.replace( /\{a(.*?)\}/g, "requiered argument `$1`");
-                            l = l.replace( /\{o(.*?)\}/g, "optional argument `$1`");
+                            l = l.replace( /\{a(.*?)\}/g, "requiered argument $1");
+                            l = l.replace( /\{o(.*?)\}/g, "optional argument $1");
                             s.objectNames.forEach(function(n){
                                 l = l.replace(new RegExp("("+n+")","gi"),"[$1](#"+n.toLowerCase()+")");
                             })
-                            l = l.replace( /\`(this*?)`/g, "[$1](#"+currentObj.toLowerCase()+")");
+                            l = l.replace( /(`this`)/g, "[this](#"+currentObj.toLowerCase()+")");
                             l = l[0].toUpperCase() + l.substr(1);
                             cLines.push("    " +l);
                         }
@@ -352,14 +352,14 @@ groover.geom = (function (){
         setAs : function(vec){  // Sets this vec to the values in the {avec}
             this.x = vec.x;
             this.y = vec.y;
-            return this;  // Returns the existing `this`
+            return this;  // Returns the existing this
         }, 
         asBox : function(box){  // returns the bounding box that envelops this vec
             if(box === undefined){
                 var box = new Box();  // {obox} is created if not supplied
             }
             box.env (this.x, this.y);
-            return box;  // returns `box`
+            return box;  // returns box
         },
         isEmpty : function (){  // Vec can not be empty so always returns true
             return false;  
@@ -369,7 +369,7 @@ groover.geom = (function (){
             this.y += vec.y;
             return this;    // returns `this`
         },
-        sub : function(v){  // subtracts {avec} from this.
+        sub : function(vec){  // subtracts {avec} from this.
             this.x -= v.x;
             this.y -= v.y;
             return this;

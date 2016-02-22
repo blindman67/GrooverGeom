@@ -194,6 +194,11 @@ var bottomRight = new geom.Vec(box.r,box.b);
 The following documentation is auto generated from within the Geom object. This Auto generation eaxtracts the comments found in the source code to construct this list. It is currently experimental so please excuse the occasional hicup.
 
 [Back to top.](#contents)
+
+Auto doc.
+runtime: 24.428ms
+GrooverUtils.js:32 
+
 ## Vec
 
 Properties.
@@ -206,19 +211,19 @@ Functions.
     Creates a copy of this
     Returns a new [this](#vec)
 - Vec.setAs(vec)  
-    Sets this [vec](#vec) to the values in the requiered argument `[vec](#vec)`
+    Sets this [vec](#vec) to the values in the requiered argument [vec](#vec)
     Returns the existing [this](#vec)
 - Vec.asBox(box)  
     Returns the bounding [box](#box) that envelops this [vec](#vec)
-    Optional argument `[box](#box)` is created if not supplied
-    Returns `[box](#box)`
+    Optional argument [box](#box) is created if not supplied
+    Returns [box](#box)
 - Vec.isEmpty()  
     [Vec](#vec) can not be [empty](#empty) so always returns true
 - Vec.add(vec) 
-    Adds requiered argument `[vec](#vec)` to this.
+    Adds requiered argument [vec](#vec) to this.
     Returns [this](#vec)
 - Vec.sub(v)  
-    Subtracts requiered argument `[vec](#vec)` from this.
+    Subtracts requiered argument [vec](#vec) from this.
 - Vec.mult(m)
 - Vec.div(m)
 - Vec.rev() 
@@ -402,11 +407,11 @@ Properties.
 Functions.
 - Circle.copy()
 - Circle.setAs(circle)  
-    Sets this [circle](#circle) to the argument requiered argument `[circle](#circle)`.
+    Sets this [circle](#circle) to the argument requiered argument [circle](#circle).
     Return [this](#circle)
 - Circle.asBox(box)     
     Returns the bounding [box](#box)
-    Requiered argument `[box](#box)` is option
+    Requiered argument [box](#box) is option
     Returns `[Box](#box)`
 - Circle.isEmpty()
 - Circle.setRadius(r)
