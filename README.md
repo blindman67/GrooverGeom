@@ -199,7 +199,18 @@ Auto doc.
 runtime: 24.428ms
 GrooverUtils.js:32 
 
-## Vec
+Regex
+
+Hide network messages
+All
+Errors
+Warnings
+Info
+Logs
+Debug
+Handled
+?
+GrooverUtils.js:32 ## Vec
 
 Properties.
 - Vec.x = number  
@@ -207,26 +218,26 @@ Properties.
 - Vec.type = 'Vec'  
 
 Functions.
-- **Vec.copy()  **  
+- **Vec.copy()**  
 	Creates a copy of this  
 	Returns a new [this](#vec)
-- **Vec.setAs(vec)  **  
+- **Vec.setAs(vec)**  
 	Sets this [vec](#vec) to the values in the requiered argument [vec](#vec)  
 	Returns the existing this
-- **Vec.asBox(box)  **  
+- **Vec.asBox(box)**  
 	Returns the bounding [box](#box) that envelops this [vec](#vec)  
 	Optional argument [box](#box) is created if not supplied  
 	Returns [box](#box)
-- **Vec.isEmpty()  **  
+- **Vec.isEmpty()**  
 	[Vec](#vec) can not be [empty](#empty) so always returns true
-- **Vec.add(vec) **  
+- **Vec.add(vec)**  
 	Adds requiered argument [vec](#vec) to this.  
 	Returns [this](#vec)
-- **Vec.sub(vec)  **  
+- **Vec.sub(vec)**  
 	Subtracts requiered argument [vec](#vec) from this.
 - **Vec.mult(m)**  
 - **Vec.div(m)**  
-- **Vec.rev() **  
+- **Vec.rev()**  
 - **Vec.r90()**  
 - **Vec.rN90()**  
 - **Vec.r180()**  
@@ -262,7 +273,7 @@ Properties.
 - VecArray.type = 'VecArray'  
 
 Functions.
-- **VecArray.each(callback) **  
+- **VecArray.each(callback)**  
 	Itterates the [vec](#vec)s in this. The itterater can break if the requiered argument callback returns false.  
 	The requiered argument callback in the form  
 	```JavaScript  
@@ -271,7 +282,7 @@ Functions.
 	}  
 	```  
 	Returns this
-- **VecArray.cull(callback)  **  
+- **VecArray.cull(callback)**  
 	Itterate all [vec](#vec)s culling those [vec](#vec)s that the requiered argument callback returns false for.  
 	Callback requiered argument callback in the form  
 	```JavaScript  
@@ -280,38 +291,38 @@ Functions.
 	}  
 	```  
 	Returns this
-- **VecArray.copy()  **  
+- **VecArray.copy()**  
 	Creates a new [Vec](#vec)Array with a copy of the [vec](#vec)s in this.  
 	Returns new [Vec](#vec)Array
-- **VecArray.setAs(vecArray)  **  
+- **VecArray.setAs(vecArray)**  
 	Sets the array of [vec](#vec)s to that of the requiered argument [vec](#vec)Array will only set existing [vec](#vec)s in this Extra items in the requiered argument [vec](#vec)Array are ignored. If the requiered argument [vec](#vec)Array is smaller than this items then  
 	Returns this
-- **VecArray.isEmpty() **  
+- **VecArray.isEmpty()**  
 	Returns whether this is [empty](#empty) (has items)  
 	Returns true if there are one or more [vec](#vec)s in this  
 	Returns false if there are no [vec](#vec)s in this
-- **VecArray.push(vec) **  
+- **VecArray.push(vec)**  
 	Push the requiered argument [vec](#vec) onto the array of [vec](#vec)s  
 	Returns this
-- **VecArray.append(vecArray)  **  
+- **VecArray.append(vecArray)**  
 	Append the requiered argument [vec](#vec)Array to the end of the list of [vec](#vec)s  
 	Returns this
-- **VecArray.asBox(box) **  
+- **VecArray.asBox(box)**  
 	Gets the bounding [box](#box) that envelops all the [vec](#vec)s in the list. The optional argument [box](#box) is used or a new [Box](#box) is created. [Box](#box) may be irrational if there are no items in [vec](#vec)Array.  
 	Returns the optional argument [box](#box) or a new [box](#box).
-- **VecArray.mult(number)  **  
+- **VecArray.mult(number)**  
 	Multiply each [vec](#vec) in the list by the requiered argument number  
 	Returns this.
-- **VecArray.add(vec) **  
+- **VecArray.add(vec)**  
 	Add the requiered argument [vec](#vec) to each [vec](#vec) in the list  
 	Returns this
-- **VecArray.rotate(number)  **  
+- **VecArray.rotate(number)**  
 	Rotates each [vec](#vec) bu requiered argument number  
 	Returns this.
-- **VecArray.getLast() **  
+- **VecArray.getLast()**  
 	Returns the last [vec](#vec) on the list  
 	Returns [Vec](#vec)
-- **VecArray.getCount() **  
+- **VecArray.getCount()**  
 	Returns the number of [vec](#vec)s in the list
 
 render extention.
@@ -353,7 +364,7 @@ Functions.
 - **Line.scale(num)**  
 - **Line.midPoint()**  
 - **Line.unitAlong( unitDist)**  
-- **Line.distanceAlong( dist) **  
+- **Line.distanceAlong( dist)**  
 - **Line.angleBetween(line)**  
 - **Line.angleFromNormal(line)**  
 - **Line.setTransformToLine(ctx)**  
@@ -362,7 +373,7 @@ Functions.
 - **Line.sliceToPoints(p1,p2)**  
 - **Line.intercept(l2)**  
 - **Line.distFrom(p)**  
-- **Line.distFromDir(p) **  
+- **Line.distFromDir(p)**  
 - **Line.getDistOfPoint(vec)**  
 - **Line.getUnitDistOfPoint(vec)**  
 - **Line.getDistOfPointSafe(vec)**  
@@ -372,13 +383,13 @@ Functions.
 - **Line.reflectLine(l)**  
 - **Line.mirrorLine(line)**  
 - **Line.centerOnStart()**  
-- **Line.midLine(l1) **  
+- **Line.midLine(l1)**  
 	This is bad must find a better way
 
 render extention.
-- **Line.lineTo() **  
-- **Line.moveTo() **  
-- **Line.draw() **  
+- **Line.lineTo()**  
+- **Line.moveTo()**  
+- **Line.draw()**  
 - **Line.mark()**  
 
 [Back to top.](#contents)
@@ -391,34 +402,34 @@ Properties.
 
 Functions.
 - **Rectangle.aspect()**  
-- **Rectangle.copy() **  
+- **Rectangle.copy()**  
 - **Rectangle.setAs(rectange)**  
 - **Rectangle.isEmpty()**  
 - **Rectangle.width()**  
-- **Rectangle.height() **  
+- **Rectangle.height()**  
 - **Rectangle.setWidth(num)**  
 - **Rectangle.setHeight(num)**  
 - **Rectangle.topLine()**  
 - **Rectangle.leftLine()**  
 - **Rectangle.rightLine()**  
 - **Rectangle.bottomLine()**  
-- **Rectangle.getCorners() **  
+- **Rectangle.getCorners()**  
 - **Rectangle.asBox(box)**  
-- **Rectangle.area() **  
+- **Rectangle.area()**  
 - **Rectangle.heightFromArea(area)**  
 - **Rectangle.widthFromArea(area)**  
-- **Rectangle.perimiter() **  
-- **Rectangle.diagonalLength() **  
-- **Rectangle.getCenter() **  
+- **Rectangle.perimiter()**  
+- **Rectangle.diagonalLength()**  
+- **Rectangle.getCenter()**  
 - **Rectangle.getDiagonalLine()**  
 - **Rectangle.getBottomRight()**  
 - **Rectangle.isPointInside(vec)**  
 - **Rectangle.isLineInside(line)**  
-- **Rectangle.setTransform(ctx)   **  
+- **Rectangle.setTransform(ctx)**  
 	Temp location of this function
-- **Rectangle.setTransformArea(width, height) **  
+- **Rectangle.setTransformArea(width, height)**  
 	Temp location of this function
-- **Rectangle.getPointAt(point)  **  
+- **Rectangle.getPointAt(point)**  
 	Point is a relative unit coordinate on the [rectangle](#rectangle)
 - **Rectangle.getLocalPoint(vec)**  
 - **Rectangle.scaleToFitIn(obj)**  
@@ -440,10 +451,10 @@ Properties.
 
 Functions.
 - **Circle.copy()**  
-- **Circle.setAs(circle)  **  
+- **Circle.setAs(circle)**  
 	Sets this [circle](#circle) to the argument requiered argument [circle](#circle).  
 	Return [this](#circle)
-- **Circle.asBox(box)     **  
+- **Circle.asBox(box)**  
 	Returns the bounding [box](#box)  
 	Requiered argument [box](#box) is option  
 	Returns `[Box](#box)`
@@ -475,10 +486,10 @@ Functions.
 - **Circle.circleIntercept(circle)**  
 - **Circle.tangentAtPoint(p)**  
 - **Circle.angleOfPoint(p)**  
-- **Circle.tangentsPointsForPoint(vec)  **  
+- **Circle.tangentsPointsForPoint(vec)**  
 	Finds where on the [circle](#circle) the tangents are for the point [vec](#vec). In valid if point is inside the [circle](#circle)  
 	Point is inside so no tangents exist
-- **Circle.reflectLine(line) **  
+- **Circle.reflectLine(line)**  
 	WTF sorry will fix in time
 - **Circle.fitCorner(l1,l2)**  
 
@@ -522,11 +533,11 @@ Functions.
 - **Arc.normalise()**  
 - **Arc.towards(vec)**  
 - **Arc.away(vec)**  
-- **Arc.endsAsVec()  **  
-- **Arc.startAsVec()  **  
-- **Arc.endAsVec()  **  
+- **Arc.endsAsVec()**  
+- **Arc.startAsVec()**  
+- **Arc.endAsVec()**  
 - **Arc.sweapLeng()**  
-- **Arc.setCircumference(leng) **  
+- **Arc.setCircumference(leng)**  
 - **Arc.cordLeng()**  
 - **Arc.cordAsLine()**  
 - **Arc.great()**  
@@ -557,10 +568,10 @@ Functions.
 - **Box.setAs(box)**  
 - **Box.asBox(box)**  
 - **Box.isEmpty()**  
-- **Box.asRectange() **  
+- **Box.asRectange()**  
 - **Box.normalise()**  
-- **Box.max() **  
-- **Box.irrate() **  
+- **Box.max()**  
+- **Box.irrate()**  
 - **Box.env( x, y)**  
 - **Box.envBox(box)**  
 - **Box.envelop(obj)**  
@@ -602,11 +613,10 @@ Properties.
 
 Functions.
 - **Transform.copy()**  
-- **Transform.setAs(transform) **  
+- **Transform.setAs(transform)**  
 - **Transform.setCtx()**  
 - **Transform.setOrigin(vec)**  
 - **Transform.setXAxis(vec)**  
 - **Transform.setYxis(vec)**  
 
 [Back to top.](#contents)
-

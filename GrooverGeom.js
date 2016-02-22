@@ -121,7 +121,7 @@ groover.geom = (function (){
                         var com = getComments(f,n);
                         f = f.shift();
                         f = f.replace("function ","").replace("{","") ;
-                        f = f.replace(/\/\/.*/g,"");
+                        f = f.replace(/\/\/.*/g,"").trim();
 
                         if(ce !== ""){
                             extentions[ce] += "- **"+n + "." + i+f + "**  " + newLine;
@@ -137,11 +137,10 @@ groover.geom = (function (){
                     }else
                     if(typeof s[n].prototype[i] === "string"){
                         st = s[n].prototype[i].toString();
-                        f = st.split(newLine).shift();
-                        propDesc += "- "+n + "." + i+" = '" +st+"'"+"  " + newLine;
+                        propDesc += "- **"+n + "." + i+"** = '" +st+"'"+"  " + newLine;
                     }else{
                         st = typeof s[n].prototype[i];
-                        propDesc += "- "+n + "." + i+" = " +st+"  " + newLine;
+                        propDesc += "- **"+n + "." + i+"** = " +st+"  " + newLine;
                     }
                 }
                 str += desc + newLine;
