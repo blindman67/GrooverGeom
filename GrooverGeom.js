@@ -438,6 +438,13 @@ groover.geom = (function (){
         isEmpty : function (){  // Vec can not be empty so always returns true
             return false;  
         },
+        isSame : function(vec){ // Returns true if the {avec} is the same as this
+            if(vec.x === this.x && vec.y === this.y){
+                return true;
+            }
+            return false; // returns boolean
+            
+        },
         add : function(vec){ // adds {avec} to this.
             this.x += vec.x;
             this.y += vec.y;
