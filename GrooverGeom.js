@@ -7,6 +7,8 @@ groover.geom = (function (){
     const MPI270 = Math.PI * ( 3 / 2);
     const MPI360 = Math.PI * 2;
     const MR2D = 180 / MPI;
+    const EPSILON = 1E-6; // this is still undecided Could use Number.EPSILON but I feel that is a little small for graphics based metrics
+    const EPSILON1 = 1-EPSILON;
     Math.triPh = function(a,b,c){  
         return Math.acos((c * c - (a * a + b * b)) / (-2 * a * b));
     }
@@ -258,7 +260,8 @@ groover.geom = (function (){
     VecArray.prototype =  {
         vecs : [],
         type :"VecArray",
-        each : function (callback,dir){ // Itterates the vecs in this. The itterater can break if the {acallback} returns false. The {odir} if true itterates the vecs in the reverse direction.
+        each : function (callback,dir,start){ // Itterates the vecs in this. The itterater can break if the {acallback} returns false. The {odir} if true itterates the vecs in the reverse direction. The {ostart} as Number is the index of the start of itteration.
+                                 // if the {odir} is true then {ostart} if passed will be the number of vec from the end to start itteration at
                                  // The {acallback} in the form
                                  // ```JavaScript
                                  // var callback = function(vec, i){
@@ -266,16 +269,20 @@ groover.geom = (function (){
                                  // }
                                  // ```
             var i;
-            var l = this.vecs.length;                                       
+            var l = this.vecs.length;      
+            if(start === undefined || start === null){
+                start = 0;
+            }
             if(dir){
                 l -= 1;
+                l -= start;
                 for(i = l; i >= 0; i --){
                     if(callback(this.vecs[i],i) === false){
                         break;
                     }
                 }
             }else{
-                for(i =0; i < l; i ++){
+                for(i = start; i < l; i ++){
                     if(callback(this.vecs[i],i) === false){
                         break;
                     }
@@ -301,17 +308,30 @@ groover.geom = (function (){
             }
             return this;  // returns this
         },
-        toString : function(){ // return a string representing this object
-            var str = "VecArray : \n"
+        toString : function(precision, lineFeed){ // return a string representing this object. 
+                                       // The {olineFeed} can insert a lineFeed after each vec. For example for console output add call with lineFeed = "\n". 
+                                       // the {oprecision} can also be changed. The default is 6;
+            var str;
+            if(precision === undefined || precision === null){
+                precision = 6;
+            }
+            if(lineFeed === undefined || lineFeed === null){
+                lineFeed = "";
+            }
             if(this.vecs.length === 0){
-                str += " Is empty."
+                str += "VecArray : Is empty." + lineFeed
             }else{
+                str = "VecArray : "+ this.vecs.length+" vecs" + lineFeed
                 this.each(function(vec,i){
-                    str += "index "+i+" : "+vec.toString()+"\n";
+                    str += "index "+i+" : "+vec.toString(precision)+lineFeed;
                 });
             }
             return str; // returns String
-        },    
+        },
+        clear : function(){  // removes all vecs from the list
+            this.vecs.splice(0,this.vecs.length);
+            return this;  // returns this
+        },
         reverse : function(){
             this.vecs.reverse();
             return this; // returns this
@@ -326,8 +346,8 @@ groover.geom = (function (){
         setAs :function (vecArray){  // sets the array of vecs to that of the {avecArray} will only set existing vecs in this Extra items in the {avecArray} are ignored. If the {avecArray} is smaller than this items then 
                                      
             this.each(function(vec,i){
-                vec.x = vecArray[i].x;
-                vec.y = vecArray[i].y;
+                vec.x = vecArray.vecs[i].x;
+                vec.y = vecArray.vecs[i].y;
             });
             return this; // returns this
         },
@@ -380,7 +400,7 @@ groover.geom = (function (){
         getCount : function(){ 
             return this.vec.length; // Returns the number of vecs in the list
         },
-        area : function(){ // gets the area of the polygon created by the set of points. I am using an old school method and do not know if the is a better way. The verts must be in counter clockwise order.
+        sumCross : function(){ // returns the sum of the cross product of all the vecs as if they are a set of lines. This includes the line that joins the last vec with the first.
             var i,v1,v2;
             var l = this.vecs.length;
             if(l === 0){
@@ -395,8 +415,11 @@ groover.geom = (function (){
                 yc += v1.y * v2.x;
                 v1 = v2;                
             }
-            return Math.abs(xc - yc)/2; // Returns Number as the area
+            return xc - yc; // Returns Number as the summed cross product
         },
+        area : function(){ // gets the area of the polygon created by the set of points. I am using an old school method and do not know if the is a better way. The verts must be in counter clockwise order.
+            return Math.abs(this.sumCross()/2); // Returns Number as the area
+        },        
         perimiter : function(){ // gets the length of the perimiter of the polygon created by the set of points.
             var i,v1,v2;
             var l = this.vecs.length;
@@ -411,7 +434,17 @@ groover.geom = (function (){
                 v1 = v2;                
             }
             return len; // Returns Number as length
-        }
+        },
+        indexOf : function(vec, start){ // finds the index of the first vec that is the same as {aVec}. If the {ostart} is passed then the search starts at that index
+            var index = -1;
+            this.each(function(vec1,i){
+                if(vec.isSame(vec1)){
+                    index = i;
+                    return false; // break from each
+                }
+            },false,start);
+            return index; // Returns index as Number of first matching vec or -1
+        },
     }
     Vec.prototype = {
         x : 1,
@@ -420,8 +453,12 @@ groover.geom = (function (){
         copy : function(){  // Creates a copy of this
             return new Vec(this.x,this.y);  // returns a new `this`
         },
-        toString : function(){  // returns a string representing this object
-            return "Vec: x = "+ this.x + " y = "+this.y; // returns String
+        toString : function(precision){  // returns a string representing this object
+                                // the {oprecision} can also be changed. The default is 6;
+            if(precision === undefined || precision === null){
+                precision = 6;
+            }
+            return "Vec: x = "+ this.x.toFixed(precision) + " y = "+this.y.toFixed(precision); // returns String
         },        
         setAs : function(vec){  // Sets this vec to the values in the {avec}
             this.x = vec.x;
@@ -442,8 +479,13 @@ groover.geom = (function (){
             if(vec.x === this.x && vec.y === this.y){
                 return true;
             }
-            return false; // returns boolean
-            
+            return false; // returns boolean            
+        },
+        isSameE : function(vec){ // Returns true if the {avec} is the same as this. Uses EPSILON 
+            if(Math.hypot(vec.x-this.x,vec.y-this.y) < EPSILON){
+                return true;
+            }
+            return false; // returns boolean            
         },
         add : function(vec){ // adds {avec} to this.
             this.x += vec.x;
@@ -811,7 +853,6 @@ groover.geom = (function (){
             this.fromTangentsToPoint(l1.p2).towards(l1.p2);
             return this; // returns this.
         },
-
     }
     Circle.prototype = {
         center : undefined,
@@ -1085,6 +1126,32 @@ groover.geom = (function (){
             box.env ( this.p2.x, this.p2.y);
             return box;
         },
+        isVecLeft : function(vec){ // Is the {avec} to the left of this line. Left is left of screen when looking at it and the line moves down.
+            var l1 = this.asVec();
+            var v1 = vec.copy().sub(this.p1);
+            if(l1.cross(v1) > 0){
+                return true;
+            }
+            return false;
+        },
+        isLineLeft : function(line){ // Is the {aline} to the left of this line. Left is left of screen when looking at it and the line moves down.
+            var l1 = this.asVec();
+            var v1 = line.p1.copy().sub(this.p1);
+            if(l1.cross(v1) > 0){
+                if(l1.cross(v1.setAs(line.p2).sub(this.p1)) > 0){
+                    return true;
+                }
+            }
+            return false; // returns boolean 
+        },
+        isCircleLeft : function(circle){ // is the circle {acircle} left of this line. Left is left of screen when line moves from top to bottom
+            if(this.isVecLeft(circle.center)){
+                if(this.distFrom(circle.center) > circle.radius){
+                    return true;
+                }
+            }
+            return false; // returns boolean 
+        },
         leng : function(){
             return Math.hypot(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
         },
@@ -1199,28 +1266,6 @@ groover.geom = (function (){
             }
             return this; // returns this.
         },
-        sliceOffEnd : function ( line ){
-            var p = this.intercept(line);
-            var u = this.getUnitDistOfPoint(p);
-            if(u > 0 && u < 1){
-                var u1 = line.getUnitDistOfPoint(p);
-                if(u1 >= 0 && u1 <= 1){
-                    this.p2 = p;
-                }
-            }
-            return this; // returns this.
-        },
-        sliceOffStart : function ( line ){
-            var p = this.intercept(line);
-            var u = this.getUnitDistOfPoint(p);
-            if(u > 0 && u < 1){
-                var u1 = line.getUnitDistOfPoint(p);
-                if(u1 >= 0 && u1 <= 1){
-                    this.p1 = p;
-                }
-            }
-            return this; // returns this.
-        },
         sliceToPoints : function (p1,p2){
             var pp1 = this.closestPoint(p1);
             var pp2 = this.closestPoint(p2);
@@ -1247,12 +1292,50 @@ groover.geom = (function (){
             return this; // returns this.
                 
         },
-        intercept : function(l2){
+        intercept : function(line){  // find the point of intercept between this line and {aline}
             var v1 = new Vec(this.p2,this.p1);
-            var v2 = new Vec(l2.p2,l2.p1);
+            var v2 = new Vec(line.p2,line.p1);
             var c = v1.cross(v2);
-            var v3 = new Vec(this.cross(),l2.cross());
-            return new Vec( v3.cross(new Vec(v1.x,v2.x))/c,v3.cross(new Vec(v1.y,v2.y))/c);
+            var v3 = new Vec(this.cross(),line.cross());
+            return new Vec( v3.cross(new Vec(v1.x,v2.x))/c,v3.cross(new Vec(v1.y,v2.y))/c); // returns Vec or Empty
+        },
+        interceptSeg : function(line){ // find the point of intercept between this line segment  and {aline}
+            var v1 = new Vec(this.p2,this.p1);
+            var v2 = new Vec(line.p2,line.p1);
+            var c = v1.cross(v2);
+            var v3 = new Vec(this.cross(),line.cross());
+            var v4 = new Vec( v3.cross(new Vec(v1.x,v2.x))/c,v3.cross(new Vec(v1.y,v2.y))/c);  // returns Vec or Empty
+            var d = this.getUnitDistOfPoint(v4);
+            if( d >= 0 && d <= 1){
+                return v4;
+            }
+            return new Empty();
+        },
+        interceptSegs : function(line){ // find the point of intercept between this line segment and and the {aline} as a line segment
+            var v1 = new Vec(this.p2,this.p1);
+            var v2 = new Vec(line.p2,line.p1);
+            var c = v1.cross(v2);
+            var v3 = new Vec(this.cross(),line.cross());
+            var v4 = new Vec( v3.cross(new Vec(v1.x,v2.x))/c,v3.cross(new Vec(v1.y,v2.y))/c); // returns Vec or Empty
+            var d = this.getUnitDistOfPoint(v4);
+            var d1 = line.getUnitDistOfPoint(v4);
+            if( d > EPSILON && d < EPSILON1 && d1 > EPSILON && d1 < EPSILON1){
+                return v4;
+            }
+            return new Empty();            
+        },
+        isLineSegIntercepting : function(line){ // Returns true if the {aline} intercepts this line segment
+            var v1 = new Vec(this.p2,this.p1);
+            var v2 = new Vec(line.p2,line.p1);
+            var c = v1.cross(v2);
+            var v3 = new Vec(this.cross(),line.cross());
+            var v4 = new Vec( v3.cross(new Vec(v1.x,v2.x))/c,v3.cross(new Vec(v1.y,v2.y))/c); 
+            var d = this.getUnitDistOfPoint(v4);
+            var d1 = line.getUnitDistOfPoint(v4);
+            if( d > EPSILON && d < EPSILON1 && d1 > EPSILON && d1 < EPSILON1){
+                return true;
+            }
+            return false;            // returns boolean
         },
         distFrom : function(p){
             var v = this.asVec();
@@ -1536,6 +1619,45 @@ groover.geom = (function (){
             box.env(this.right,this.bottom);
             return box;
         },      
+        isVecInside : function(vec){
+            if(vec.x >= this.left && vec.x <= this.right && vec.y >= this.top && vec.y <= this.bottom){
+                return true;
+            }
+            return false;
+        },
+        isVecArrayInside : function(vecArray){
+            var inside = true;
+            var me = this;
+            
+            vec.each(function(vec){
+                if(!me.isVecInside(vec)){
+                    inside = false;
+                    return false;  // break from itteration
+                }
+            });
+            return inside;
+        },
+        isLineInside : function(line){
+            return (this.isVecInside(line.p1) && this.isVecInside(line.p2));
+            return false;
+        },
+        isRectangleInside : function(rectange){
+            return this.isVectArrayInside(rectangle.getCorners());
+        },
+        isCircleInside : function(circle){
+            var vec = circle.center;
+            var r = circle.radius;
+            if(vec.x >= this.left + r && vec.x <= this.right - r && vec.y >= this.top + r && vec.y <= this.bottom - r){
+                return true;
+            }
+            return false;
+        },
+        isBoxInside : function(box){
+            if(box.left >= this.left && box.right <= this.right && box.top >= this.top && box.bottom <= this.bottom){
+                return true;
+            }
+            return false;           
+        },
         isEmpty : function(){
             if(this.top >= this.bottom || this.left >= this.right){
                 return true;
@@ -1623,7 +1745,7 @@ groover.geom = (function (){
             this.xa.x = vec.x;
             this.ya.y = vec.y;
         },
-        setYxis : function(vec){
+        setYAxis : function(vec){
             this.ya.x = vec.x;
             this.ya.y = vec.y;
         },

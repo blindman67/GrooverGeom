@@ -2,6 +2,7 @@
 
 ## Contents
 1. [Work in progress](#work-in-progress)
+1. [Status notes](#status-notes)
 1. [Current Primitives](#current-primitives)
 1. [Non Primitives](#non-primitives)
 1. [Common Methods](#common-Methods)
@@ -25,8 +26,31 @@ This is currently very much a work in progress
 
 [Back to top.](#contents)
 
-## Warning Refactoring in progress
-The document dose not fully reflect the current refactoring.
+## Status notes
+
+26 Feb 2016 
+Started adding EPSILON checks where needed. 
+Still no checking for parallel lines where they are needed (ie line intercepts)
+Spent two days on the shapes extention. 
+Extending polygon with shape.isConvex(), shape.isInside(primitive), shape.chamfer(amount), shape.inflate(), shape.getConvex(), shape.removeLines(), and more.
+As needed added functions to the primitives. Box now has function to check if any of the primitives are inside. Eg box.isVecInside(vec) will return boolen if the vec is inside the box. Avalible for all the primitives but will add function to test generic primitive soon.
+There are two shapes polygon and roundedPill both of which only have part fuctionality.
+Still working on how to present this readme and the API referance.
+Fixed assorted bugs as I found them.
+
+Before 26 Feb 2016
+Last time. Well as I have just added status notes to the README there is no last time.
+
+
+### Warnings
+
+- The document dose not fully reflect the current refactoring.
+- This document does not include the full primitive API referance. Many functions are missing from documention.
+- Shapes extention only has part functionality. Not all functionds have been tested.
+- EPSILON is currently set at 1E-6 for testing.
+
+[Back to top.](#contents)
+
 
 This is part of the Groover name space and can be located as groover.geom. 
 
@@ -34,7 +58,7 @@ You can also extend the object with render functions for rendering  on the 2D ca
 
 Geom provides a wide range of functions to aid with 2D geometric objects.
 
-Currently supporting the following primitives
+Currently supporting this [primitives](#current-primitives)
 
 [Back to top.](#contents)
 
