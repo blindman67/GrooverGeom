@@ -64,6 +64,7 @@ groover.geom = (function (){
         this.Empty = Empty;
     }
     Geom.prototype = {
+        extentions : {},
         isGeom : function (obj){
             if(obj !== undefined && typeof obj.type === "string"){
                 if(this.types.indexOf(obj.type) > -1){
