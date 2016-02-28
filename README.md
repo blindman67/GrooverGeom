@@ -28,25 +28,41 @@ This is currently very much a work in progress
 
 ## Status notes
 
-26 Feb 2016 
-Started adding EPSILON checks where needed. 
-Still no checking for parallel lines where they are needed (ie line intercepts)
-Spent two days on the shapes extention. 
-Extending polygon with shape.isConvex(), shape.isInside(primitive), shape.chamfer(amount), shape.inflate(), shape.getConvex(), shape.removeLines(), and more.
-As needed added functions to the primitives. Box now has function to check if any of the primitives are inside. Eg box.isVecInside(vec) will return boolen if the vec is inside the box. Avalible for all the primitives but will add function to test generic primitive soon.
-There are two shapes polygon and roundedPill both of which only have part fuctionality.
-Still working on how to present this readme and the API referance.
-Fixed assorted bugs as I found them.
+###29 Feb 2016
 
-Before 26 Feb 2016
+- Added `Triangle` to the primitives defined by 3 `Vec`. Many functions are just stubs at the moment.
+- Added the method `lable` to the drawing extention. This will draw text (lable) the primitive
+- Added common functions and properties to all primitives. These are independent of the primitive type. EG the common function .makeUnique() set a unique ID to the primitive
+- Added `scale(scale)`, `translate(vec)`, `rotate(radians)` to all primitives. Though many already have an aulternative function that does the same this is to provide a common method of applying transformations.
+- Fixed asorted bugs.
+- Inproved the Shape extention `Shape.polygon` to include concave polygons and added functions for `isVecInside`, `isLineInside`, `isPolygonIside` and laid the groundwork for slicing, and other boolean functions.
+- Experimenting with auto documentation. No conclutions as to their use.
+- Removed stray calls to `log()` that I use during debugging. Need to find a way to validate the project so these things do not creep in.
+- Added asorted functions to variouse primitives as I found a need.
+- General source code cleanups 
+
+###26 Feb 2016 
+
+- Started adding EPSILON checks where needed. 
+- Still no checking for parallel lines where they are needed (ie line intercepts)
+- Spent two days on the shapes extention. 
+- Extending polygon with shape.isConvex(), shape.isInside(primitive), shape.chamfer(amount), shape.inflate(), shape.getConvex(), shape.removeLines(), and more.
+- As needed added functions to the primitives. Box now has function to check if any of the primitives are inside. Eg box.isVecInside(vec) will return boolen if the vec is inside the box. Avalible for all the primitives but will add function to test generic primitive soon.
+- There are two shapes polygon and roundedPill both of which only have part fuctionality.
+- Still working on how to present this readme and the API referance.
+- Fixed assorted bugs as I found them.
+
+###Before 26 Feb 2016
+
 Last time. Well as I have just added status notes to the README there is no last time.
 
 
 ### Warnings
 
+- `Shape.polygon` currently does not handly self intersecting polygons, though it does detect this case and will treat such polygons as empty.
 - The document dose not fully reflect the current refactoring.
 - This document does not include the full primitive API referance. Many functions are missing from documention.
-- Shapes extention only has part functionality. Not all functionds have been tested.
+- Shapes extention only has part functionality. Not all functions have been tested.
 - EPSILON is currently set at 1E-6 for testing.
 
 [Back to top.](#contents)

@@ -9,28 +9,62 @@ groover.geom = (function (){
     const MR2D = 180 / MPI;
     const EPSILON = 1E-6; // this is still undecided Could use Number.EPSILON but I feel that is a little small for graphics based metrics
     const EPSILON1 = 1-EPSILON;
-    Math.triPh = function(a,b,c){  
+    
+    var UID = 1;
+    
+    // some math extentions 
+    Math.triPh = function(a,b,c){    // return the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
         return Math.acos((c * c - (a * a + b * b)) / (-2 * a * b));
     }
-    Math.triCosPh = function(a,b,c){
+    Math.triCosPh = function(a,b,c){ // return the cosine of the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
         return (c * c - (a * a + b * b)) / (-2 * a * b);
     }
-    Math.triLenC = function(a,b,pheta){
+    Math.triLenC = function(a,b,pheta){ // return the length of side C given the length of two sides a,b and the angle opisite the edge C
         return Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(pheta));
     }
-    Math.triLenC2 = function(a,b,pheta){
+    Math.triLenC2 = function(a,b,pheta){ // return the length squared of side C given the length of two sides a,b and the angle opisite the edge C
         return a*a + b*b - 2*a*b*Math.cos(pheta);
     }
+    
+    // polyfill for math hypot function.
     if(typeof Math.hypot !== "function"){
         Math.hypot = function(x, y){ return Math.sqrt(x * x + y * y);};
     }
+      
+    var sharedFunctions = {
+        setLable : function(lable){
+            this.lableStr = lable;
+            return this;
+        },
+        getLable : function(){
+            return this.lableStr;
+        },   
+        makeUnique : function(){
+            this.id = UID;
+            UID += 1;
+            return this;
+        },
+        copyFull : function(arg1,arg2){
+            var newMe = this.copy(arg1,arg2);
+            newMe.id = this.id;
+            newMe.lableStr = this.lableStr;
+            return newMe;
+        },
         
+    }
+    var sharedProperties = {
+        lableStr : null,
+        id : null,
+    }
+    
+      
     function Geom(){
 
         this.objectNames = [
             "Vec",
             "VecArray",
             "Line",
+            "Triangle",
             "Rectangle",
             "Circle",
             "Arc",
@@ -50,21 +84,49 @@ groover.geom = (function (){
             Rectangle: ["t","a","type"],
             VecArray: ["vecs","type"],
             Transform: ["xa","ya","o","type"],
+            Triangle : ["p1","p2","p3","type"],
+            
             Empty : ["type"],
         };
         this.Vec = Vec;
         this.Line = Line;
         this.Circle = Circle;
         this.Arc = Arc;
+        this.Triangle = Triangle;
         this.Rectangle = Rectangle;
         this.Box = Box;
         this.Transform = Transform;
         this.VecArray = VecArray;
         this.Geom = Geom;
         this.Empty = Empty;
+
     }
     Geom.prototype = {
         extentions : {},
+        init : function(){
+            var me = this;
+            this.objectNames.forEach(function(primitive){
+                var i;
+                var prim = me[primitive];
+                for(i in sharedFunctions){
+                     Object.defineProperty(prim.prototype, i, {
+                        writable : false,
+                        enumerable : true,
+                        configurable : false,
+                        value : sharedFunctions[i]
+                     });
+                    console.log("adding to "+primitive+".prototype."+i+"()");
+                }
+                for(i in sharedProperties){
+                     Object.defineProperty(prim.prototype, i, {
+                        writable : true,
+                        enumerable : true,
+                        configurable : false,
+                        value : sharedProperties[i]
+                     }); 
+                }
+            });        
+        },
         isGeom : function (obj){
             if(obj !== undefined && typeof obj.type === "string"){
                 if(this.types.indexOf(obj.type) > -1){
@@ -188,6 +250,11 @@ groover.geom = (function (){
     };
     function VecArray(){
         this.vecs = [];
+    };
+    function Triangle(p1,p2,p3){
+        this.p1 = p1;
+        this.p2 = p2;
+        this.p3 = p3;
     };
     function Line(vec1,vec2){  
         if((vec1 === undefined || vec1 === null) && (vec2 === undefined || vec2 === null)){
@@ -337,8 +404,51 @@ groover.geom = (function (){
             this.vecs.reverse();
             return this; // returns this
         },
-        copy : function (){  // Creates a new VecArray with a copy of the vecs in this.
+        remove : function(index){
+            if(index >= 0 && index < this.vecs.length){
+                this.vecs.splice(index,1);
+            }
+            return this;
+        },
+        copy : function (from, to){  // Creates a new VecArray with a copy of the vecs in this.
+                                     // if {ofrom} and {oto} are passed then create a copy of the points from {ofrom} to but not including {oto}.
+            var to2, count;                                     
             var va = new VecArray();
+            if(from !== undefined && from !== null){
+                if(to === undefined){
+                    to = this.getCount();
+                }
+            }else
+            if(to !== undefined && to !== null){
+                from = 0;
+            }
+            if(from !== undefined){
+                count = this.getCount();
+                to2 = to;
+                if(to > count){
+                    this.each(function(vec,ind){
+                        va.push(vec.copy());
+                    },false,from);
+                    to -= count;
+                    this.each(function(vec,ind){
+                        if(ind < to){
+                            va.push(vec.copy());
+                        }else{
+                            return false;
+                        }
+                    },false,0);
+                    return va;  
+                }else{                    
+                    this.each(function(vec,ind){
+                        if(ind < to){
+                            va.push(vec.copy());
+                        }else{
+                            return false;
+                        }
+                    },false,from);
+                    return va;  
+                }
+            }
             this.each(function(vec){
                 va.push(vec.copy());
             });
@@ -389,17 +499,53 @@ groover.geom = (function (){
             });
             return this; // returns this
         },
+        sum : function (){ // add the {avec} to each vec in the list
+            var vec1 = new Vec(0,0);
+            this.each(function(v){
+               vec1.add(v);
+            });
+            return vec1; // returns this
+        },
+        mean : function(){
+            var count = this.getCount();
+            if(count > 0){
+                return this.sum().div(count);
+            }
+            return new Empty();
+        },
         rotate : function(number){  // rotates each vec bu {anumber}
             this.each(function(vec){
                vec.rotate(number); 
             });
             return this; //returns this.
         },
+        findClosestIndex : function(vec){ // returns the index of the point closest to the {avec}
+            if(this.vecs.length === 0){
+                return -1;
+            }
+            var minDist = Infinity;
+            var index = 0;
+            var dist = 0;
+            this.each(function(vec1,ind){
+                dist = vec.distTo(vec1);
+                if(dist < minDist){
+                    minDist = dist;
+                    index = ind;
+                }                
+            });
+            return index;
+        },
+        findClosest : function(vec){ // returns the index of the point closest to the {avec}
+            if(this.vecs.length === 0){
+                return new Empty();
+            }
+            return this.vecs[this.findClosestIndex(vec)];
+        },
         getLast : function(){ // returns the last vec on the list
             return this.vecs[this.vecs.length-1]; // returns Vec
         },
         getCount : function(){ 
-            return this.vec.length; // Returns the number of vecs in the list
+            return this.vecs.length; // Returns the number of vecs in the list
         },
         sumCross : function(){ // returns the sum of the cross product of all the vecs as if they are a set of lines. This includes the line that joins the last vec with the first.
             var i,v1,v2;
@@ -447,6 +593,168 @@ groover.geom = (function (){
             return index; // Returns index as Number of first matching vec or -1
         },
     }
+    Triangle.prototype = {
+        p1 : undefined,
+        p2 : undefined,
+        p3 : undefined,
+        type : "Triangle",
+        copy : function(){
+            return new Triangle(this.p1.copy(),this.p2.copy(),this.p3.copy());
+        },
+        asBox : function(box){
+            if(box === undefined){
+                var box = new Box();
+            }
+            box.env ( this.p1.x, this.p1.y);
+            box.env ( this.p2.x, this.p2.y);
+            box.env ( this.p3.x, this.p3.y);
+            return box;            
+        },
+        isEmpty : function(){
+            if(this.p1.distFrom(this.p2) <= EPSILON){
+                return true;
+            }
+            if(this.p2.distFrom(this.p3) <= EPSILON){
+                return true;
+            }
+            if(this.p3.distFrom(this.p1) <= EPSILON){
+                return true;
+            }
+            if(this.p1 === undefined || this.p2 === undefined || this.p2 === undefined){
+                return true;
+            }
+        },
+        area : function(){
+            return Math.abs( this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1) );
+        },
+        perimiter: function(){
+            return this.p1.distFrom(this.p2) + this.p2.distFrom(this.p3) + this.p3.distFrom(this.p1);
+        },
+        asVecArray : function(){
+            return new VecArray()
+                .push(this.p1.copy())
+                .push(this.p2.copy())
+                .push(this.p3.copy())
+        },            
+        asLines : function(){
+            return [
+                new Line(this.p1.copy(),this.p2.copy()),
+                new Line(this.p2.copy(),this.p3.copy()),
+                new Line(this.p3.copy(),this.p1.copy())
+            ]
+        },
+        lines : function(){
+            return [
+                new Line(this.p1,this.p2),
+                new Line(this.p2,this.p3),
+                new Line(this.p3,this.p1)
+            ]            
+        },
+        angles : function(){
+            var a = this.p2.copy().sub(this.p1).leng();
+            var b = this.p3.copy().sub(this.p2).leng();
+            var c = this.p1.copy().sub(this.p3).leng();
+            return [
+                Math.triPh(a,c,b),
+                Math.triPh(b,a,c),
+                Math.triPh(c,b,a)            
+            ];
+            
+        },
+        center : function(){
+            return this.p1.copy().add(this.p2).add(this.p3).div(3);
+        },
+        sumCross : function(){
+            return  this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1);
+        },
+        isVecInside : function(vec){
+            var x,y,x1,y1,c; // use the cross product of the vec and each line to find it the point is left off all lines
+            x = vec.x - this.p1.x;
+            y = vec.y - this.p1.y;
+            x1 = this.p2.x-this.p1.x;
+            y1 = this.p2.y-this.p1.y;
+            if((x1 * y - y1 * x) < 0){
+                return false;
+            }
+            x = vec.x - this.p2.x;
+            y = vec.y - this.p2.y;
+            x1 = this.p3.x-this.p2.x;
+            y1 = this.p3.y-this.p2.y;
+            if((x1 * y - y1 * x) < 0){
+                return false;
+            }
+            x = vec.x - this.p3.x;
+            y = vec.y - this.p3.y;
+            x1 = this.p1.x-this.p3.x;
+            y1 = this.p1.y-this.p3.y;
+            if((x1 * y - y1 * x) < 0){
+                return false;
+            }
+            return true;
+        },
+        isLineInside : function(line){
+            if(!this.isVecInside(line.p1)){
+                return false;
+            }
+            return this.isVecInside(line.p2)
+        },
+        isCircleInside : function(circle){
+        },
+        isArcInside : function(arc){
+        },
+        isRectangleInside : function(rectangle){
+        },
+        isBoxInside : function(box){
+        },
+        isTriangleInside : function(triangle){
+        },
+        isLineTouching : function(line){
+        },
+        isCircleTouching : function(circle){
+        },
+        isArcTouching : function(arc){
+        },
+        isBoxTouching : function(box){
+        },
+        isRectangleTouching : function(rectangle){
+        },
+        isTriangleTouching : function(triangle){
+        },
+        isClockwise : function(){
+            return  this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1)> 0 ? true : false;
+        },
+        reverse : function(){
+        },
+        inflate : function(amount){
+        },
+        center : function(){
+        },
+        asVecArray: function(){
+        },
+        setAs: function(triangle){
+        },
+        scale : function(scale){
+            this.p1.scale(scale);
+            this.p2.scale(scale);
+            this.p3.scale(scale);
+            return this; // returns this
+        },
+        translate : function(vec){
+            this.p1.translate(vec);
+            this.p2.translate(vec);
+            this.p3.translate(vec);
+            return this; // returns this
+        },
+        rotate : function(rotation){
+            this.p1.rotation(rotation);
+            this.p2.rotation(rotation);
+            this.p3.rotation(rotation);
+            return this; // returns this
+        },
+        transform : function(transform){
+            return this; // returns this
+        },
+    },
     Vec.prototype = {
         x : 1,
         y : 0,
@@ -583,8 +891,21 @@ groover.geom = (function (){
         distFrom : function(vec){ // get the distance from this to the {avec}
             return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
         },
+        distTo : function(vec){ // get the distance from this to the {avec}
+            return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
+        },        
         angleTo : function(vec){  // Get the direction from this to the {avec}
             return Math.atan2(vec.y - this.y,vec.x-this.x); // returns number as radians
+        },
+        scale : function(scale){
+            this.x *= scale;
+            this.y *= scale;
+        },
+        translate : function(vec){
+            this.x += vec.x;
+            this.y += vec.y;
+        },
+        transform : function(transform){
         },
     }
     Arc.prototype = {
@@ -854,6 +1175,22 @@ groover.geom = (function (){
             this.fromTangentsToPoint(l1.p2).towards(l1.p2);
             return this; // returns this.
         },
+        scale : function(scale){
+            this.circle.radius * scale;
+            return this; // returns this
+        },
+        translate : function(vec){
+            this.circle.center.translate(vec);
+            return this; // returns this
+        },
+        rotate : function(rotation){
+            this.start += rotation;
+            this.end += rotation;
+            return this; // returns this
+        },
+        transform : function(transform){
+            return this; // returns this
+        },
     }
     Circle.prototype = {
         center : undefined,
@@ -1081,7 +1418,21 @@ groover.geom = (function (){
             this.center.setAs(v3.norm().mult(d).add(l2.p1));
             return this;
         },    
-            
+        scale : function(scale){
+            this.radius * scale;
+            return this; // returns this
+        },
+        translate : function(vec){
+            this.center.translate(vec);
+            return this; // returns this
+        },
+        rotate : function(rotation){
+            return this; // returns this
+        },
+        transform : function(transform){
+            return this; // returns this
+        },
+          
     }
     Line.prototype = {
         p1 : undefined,
@@ -1446,7 +1797,26 @@ groover.geom = (function (){
             var v3 = v1.copy().sub(v2).half().add(v2);
             return new Line(p, p.copy().add(v3.sub(p).setLeng(len)));
             
-        }
+        },
+        scale : function(scale){
+            this.p1.scale(scale);
+            this.p2.scale(scale);
+            return this; // returns this
+        },
+        translate : function(vec){
+            this.p1.translate(vec);
+            this.p2.translate(vec);
+            return this; // returns this
+        },
+        rotate : function(rotation){
+            this.p1.rotate(rotation);            
+            this.p2.rotate(rotation);            
+            return this; // returns this
+        },
+        transform : function(transform){
+            return this; // returns this
+        },
+
     }
     Rectangle.prototype = {
         top : undefined,
@@ -1594,7 +1964,22 @@ groover.geom = (function (){
             if(obj.type === "circle"){
                 return this;
             }
-        }
+        },
+        scale : function(scale){
+            this.top.scale(scale);
+            return this; // returns this
+        },
+        translate : function(vec){
+            this.top.translate(vec);
+            return this; // returns this
+        },
+        rotate : function(rotation){
+            this.top.rotate(rotation);
+            return this; // returns this
+        },
+        transform : function(transform){
+            return this; // returns this
+        },
     }
     Box.prototype = {
         top : 0,
@@ -1752,6 +2137,7 @@ groover.geom = (function (){
         },
     }
 
+    geom.init();
     return geom
 })();
 
