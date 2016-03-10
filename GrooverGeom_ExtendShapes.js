@@ -630,7 +630,6 @@ groover.geom.Geom.prototype.addShapes = function(){
                 va.push(l2.p2);
                 va.push(l2.p1);
                 va.push(l1.p2);
-                log(va.area())
                 a += va.area();
                 return a; // returns a Number
             }

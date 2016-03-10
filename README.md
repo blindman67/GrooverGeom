@@ -27,6 +27,16 @@ This is currently very much a work in progress
 [Back to top.](#contents)
 
 ## Status notes
+###10 March 2016
+-- Added limit to VecArray's `findClosestIndex()` and `findClosest()` so that they only find vecs within that limit
+-- Added pushI() to VecArray which returns the index of the added vec
+-- Some refactoring to keep the some sembilag of consistancy 
+-- Worked on Rectangle, optimising functions and added a few. Optimisation is making code size grow but worth it.
+-- Added testCode directory with files for testing.
+-- Minor changes to render extentions.
+-- A few bugs fixed as I found them
+
+
 
 ###29 Feb 2016
 

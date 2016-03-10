@@ -128,15 +128,18 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             this.p2.mark();
             return this;// returns this
         };
-        geom.Line.prototype.lable = function (text){
-            this.setTransformToLine();
+        geom.Line.prototype.lable = function (text,pos){
+            if(pos === undefined){
+                pos = 0.5;
+            }
             if(text === null || text === undefined){
                 text = this.lableStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
             }
-            ctx.fillText(text, 0, 0);
+            this.setTransformToLine(ctx);
+            ctx.fillText(text, pos * this._leng, 0);
             return this;
 
         };
@@ -265,11 +268,12 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             return this;// returns this
         };
         geom.Rectangle.prototype.draw = function(dir){// The {odir} is a boolean that if true reveres the direction to the draw
-            this.getCorners().draw(dir);
+            this.corners().draw(dir);
+            ctx.closePath();
             return this;// returns this
         };
         geom.Rectangle.prototype.mark = function(){
-            this.getCorners().mark();
+            this.corners().mark();
             return this;// returns this
         };
         geom.Rectangle.prototype.lable = function (text){
