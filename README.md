@@ -27,6 +27,13 @@ This is currently very much a work in progress
 [Back to top.](#contents)
 
 ## Status notes
+
+CURRENTLY not working, will be fixed by 14th.
+
+###12 March 2016
+-- Adding isRectangeTouching to Rectangle and discovered I introduced a bug in Line. No time to fix today so will put it all on hold untill tomorrow.
+
+
 ###10 March 2016
 -- Added limit to VecArray's `findClosestIndex()` and `findClosest()` so that they only find vecs within that limit
 -- Added pushI() to VecArray which returns the index of the added vec

@@ -1557,8 +1557,8 @@ groover.geom = (function (){
         fromCircumference  : function(leng){
             this.radius = leng / (Math.PI * 2);
         },
-        touching : function(c){
-            if(this.center.copy().sub(c.center).leng() > this.radius + c.radius){
+        touching : function(circle){
+            if(this.center.copy().sub(circle.center).leng() > this.radius + circle.radius){
                 return false;
             }
             return true;
@@ -1768,18 +1768,18 @@ groover.geom = (function (){
         asVec : function(){
             return new Vec(this.p1,this.p2);
         },
-        _asVec : function(){
+        _asVec : function(){  // do not use, experimental code
             var v = regv[(regvSP ++)%REGS_LEN]; // get next reg vec
             v.x = this.p2.x - this.p1.x
             v.y = this.p2.y - this.p1.y
             return v;
         },
-        _asVec1 : function(){
+        _asVec1 : function(){ // do not use, experimental code
             vr1.x = this.p2.x - this.p1.x
             vr1.y = this.p2.y - this.p1.y
             return vr1;
         },
-        _asVec2 : function(){
+        _asVec2 : function(){ // do not use, experimental code
             vr2.x = this.p2.x - this.p1.x
             vr2.y = this.p2.y - this.p1.y
             return vr2;
@@ -1794,6 +1794,15 @@ groover.geom = (function (){
             box.env ( this.p1.x, this.p1.y);
             box.env ( this.p2.x, this.p2.y);
             return box;
+        },
+        asCircle : function(circle){ // creates a circle the bounds this line/ {ocircle) if supplied is set to the circle else a new circle is created
+            if(circle === undefined){
+                circle = new Circle();
+            }
+            circle.center.x = (this.p1.x + this.p2.x)/2;
+            circle.center.y = (this.p1.y + this.p2.y)/2;
+            circle.radius = Math.hypot(this.p2.x - this.p1.x, this.p2.y - this.p1.y) / 2;
+            return circle;            
         },
         isVecLeft : function(vec){ // Is the {avec} to the left of this line. Left is left of screen when looking at it and the line moves down.
             if((this.p2.x - this.p1.x) * (vec.y - this.p1.y) - (this.p2.y - this.p1.y) * (vec.x - this.p1.x) < 0){
@@ -2022,18 +2031,24 @@ groover.geom = (function (){
                 
         },
         intercept : function(line,rVec){  // find the point of intercept between this line and {aline}
-            v1.x = this.p2.x - this.p1.x;
-            v1.y = this.p2.y - this.p1.y;
-            v2.x = line.p2.x - line.p1.x;
-            v2.y = line.p2.y - line.p1.y;
+        
+        
+    // this is a total cludge
+            v1.x = this.p1.x - this.p2.x;
+            v1.y = this.p1.y - this.p2.y;
+            v2.x = line.p1.x - line.p2.x;
+            v2.y = line.p1.y - line.p2.y;
+    
             var c = v1.x * v2.y - v1.y * v2.x;
+    
             v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
             v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
             if(rVec === undefined){
                 rVec = new Vec();
             }
-            rVec.x = (v3.x * v1.x - v3.y * v2.x) / c;
-            rVec.y = (v3.x * v1.y - v3.y * v2.y) / c;
+            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
+            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
+
             return rVec;
         },
         interceptSeg : function(line,rVec){ // find the point of intercept between this line segment  and {aline}
@@ -2130,7 +2145,9 @@ groover.geom = (function (){
         },
         isLineSegIntercepting : function(line){ // Returns true if the {aline} intercepts this line segment
                                                 // if returns true then v4 is intercept, and _leng is the dist from start for line and this line
-            v1.x = this.p2.x - this.p1.x;
+ 
+            this.intercept(line,v4);
+            /*v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             v2.x = line.p2.x - line.p1.x;
             v2.y = line.p2.y - line.p1.y;
@@ -2139,7 +2156,8 @@ groover.geom = (function (){
             v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
             v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
             v4.x = (v3.x * v1.x - v3.y * v2.x) / c;
-            v4.y = (v3.x * v1.y - v3.y * v2.y) / c;
+            v4.y = (v3.x * v1.y - v3.y * v2.y) / c;*/
+
             var l = Math.hypot(v1.x,v1.y);
             if ( (this._leng = Math.hypot(v4.y - this.p1.y, v4.x - this.p1.x)) / l <= 1) {
                 if (Math.hypot(v4.y - this.p2.y, v4.x - this.p2.x) / l <= 1){
@@ -2337,7 +2355,6 @@ groover.geom = (function (){
         transform : function(transform){
             return this; // returns this
         },
-
     }
     Rectangle.prototype = {
         top : undefined,
@@ -2354,7 +2371,7 @@ groover.geom = (function (){
             return this; // returns this.
         },
         isEmpty : function(){
-            if(this.aspect === 0 || this.top.leng() === 0){
+            if(this.aspect <= 0 || Math.hypot(this.top.p1.x - this.top.p2.x,this.top.p1.y - this.top.p2.y) < EPSILON){
                 return true;
             }
             return false;
@@ -2472,9 +2489,31 @@ groover.geom = (function (){
             return circle;            
         },
         slice : function (x, y, rect){
+                // uses v1,v2,v3,v4
             var lw,lh;
             if(rect === undefined){
                 rect = new Rectangle();
+            }
+            
+            
+            
+            x = x < EPSILON ? 0 : x > EPSILON1 ? 1 : x;
+            y = y < EPSILON ? 0 : y > EPSILON1 ? 1 : y;
+            if(x === 0 && y === 0){
+                rect.top.p1.x = this.top.p1.x;
+                rect.top.p1.y = this.top.p1.y;
+                rect.top.p2.x = this.top.p2.x;
+                rect.top.p2.y = this.top.p2.y;
+                rect.aspect = this.aspect;
+                return rect;
+            }
+            if(x === 1 || y === 1){
+                v3.x = x;
+                v3.y = y;
+                rect.top.p1.setAs(this.pointAt(v3,v4));
+                rect.top.p2.setAs(rect.top.p1);
+                rect.aspect = 0;
+                return rect;
             }
 
             //Get top vec
@@ -2655,18 +2694,22 @@ groover.geom = (function (){
             return line;   
         },
         setDiagonalLine : function (line){   
+            // I do not like this solution as it seams a little to long. Need to find a better method
             var len = Math.hypot(v1.y = line.p2.y - line.p1.y, v1.x = line.p2.x - line.p1.x);
+            v1.x /= len;
+            v1.y /= len;
+            var h = Math.sqrt( 1 + this.aspect * this.aspect);
             var ph = Math.atan(this.aspect);
-            var l = Math.cos(ph) * (this._width = Math.cos(ph) * len);
-            v1.x *= l / len;
-            v1.y *= l / len;
-            l = Math.sin(ph);
-            
+            h = (1/h) * len;
+            v2.x = Math.cos(-ph) * h;
+            v2.y = Math.sin(-ph) * h;
+            v3.x = v1.x * v2.x + v1.y * -v2.y;
+            v3.y = v1.x * v2.y + v1.y * v2.x;
             
             this.top.p1.x = line.p1.x;
             this.top.p1.y = line.p1.y;
-            this.top.p2.x = line.p1.x + v1.x + v1.y * l;
-            this.top.p2.y = line.p1.y + v1.y - v1.x * l;
+            this.top.p2.x = line.p1.x + v3.x;
+            this.top.p2.y = line.p1.y + v3.y;
             return this;   
         },
         bottomRight : function (vec) {
@@ -2701,10 +2744,49 @@ groover.geom = (function (){
             this.top.p2.y += v1.y;
             return this;
         },
+        isRectangleTouching : function(rectangle){
+            if(! this.asCircle().touching(rectangle.asCircle())){
+                return false;
+            }
+            if(this.top.isLineSegIntercepting(rectangle.top)){
+                return true;
+            }
+            var rll,rlb,rlr;
+            if(this.top.isLineSegIntercepting(rll = rectangle.leftLine()) ||
+                this.top.isLineSegIntercepting(rlb = rectangle.bottomLine()) ||
+                this.top.isLineSegIntercepting(rlr = rectangle.rightLine())){
+                return true;
+            }
+            var ll = this.leftLine();
+            if(ll.isLineSegIntercepting(rectangle.top) ||
+                ll.isLineSegIntercepting(rll) ||
+                ll.isLineSegIntercepting(rlb) ||
+                ll.isLineSegIntercepting(rlr) ){
+                return true;
+            }
+            var ll = this.bottomLine();
+            if(ll.isLineSegIntercepting(rectangle.top) ||
+                ll.isLineSegIntercepting(rll) ||
+                ll.isLineSegIntercepting(rlb) ||
+                ll.isLineSegIntercepting(rlr) ){
+                return true;
+            }            
+            var ll = this.rightLine();
+            if(ll.isLineSegIntercepting(rectangle.top) ||
+                ll.isLineSegIntercepting(rll) ||
+                ll.isLineSegIntercepting(rlb) ||
+                ll.isLineSegIntercepting(rlr) ){
+                return true;
+            }            
+            if(this.isRectangleInside(rectangle) || rectangle.isRectangleInside(this)){
+                return true;
+            }
+            return false;            
+        },
         isRectangleInside : function (rectangle){ // there is room for more optimisation.
             var x1,y1,x2,y2,x3,y3,x4,y4;
-            x2 = this.top.p2.x - this.top.p1.x;
-            y2 = this.top.p2.y - this.top.p1.y;
+            v1.x = x2 = this.top.p2.x - this.top.p1.x;
+            v1.y = y2 = this.top.p2.y - this.top.p1.y;
             x1 = rectangle.top.p1.x - this.top.p1.x
             y1 = rectangle.top.p1.y - this.top.p1.y
             if(x2 * y1 - y2 * x1 < 0 || -y2 * y1 - x2 * x1 > 0){
@@ -2752,7 +2834,7 @@ groover.geom = (function (){
             return true;                        
         },
         isBoxInside : function(box){ // Needs improvment
-            var x1,y1,x2,y2,x3,y3,x4,y4,x5,t1,t2;
+            var x1,y1,x2,y2,x3,y3,x4,y4,x5,t1,t2,a1,a2;
             x2 = this.top.p2.x - this.top.p1.x;
             y2 = this.top.p2.y - this.top.p1.y;
             x1 = box.left - this.top.p1.x
@@ -2763,30 +2845,27 @@ groover.geom = (function (){
                  x2 * y1 - y2 * x5 < 0 || 
                 -y2 * y1 - x2 * x5 > 0 ) {
                 return false;
-            }
-          
+            }         
             x4 = box.left - (x3 = this.top.p2.x - y2 * this.aspect); 
             y4 = box.top - (y3 = this.top.p2.y + x2 * this.aspect);
             t1 = box.right - x3; 
             y1 = box.bottom - this.top.p1.y
             t2 = box.bottom - y3;
-            if ( x2 * y4 - y2 * x4 > 0 || 
-                -y2 * y4 - x2 * x4 < 0 ||
-                 x2 * y4 - y2 * t1 > 0 ||
-                -y2 * y4 - x2 * t1 < 0 ||
-                 x2 * y1 - y2 * x1 < 0 || 
-                -y2 * y1 - x2 * x1 > 0 ||
-                 x2 * y1 - y2 * x5 < 0 || 
-                -y2 * y1 - x2 * x5 > 0 ||
-                 x2 * t2 - y2 * x4 > 0 ||
-                -y2 * t2 - x2 * x4 < 0 || 
-                 x2 * t2 - y2 * t1 > 0 || 
-                -y2 * t2 - x2 * t1 < 0 ) {
+            if ( (a1 = x2 * y4) - y2 * x4 > 0 || 
+                 (a2 = -y2 * y4) - x2 * x4 < 0 ||
+                 a1 - y2 * t1 > 0 ||
+                 a2 - x2 * t1 < 0 ||
+                 (a1 = x2 * y1) - y2 * x1 < 0 || 
+                 (a2 = -y2 * y1) - x2 * x1 > 0 ||
+                 a1 - y2 * x5 < 0 || 
+                 a2 - x2 * x5 > 0 ||
+                 (a1 = x2 * t2) - y2 * x4 > 0 ||
+                 (a2 = -y2 * t2 - x2) * x4 < 0 || 
+                 a1 - y2 * t1 > 0 || 
+                 a2 - x2 * t1 < 0 ) {
                 return false;
-            }
-            
+            }            
             return true;         
-
         },
         isCircleInside : function (circle){
             var x,y,x1,y1,x2,y2,l,l1
@@ -3075,9 +3154,19 @@ groover.geom = (function (){
             return retLineSeg;
             
         },
-        pointAt : function(point){  // point is a relative unit coordinate on the rectangle
-            var v = this.top.asVec();
-            return this.top.p1.copy().add(v.copy().mult(point.x)).add(v.r90().mult(this.aspect * point.y));
+        pointAt : function(point,vec){  // point is a relative unit coordinate on the rectangle
+                                    // uses v1,v2
+            if(vec === undefined){
+                vec = new Vec(this.top.p1);
+            }else{
+                vec.x = this.top.p1.x;
+                vec.y = this.top.p1.y;
+            }
+            v2.y = (v1.x = this.top.p2.x - this.top.p1.x) * this.aspect * point.y;
+            v2.x = -(v1.y = this.top.p2.y - this.top.p1.y) * this.aspect * point.y;
+            vec.x += v1.x * point.x + v2.x;
+            vec.y += v1.y * point.x + v2.y;
+            return vec;
         },
         localPoint : function(vec){
             var dy = this.top.distFromDir(vec);
