@@ -28,7 +28,8 @@ This is currently very much a work in progress
 
 ## Status notes
 
-CURRENTLY not working, will be fixed by 14th.
+###12 March 2016
+-- Fixed bug in Line object that failed to correctly intercept lines.
 
 ###12 March 2016
 -- Adding isRectangeTouching to Rectangle and discovered I introduced a bug in Line. No time to fix today so will put it all on hold untill tomorrow.

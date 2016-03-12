@@ -2031,16 +2031,11 @@ groover.geom = (function (){
                 
         },
         intercept : function(line,rVec){  // find the point of intercept between this line and {aline}
-        
-        
-    // this is a total cludge
             v1.x = this.p1.x - this.p2.x;
             v1.y = this.p1.y - this.p2.y;
             v2.x = line.p1.x - line.p2.x;
             v2.y = line.p1.y - line.p2.y;
-    
             var c = v1.x * v2.y - v1.y * v2.x;
-    
             v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
             v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
             if(rVec === undefined){
@@ -2048,24 +2043,21 @@ groover.geom = (function (){
             }
             rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
             rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
-
             return rVec;
         },
         interceptSeg : function(line,rVec){ // find the point of intercept between this line segment  and {aline}
-            v1.x = this.p2.x - this.p1.x;
-            v1.y = this.p2.y - this.p1.y;
-            v2.x = line.p2.x - line.p1.x;
-            v2.y = line.p2.y - line.p1.y;
-            var l = Math.hypot(v1.x,v1.y);
+            v1.x = this.p1.x - this.p2.x;
+            v1.y = this.p1.y - this.p2.y;
+            v2.x = line.p1.x - line.p2.x;
+            v2.y = line.p1.y - line.p2.y;
             var c = v1.x * v2.y - v1.y * v2.x;
             v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
             v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
             if(rVec === undefined){
                 rVec = new Vec();
             }
-            rVec.x = (v3.x * v1.x - v3.y * v2.x) / c;
-            rVec.y = (v3.x * v1.y - v3.y * v2.y) / c;
-            
+            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
+            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
             var l = Math.hypot(v1.x,v1.y);
             if ((this._leng = Math.hypot(rVec.y - this.p1.y, rVec.x - this.p1.x)) / l <= 1) {
                 if (Math.hypot(rVec.y - this.p2.y, rVec.x - this.p2.x) / l <= 1){
@@ -2074,26 +2066,23 @@ groover.geom = (function (){
             }
             rVec.p1 = undefined;
             rVec.p2 = undefined;
-
             return rVec;        
 
         },
         interceptSegsE : function(line,rVec){ // find the point of intercept between this line segment and and the {aline} as a line segment
             var ll;
-            v1.x = this.p2.x - this.p1.x;
-            v1.y = this.p2.y - this.p1.y;
-            v2.x = line.p2.x - line.p1.x;
-            v2.y = line.p2.y - line.p1.y;
-            var l = Math.hypot(v1.x,v1.y);
+            v1.x = this.p1.x - this.p2.x;
+            v1.y = this.p1.y - this.p2.y;
+            v2.x = line.p1.x - line.p2.x;
+            v2.y = line.p1.y - line.p2.y;
             var c = v1.x * v2.y - v1.y * v2.x;
             v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
             v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
             if(rVec === undefined){
                 rVec = new Vec();
             }
-            rVec.x = (v3.x * v1.x - v3.y * v2.x) / c;
-            rVec.y = (v3.x * v1.y - v3.y * v2.y) / c;
-            
+            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
+            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
             var l = Math.hypot(v1.x,v1.y);
             if ( (ll = (this._leng = Math.hypot(rVec.y - this.p1.y, rVec.x - this.p1.x)) / l) <= EPSILON1 && ll >= EPSILON) {
                 if (Math.hypot(rVec.y - this.p2.y, rVec.x - this.p2.x) / l < 1){
@@ -2112,20 +2101,18 @@ groover.geom = (function (){
         },
         interceptSegs : function(line,rVec){ // find the point of intercept between this line segment and and the {aline} as a line segment
             var ll;
-            v1.x = this.p2.x - this.p1.x;
-            v1.y = this.p2.y - this.p1.y;
-            v2.x = line.p2.x - line.p1.x;
-            v2.y = line.p2.y - line.p1.y;
-            var l = Math.hypot(v1.x,v1.y);
+            v1.x = this.p1.x - this.p2.x;
+            v1.y = this.p1.y - this.p2.y;
+            v2.x = line.p1.x - line.p2.x;
+            v2.y = line.p1.y - line.p2.y;
             var c = v1.x * v2.y - v1.y * v2.x;
             v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
             v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
             if(rVec === undefined){
                 rVec = new Vec();
             }
-            rVec.x = (v3.x * v1.x - v3.y * v2.x) / c;
-            rVec.y = (v3.x * v1.y - v3.y * v2.y) / c;
-            
+            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
+            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
             var l = Math.hypot(v1.x,v1.y);
             if ( (this._leng = Math.hypot(rVec.y - this.p1.y, rVec.x - this.p1.x)) / l <= 1) {
                 if (Math.hypot(rVec.y - this.p2.y, rVec.x - this.p2.x) / l <= 1){
@@ -2146,17 +2133,16 @@ groover.geom = (function (){
         isLineSegIntercepting : function(line){ // Returns true if the {aline} intercepts this line segment
                                                 // if returns true then v4 is intercept, and _leng is the dist from start for line and this line
  
-            this.intercept(line,v4);
-            /*v1.x = this.p2.x - this.p1.x;
-            v1.y = this.p2.y - this.p1.y;
-            v2.x = line.p2.x - line.p1.x;
-            v2.y = line.p2.y - line.p1.y;
-            var l = Math.hypot(v1.x,v1.y);
+            v1.x = this.p1.x - this.p2.x;
+            v1.y = this.p1.y - this.p2.y;
+            v2.x = line.p1.x - line.p2.x;
+            v2.y = line.p1.y - line.p2.y;
             var c = v1.x * v2.y - v1.y * v2.x;
             v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
             v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
-            v4.x = (v3.x * v1.x - v3.y * v2.x) / c;
-            v4.y = (v3.x * v1.y - v3.y * v2.y) / c;*/
+
+            v4.x = (v3.x * v2.x - v3.y * v1.x) / c;
+            v4.y = (v3.x * v2.y - v3.y * v1.y) / c;
 
             var l = Math.hypot(v1.x,v1.y);
             if ( (this._leng = Math.hypot(v4.y - this.p1.y, v4.x - this.p1.x)) / l <= 1) {
