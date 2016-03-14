@@ -1868,6 +1868,23 @@ groover.geom = (function (){
             circle.radius = Math.hypot(this.p2.x - this.p1.x, this.p2.y - this.p1.y) / 2;
             return circle;            
         },
+        asRectangle : function(height,rect){ // creates a rectangle with the center aligned to this line and width equal to the length of this line and the aspect set to give the requested height
+            if(rect === undefined){
+                rect = new Rectangle();
+            }
+            var w;
+            w = Math.hypot(v1.y = this.p2.y - this.p1.y, v1.x = this.p2.x - this.p1.x);
+            
+            v1.x /= w;
+            v1.y /= w;
+            rect.top.p1.x = this.p1.x + v1.y * (height / 2);
+            rect.top.p1.y = this.p1.y - v1.x * (height / 2);
+            rect.top.p2.x = rect.top.p1.x + v1.x * w;
+            rect.top.p2.y = rect.top.p1.y + v1.y * w;
+            rect.aspect = height / w;
+            return rect;           
+
+        },
         isVecLeft : function(vec){ // Is the {avec} to the left of this line. Left is left of screen when looking at it and the line moves down.
             if((this.p2.x - this.p1.x) * (vec.y - this.p1.y) - (this.p2.y - this.p1.y) * (vec.x - this.p1.x) < 0){
                 return true;
