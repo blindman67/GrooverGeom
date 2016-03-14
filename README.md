@@ -28,6 +28,17 @@ This is currently very much a work in progress
 
 ## Status notes
 
+###14 March 2016 Pi day
+-- Added length property to VecArray
+-- Removed aspect method and replaced it with ratio 
+-- Messed around with auto documentions a bit.
+-- Discovered extension (I had extention) spelling mistake, will refactor where needed as I go.
+-- Added isCircleTouching and better isRectangleTouching to Rectangle primitive. 
+-- Added isLineTouching, inflate, asTriangles to Rectangle
+-- Added helper function to test code `descriptionToHTML` that converts API description object to HTML string
+-- added asTrinagles to Circle.
+-- added asRectangle to Line
+
 ###12 March 2016
 -- Fixed bug in Line object that failed to correctly intercept lines.
 

@@ -75,7 +75,76 @@ if(typeof groover.geom.addShapes === "function"){
     groover.geom.addShapes();
 }
 
+function descriptionToHTML(det){
+    var str = "";
+    det.forEach(function(d){
 
+        str += "<h1>"+d.name+"</h1>";
+        str += "<ul>";
+        str += "<li>";
+        str += "<h2>Properties.</h2>";
+        str += "<ul>";
+        d.properties.sort(function (a,b){
+            var ac = a.split("(")[0];
+            var bc = b.split("(")[0];
+            if(ac < bc) {return -1};
+            if(ac > bc) {return 1};
+            return 0;
+            
+        })
+        d.properties.forEach(function(p){
+            str += "<li><b>"+p+"</b></li>";
+        });
+        str += "</ul>";
+        str += "</li>";
+        str += "<li>";
+        str += "<h2>Methods.</h2>";
+        str += "<ul>";
+        d.methods.sort(function (a,b){
+            var ac = a.split("(")[0];
+            var bc = b.split("(")[0];
+            if(ac < bc) {return -1};
+            if(ac > bc) {return 1};
+            return 0;
+            
+        })
+        d.methods.forEach(function(m){
+            str += "<li><b>"+m+"</b></li>";
+        });
+        str += "</ul>";
+        str += "</li>";
+        
+        str += "<li>";
+        str += "<h3>Extended methods.</h3>";
+        str += "<ul>";
+        d.extensions.forEach(function(e){
+            str += "<li><h4>"+e.name+"</h4>";
+            str += "<ul>";
+            e.methods.sort(function (a,b){
+                var ac = a.split("(")[0];
+                var bc = b.split("(")[0];
+                if(ac < bc) {return -1};
+                if(ac > bc) {return 1};
+                return 0;
+                
+            })
+            e.methods.forEach(function(m){
+                str += "<li><b>"+m+"</b></li>";
+                
+            })
+            str += "</ul>";
+            str += "</li>"
+            
+        });    
+        
+        
+        str += "</ul>";
+        str += "</li>";
+        str += "</ul>";
+
+    });
+    return str;
+}
 
 
 var G = groover.geom;
