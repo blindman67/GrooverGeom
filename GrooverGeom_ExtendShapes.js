@@ -1,3 +1,4 @@
+"use strict";
 
 groover.geom.Geom.prototype.addShapes = function(){
     var geom = this;

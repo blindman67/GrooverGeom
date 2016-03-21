@@ -85,8 +85,8 @@ function descriptionToHTML(det){
         str += "<h2>Properties.</h2>";
         str += "<ul>";
         d.properties.sort(function (a,b){
-            var ac = a.split("(")[0];
-            var bc = b.split("(")[0];
+            var ac = a.split("(")[0].toLowerCase();
+            var bc = b.split("(")[0].toLowerCase();
             if(ac < bc) {return -1};
             if(ac > bc) {return 1};
             return 0;
@@ -101,8 +101,8 @@ function descriptionToHTML(det){
         str += "<h2>Methods.</h2>";
         str += "<ul>";
         d.methods.sort(function (a,b){
-            var ac = a.split("(")[0];
-            var bc = b.split("(")[0];
+            var ac = a.split("(")[0].toLowerCase();
+            var bc = b.split("(")[0].toLowerCase();
             if(ac < bc) {return -1};
             if(ac > bc) {return 1};
             return 0;
@@ -121,8 +121,8 @@ function descriptionToHTML(det){
             str += "<li><h4>"+e.name+"</h4>";
             str += "<ul>";
             e.methods.sort(function (a,b){
-                var ac = a.split("(")[0];
-                var bc = b.split("(")[0];
+                var ac = a.split("(")[0].toLowerCase();
+                var bc = b.split("(")[0].toLowerCase();
                 if(ac < bc) {return -1};
                 if(ac > bc) {return 1};
                 return 0;

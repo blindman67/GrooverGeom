@@ -1,3 +1,4 @@
+"use strict";
 var groover = {};
 groover.geom = (function (){
     const MPI2 = Math.PI * 2;
@@ -183,7 +184,7 @@ groover.geom = (function (){
         getDetails : function(){
             var newLine = "\r\n";
             function getComments(lines,currentObj){
-                cLines = [];
+                var cLines = [];
                 lines.forEach(function(line){
                     if(line.indexOf("//") > -1){
                         var l = (line.split("//").pop().trim());
@@ -207,12 +208,13 @@ groover.geom = (function (){
             var data = [];
              
             this.objectNames.forEach(function(n){
+                var st,f,ii;
                 var desc = "## " + n + newLine;
                 var methods = "Functions."+newLine;
                 var propDesc = "Properties."+newLine;
                 var pr = s.properties[n];
                 var extentions = {};
-                dat = {};
+                var dat = {};
                 dat.name = n;
                 dat.properties = [];
                 dat.methods = [];
@@ -736,15 +738,21 @@ groover.geom = (function (){
                 new Line(this.p3,this.p1)
             ]            
         },
-        angles : function(){
+        angles : function(array){
             var a = this.p2.copy().sub(this.p1).leng();
             var b = this.p3.copy().sub(this.p2).leng();
             var c = this.p1.copy().sub(this.p3).leng();
-            return [
-                Math.triPh(a,c,b),
-                Math.triPh(b,a,c),
-                Math.triPh(c,b,a)            
-            ];
+            if(array === undefined){
+                return [
+                    Math.triPh(a,c,b),
+                    Math.triPh(b,a,c),
+                    Math.triPh(c,b,a)            
+                ];
+            }
+            array[0] = Math.triPh(a,c,b);
+            array[1] = Math.triPh(b,a,c);
+            array[2] = Math.triPh(c,b,a);
+            return array;
             
         },
         center : function(){
@@ -1064,9 +1072,14 @@ groover.geom = (function (){
             }
             return "Vec: ("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
         },        
-        setAs : function(vec){  // Sets this vec to the values in the {avec}
-            this.x = vec.x;
-            this.y = vec.y;
+        setAs : function(vec,num){  // Sets this vec to the values in the {avec} or if two args then assumed to be numbers x and y
+            if(num === undefined){
+                this.x = vec.x;
+                this.y = vec.y;
+            }else{
+                this.x = vec;
+                this.y = num;
+            }
             return this;  // Returns the existing this
         }, 
         asBox : function(box){  // returns the bounding box that envelops this vec
@@ -1276,6 +1289,46 @@ groover.geom = (function (){
         asCircle : function(){
             return this.circle.copy();
         },
+        asTriangles : function(sides,sector,array){
+            sides = sides === undefined || sides === null ? 8 : Math.max(4,Math.floor(sides));
+            var steps = (this.end - this.start)/sides;
+            var i,cx,cy,x,y,xx,yy,c,a,px,py,r;
+            px = cx = this.circle.center.x;
+            py = cy = this.circle.center.y;
+            r = this.circle.radius;
+            x = cx + Math.cos(this.start) * r;
+            y = cy + Math.sin(this.start) * r;                
+            if(sector !== true){
+                px = (x + cx + Math.cos(this.end) * r) /2;
+                py = (y + cy + Math.sin(this.end) * r) /2; 
+            }
+            if(array === undefined){
+                array = [];
+            }
+            c = 0;
+            x = cx + Math.cos(this.start) * r;
+            y = cy + Math.sin(this.start) * r;
+            for(i = this.start + steps; i < this.end + steps/2; i += steps,c++){
+                xx = cx + Math.cos(i) * r;
+                yy = cy + Math.sin(i) * r;
+                a = array[c];
+                if(a === undefined){
+                    array[c] = new Triangle(new Vec(px,py),new Vec(x,y),new Vec(xx,yy));
+                }else{
+                    a.p1.x = px;
+                    a.p1.y = py;
+                    a.p2.x = x;
+                    a.p2.y = y;
+                    a.p3.x = xx;
+                    a.p3.y = yy;
+                }
+                x = xx;
+                y = yy;
+            }
+            return array;
+
+            
+        },                        
         sweap : function (){
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
@@ -2243,7 +2296,7 @@ groover.geom = (function (){
             this._leng = l = Math.hypot(v1.y,v1.x);
             v2.x = p.x - this.p1.x;
             v2.y = p.y - this.p1.y;
-            l = (v2.x * v1.x + v2.y * v1.y)/(l * l);
+            var l = (v2.x * v1.x + v2.y * v1.y)/(l * l);
             v3.x = v1.x * l - v2.x;
             v3.y = v1.y * l - v2.y;
             return Math.hypot(v3.y,v3.x);
@@ -2264,6 +2317,7 @@ groover.geom = (function (){
             return -d;
         },
         lineTo : function(p, rLine){  // returns the line from vec p to the closest point on the line
+            var l;
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             this._leng = l = Math.hypot(v1.y,v1.x);
@@ -2326,6 +2380,7 @@ groover.geom = (function (){
             return -la;
         },    
         closestPoint : function(vec, rVec){
+            var l;
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             this._leng = l = Math.hypot(v1.y,v1.x);
@@ -2643,7 +2698,7 @@ groover.geom = (function (){
                      
         },
         asArc : function(where,radius,arc){
-            var lw,lh,a,r,b;
+            var lw,lh,a,r,b,l;
             where = where.toLowerCase();
             if(arc === undefined){
                 arc = new Arc();

@@ -1,3 +1,5 @@
+"use strict";
+
 groover.geom.Geom.prototype.addRender = function(ctx1){
     var geom = this;
     var ctx = ctx1;
@@ -66,15 +68,40 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             
         }
     }
+    geom.Geom.prototype.markNames = null; // list of avalible mark names
+    function getMarkNames(){  // set the list of names
+        var names = Object.getOwnPropertyNames(geom.marks);
+        geom.markNames = names.filter(function(name){
+            if(typeof geom.marks[name] === "function"){
+                if(name === "vecArray"){
+                    if(geom.marks.vecArrayShape !== undefined){
+                        return true;
+                    }
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+    getMarkNames();
+    // set the vecArray for custom mark shape
     geom.Geom.prototype.setMarkShape = function(vecArray){
         geom.marks.vecArrayShape = vecArray;        
     }
-    var mark = geom.marks.cross;
-    geom.Geom.prototype.setMark = function ( name ){
+    var mark = geom.marks.cross;  // set current mark shape
+    geom.Geom.prototype.setMark = function ( name ){ // set the named mark
         if(typeof geom.marks[name] === "function"){
             mark = geom.marks[name];
         }
     }
+    geom.Geom.prototype.addNamedMark = function ( name, func ){ // adds a new mark shape
+        if(typeof func === "function"){
+            geom.marks[name] = func;
+            getMarkNames();
+        }
+    }
+    
     
     if(geom.Vec){
         geom.Vec.prototype.moveTo = function (){
