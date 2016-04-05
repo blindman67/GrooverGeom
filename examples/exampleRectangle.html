@@ -13,9 +13,9 @@
     </head>
     <body>
     <h1 class="exampleH1" >GrooverGeom Example</h1>
-    <h2 class="exampleH2" >Primitive: groover.geom.VecArray</h2>
+    <h2 class="exampleH2" >Primitive: groover.geom.Rectangle</h2>
     <div>
-        <p>Uses primitives Vec and VecArray and rendered with render extention that is added via groover.geom.addRender(). To set the current context use groover.geom.setCtx(context).</p>
+        <p>This examples uses primitives Vec, VecArray, Line, and Rectangle and rendered with render extention that is added via groover.geom.addRender(). To set the current context use groover.geom.setCtx(context).</p>
         <p>The render extention adds the following functions to each primitive
             <ul>
                 <li>primitive.moveTo()  moves the current path to the start of the primitive.</li>
@@ -26,6 +26,19 @@
             </ul>
         
         </p>
+        <p>Rectanles are defined by a groover.geom.line that describes the top of the rectangle and aspect that describles the height in terms of the length of the top. A square thus would have an aspect of 1.</p>
+        <p>Constructing a rectangle via new.
+            <ul>
+                <li>new groover.geom.Rectangle(); Creates a unit square with the top aligned to the x axis and the aspect 1.</li>
+                <li>new groover.geom.Rectangle(Line); Creates a square with the top as an instance of line and the aspect 1.</li>
+                <li>new groover.geom.Rectangle(Line, aspect); Creates a rectangle with the top as an instance of line with aspect being the aspect.</li>
+                <li>new groover.geom.Rectangle(null,aspect); Creates a rectangle with a unit line as the top and aspect being the aspect</li>
+                <li>new groover.geom.Rectangle(Vec, Vec1); Creates a rectangle with a line constructed from instances of Vec,Vec1 and aspect of 1</li>
+                <li>new groover.geom.Rectangle(Vec, Vec1, aspect); Creates a rectangle with a line constructed from instances of Vec,Vec1 and aspect being the aspect</li>
+            </ul>        
+        </p>
+                
+        
         
         <table>
             <tr>
@@ -38,9 +51,17 @@
                     <ul>
                         <li>Mouse coords <span id="mouseCoords"></span></li>
                         <li>Mouse near index <span id="mouseNear"></span></li>
+                        <li>Area : <span id="selectedArea"></span></li>
+                        <li>Perimiter : <span id="selectedPerimiter"></span></li>
+                        <li>Width : <span id="selectedWidth"></span></li>
+                        <li>Height : <span id="selectedHeight"></span></li>
+                        <li>Aspect : <span id="selectedAspect"></span></li>
+                        <li>Inside : <span id="selectedInside"></span></li>
+                        <li>Touching : <span id="selectedTouching"></span></li>
                         <li>
                             <span id="markerTypes"></span>
                         </li>
+                        <li><span id="displayTypes"></span></li>
                     </ul>
                 </td>
             </tr>
@@ -71,20 +92,48 @@
     var dragOffset = new GG.Vec();  // distance from mouse to point
     var dragPoints = new GG.VecArray(); // create a vec array to hold draggable points.
     var closePointIndex = undefined;  // index of cloest drag point
-    var currentDragPoint = undefined;
+    var currentDragPoint = undefined; // index of current dragging point
     const SELECT_DIST = 10; // distance from point to be selected
+    var rectangles = new GG.PrimitiveArray(); // array of primitives
+    
+    var showExtras = {
+        boundingBox : true,
+        boundingCircle : true,
+        innerCircle : true,
+        center : true,
+    }
     var background = undefined;
     var mouseInfoEl = $("#mouseCoords");
     var mouseNearEl = $("#mouseNear");
     var currentMarkType = "circle";
+    var currentPrimitiveIndex = undefined;
+    var currentPrimitive = undefined;
     var markNameSet = function(event){
         currentMarkType = this.value;
         console.log(this);
     }
+    var displayUpdate = function(event){
+        if(this.value === "Bounding_Box"){
+            showExtras.boundingBox = this.checked;
+        }
+        if(this.value === "Bounding_Circle"){
+            showExtras.boundingCircle = this.checked;
+        }
+        if(this.value === "Inner_Circle"){
+            showExtras.innerCircle = this.checked;
+        }
+        if(this.value === "Center"){
+            showExtras.center = this.checked;
+        }
+        console.log("Show unshow");
+        
+    }
+    
         
     var markerTypeList = addRadioGroup(GG.markNames,"#markerTypes",null,"circle",markNameSet);
-    
+    var displayExtras = addCheckBoxes(["Bounding Box","Bounding Circle","Inner Circle","Center"],"#displayTypes",displayUpdate);
     function update(time){
+        var i;
         // put in the request for next frame
         requestAnimationFrame(update);
         // set the mouse Vec to the mouse position.
@@ -110,6 +159,55 @@
         mouseNearEl.textContent = currentDragPoint !== undefined ? currentDragPoint : (closePointIndex === -1 ? "none" : closePointIndex);
         
         mouseInfoEl.textContent = mouseV.toString(0);
+        if(currentDragPoint !== undefined){
+            currentPrimitiveIndex = Math.floor(currentDragPoint/2);
+            currentPrimitive = rectangles.primitives[currentPrimitiveIndex];
+            selectedArea.innerHTML = currentPrimitive.area().toFixed(1) + " pixels<sup>2</sup>";
+            selectedPerimiter.textContent = currentPrimitive.perimiter().toFixed(1) + " pixels";
+            selectedWidth.textContent = currentPrimitive.width().toFixed(1) + " pixels";
+            selectedHeight.textContent = currentPrimitive.height().toFixed(1) + " pixels";
+            selectedAspect.textContent = currentPrimitive.aspect.toFixed(1);
+            var str = "";
+            var s = "";
+            beginStyle("rgba(0,255,0,0.2)","black",1);
+            rectangles.each(function(r,i){
+                if(i !== currentPrimitiveIndex){
+                    if(r.isRectangleInside(currentPrimitive)){
+                        str += s + i;
+                        s = ",";
+                        r.moveTo().draw();
+
+                    }
+                }
+             });
+             ctx.fill();
+             if(str === ""){
+                selectedInside.textContent = "None.";
+             }else{
+                selectedInside.textContent = "rectangle/s " + str;
+             }
+            var str = "";
+            var s = "";
+            beginStyle("rgba(0,0,255,0.2)","black",1);
+            rectangles.each(function(r,i){
+                if(i !== currentPrimitiveIndex){
+                    if(r.isRectangleTouching(currentPrimitive)){
+                        str += s + i;
+                        s = ",";
+                        r.moveTo().draw();
+                    }
+                }
+             });
+             ctx.fill();
+             if(str === ""){
+                selectedTouching.textContent = "None.";
+             }else{
+                selectedTouching.textContent = "rectangle/s " + str;
+             }
+                
+            
+        }
+        
         
         // display the mouse vector
         beginStyle("blue","Red",1)
@@ -117,6 +215,42 @@
         GG.setMarkSize(4);
         mouseV.mark();
         ctx.stroke();
+        
+        
+        beginStyle("blue","White",3);
+        rectangles.draw();            
+        ctx.stroke();
+        
+        if(showExtras.boundingBox){
+            beginStyle("blue","#ff0",1);
+            
+            rectangles.each(function(r){r.asBox().moveTo().draw()});
+            ctx.stroke();
+         }
+        if(showExtras.boundingCircle){
+            beginStyle("blue","#f00",1);
+            rectangles.each(function(r){r.asCircle().moveTo().draw()});
+            ctx.stroke();
+         }
+        if(showExtras.innerCircle){
+            beginStyle("blue","#00F",1);
+            rectangles.each(function(r){r.asInnerCircle().moveTo().draw()});
+            ctx.stroke();
+         }
+        if(showExtras.center){
+            beginStyle("blue","#00F",1);
+            rectangles.each(function(r){r.center().mark()});
+            ctx.stroke();
+         }
+         
+         if(currentPrimitive !== undefined){
+            beginStyle("rgba(255,255,255,0.2)","black",1);
+            currentPrimitive.draw();
+            ctx.fill();
+            ctx.stroke();
+         
+         }
+
         
         // display all drag points
         beginStyle("blue","black",3)
@@ -140,9 +274,10 @@
         }
         beginFontStyle("arial",16,"black","center","middle");
         dragPoints.lable();   
+        rectangles.lable();
     }
     function start(){
-        var v;
+        var v,r;
         canvas = document.getElementById("mainCanvas");
         ctx = canvas.getContext("2d");
         w = canvas.width;
@@ -157,6 +292,14 @@
             dragPoints.push(v = new GG.Vec(Math.random() * w,Math.random() * h));
             v.setLable(i);
         }
+        for(var i = 0; i < 5 ; i += 1){ // add rectangles
+            rectangles.push(r = new GG.Rectangle(new GG.Line(dragPoints.vecs[i * 2],dragPoints.vecs[i * 2 + 1]),Math.random() * 2 + 0.1));
+            r.setLable("Rectangle "+ i);
+        }
+            
+        
+        
+        
         
         update();
     

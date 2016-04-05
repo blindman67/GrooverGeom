@@ -27,6 +27,12 @@ This is currently very much a work in progress
 [Back to top.](#contents)
 
 ## Status notes
+###6 April 2016
+-- Long time between drinks so not sure if I have poked about. At most a few minor changes
+-- Added PrimitiveArray though only a stub for the time being
+-- Started with examples and documention. But that is likely to go unless I find support.
+-- Worked on Transform adding the basic functionality though only stubs for the apply functions ATM
+-- At this time none of the Transform functions have been tested apart from being parsable
 
 ###14 March 2016 Pi day
 -- Added length property to VecArray

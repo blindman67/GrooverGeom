@@ -45,6 +45,33 @@ var $TN = function(tagName){           // get elements by tag name
     return document.getElementsByTagName(tagName);
 }
 
+function addCheckBoxes(items,element,action){
+    var elements = [];
+    if(typeof element === "string"){
+        element = $(element);
+    }
+    if(element !== null){
+        items.forEach(function(item){
+            var t = $C("div");
+            $A(element,t);
+            var cb = $C("input","exampleCB","checkBox_"+$ID()+item.replace(/ /g,"-"));
+            cb.type = "checkbox";
+            cb.checked = true;
+            cb.value = item.replace(/ /g,"_");
+            elements.push(cb);
+            $A(t,cb);
+            //t.innerHTML += item;
+        });
+        if(typeof action === "function"){
+            elements.forEach(function(checkbox){
+                checkbox.addEventListener("change",action);
+                console.log("ASS");
+                               
+            });
+        }
+    }
+    return elements;
+}
 
 function addRadioGroup(items,element,group,selected,action){
     var elements = [];
@@ -75,5 +102,29 @@ function addRadioGroup(items,element,group,selected,action){
         });
     }
     return elements;
-    
+}
+// helper function that begins a new path and sets fill storke and line width
+var beginStyle = function(col,col1,width) {
+    if(col !== undefined && col !== null) { ctx.fillStyle = col;}
+    if(col1 !== undefined && col1 !== null) { ctx.strokeStyle = col1;}
+    if(width !== undefined && width !== null) { ctx.lineWidth = width;}
+    ctx.beginPath();
+}    
+var beginFontStyle = function(font,size,col,align,alignH){
+    if(font !== undefined && font !== null){
+        if(size !== undefined && size !== null){
+            ctx.font = size + "px "+ font;
+        }else{
+            var s = ctx.font.split("px ")[0];
+            ctx.font = s + "px "+ font;
+        }
+    }else
+    if(size !== undefined && size !== null){
+        var s = ctx.font.split("px ")[1];
+        ctx.font = suze + "px " + s;
+    }
+    if(align !== undefined && align !== null){ ctx.textAlign = align;}
+    if(alignH !== undefined && alignH !== null){ ctx.textBaseline = alignH;}
+    if(col !== undefined && col !== null){ ctx.fillStyle = col;}
+    ctx.beginPath();
 }

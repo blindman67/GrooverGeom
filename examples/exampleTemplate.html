@@ -63,33 +63,7 @@
         groover.geom.addShapes(); // add shape extention if it exists
     }    
     
-    // helper function that begins a new path and sets fill storke and line width
-    var beginStyle = function(col,col1,width) {
-        if(col !== undefined && col !== null) { ctx.fillStyle = col;}
-        if(col1 !== undefined && col1 !== null) { ctx.strokeStyle = col1;}
-        if(width !== undefined && width !== null) { ctx.lineWidth = width;}
-        ctx.beginPath();
-    }    
-    var beginFontStyle = function(font,size,col,align,alignH){
-        if(font !== undefined && font !== null){
-            if(size !== undefined && size !== null){
-                ctx.font = size + "px "+ font;
-            }else{
-                var s = ctx.font.split("px ")[0];
-                ctx.font = s + "px "+ font;
-            }
-        }else
-        if(size !== undefined && size !== null){
-            var s = ctx.font.split("px ")[1];
-            ctx.font = suze + "px " + s;
-            
-        }
-        if(align !== undefined && align !== null){ ctx.textAlign = align;}
-        if(alignH !== undefined && alignH !== null){ ctx.textBaseline = alignH;}
-        if(col !== undefined && col !== null){ ctx.fillStyle = col;}
-        ctx.beginPath();
-    }
-    
+
     var GG = groover.geom; // shortcut to groover.geom
     
     var canvas,ctx,w,h;

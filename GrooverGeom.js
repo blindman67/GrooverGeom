@@ -107,6 +107,7 @@ groover.geom = (function (){
         regvSP = 0;
 
         this.objectNames = [
+            "PrimitiveArray",
             "Vec",
             "VecArray",
             "Line",
@@ -128,7 +129,8 @@ groover.geom = (function (){
             Arc: ["c","s","e","type"],
             Circle: ["p","r","type"],
             Rectangle: ["t","a","type"],
-            VecArray: ["vecs","type"],
+            VecArray: ["vecs","length","type"],
+            PrimitiveArray: ["primitives","length","type"],
             Transform: ["xa","ya","o","type"],
             Triangle : ["p1","p2","p3","type"],
             
@@ -143,6 +145,7 @@ groover.geom = (function (){
         this.Box = Box;
         this.Transform = Transform;
         this.VecArray = VecArray;
+        this.PrimitiveArray = PrimitiveArray;
         this.Geom = Geom;
         this.Empty = Empty;
 
@@ -297,6 +300,8 @@ groover.geom = (function (){
                        // extend the prototype of Geom.
 
     function Empty(){};
+    function PrimitiveArray(){
+    };
     function Vec(x,y){
         if(x === undefined && y === undefined){
             return;
@@ -359,9 +364,16 @@ groover.geom = (function (){
         this.start = start;
         this.end = end;
     };
-    function Rectangle(top,aspect){
+    function Rectangle(top,v2Aspect,aspect){
+        if(top !== undefined && v2Aspect !== undefined && aspect !== undefined){
+            if(top.type === "Vec" && top.v2Aspect.type === "Vec"){
+                top = new Line(top,v2Aspect);
+                v2Aspect = aspect;
+            }
+        }
+                
         this.top = top === undefined || top === null ? new Line() : top;
-        this.aspect = aspect === undefined || aspect === null ? 1 : aspect;
+        this.aspect = v2Aspect === undefined || v2Aspect === null ? 1 : v2Aspect;
     };
     function Box(left,top,right,bottom){
         if((left === undefined || left === null) && (top === undefined || top === null)  && (right === undefined || right === null) && (bottom === undefined || bottom === null)){
@@ -374,9 +386,9 @@ groover.geom = (function (){
         this.bottom = bottom;
     };
     function Transform(xAxis,yAxis,origin){
-        this.xa = xAxis;
-        this.ya = yAxis;
-        this.o = origin;
+        this.xAxis = xAxis;
+        this.yAxis = yAxis;
+        this.origin = origin;
     };
     
     Empty.prototype = {
@@ -397,6 +409,45 @@ groover.geom = (function (){
             return true; // returns true.
         },
     },
+    PrimitiveArray.prototype = {
+        primitives : [],
+        type : "PrimitiveArray",
+        length : 0,
+        push : function(primitive){
+            this.primitives.push(primitive);
+            this.length = this.primitives.length; 
+            return this;
+        },
+        pushI : function(primitive){
+            this.primitives.push(primitive);
+            this.length = this.primitives.length; 
+            return this.length - 1;
+        },
+        each : function (callback,dir,start){ 
+            var i;
+            var l = this.primitives.length;      
+            if(start === undefined || start === null){
+                start = 0;
+            }
+            if(dir){
+                l -= 1;
+                l -= start;
+                for(i = l; i >= 0; i --){
+                    if(callback(this.primitives[i],i) === false){
+                        break;
+                    }
+                }
+            }else{
+                for(i = start; i < l; i ++){
+                    if(callback(this.primitives[i],i) === false){
+                        break;
+                    }
+                }
+            }
+            return this; // returns this
+        },  
+        
+    }
     VecArray.prototype =  {
         vecs : [],
         type :"VecArray",
@@ -3186,12 +3237,25 @@ groover.geom = (function (){
             
         },
         setTransform :function(ctx){   // temp location of this function
+            if(ctx === undefined || ctx === null){
+                if(typeof this.getCTX === "function"){
+                    ctx = this.getCTX()
+                }else{
+                    return this;
+                }
+            }
             var xa = new Vec(null,this.top.dir());
             ctx.setTransform(xa.x, xa.y, -xa.y * this.aspect, xa.x * this.aspect, this.top.p1.x, this.top.p1.y);
             return this;  // returns this.
         },    
-        setTransformArea : function (width, height){ // temp location of this function
-            var l = this.top.leng();
+        setTransformArea : function (ctx, width, height){ // temp location of this function
+            if(ctx === undefined || ctx === null){
+                if(typeof this.getCTX === "function"){
+                    ctx = this.getCTX()
+                }else{
+                    return this;
+                }
+            }            var l = this.top.leng();
             var xa = new Vec(null,this.top.dir()).mult(l/width);
             var ya = new Vec(null,this.top.dir()).mult((l* this.aspect)/width);
             ctx.setTransform(xa.x, xa.y, -ya.y, ya.x, this.top.p1.x, this.top.p1.y);
@@ -3571,35 +3635,308 @@ groover.geom = (function (){
         } 
     }
     Transform.prototype = {
-        xa : undefined,
-        ya : undefined,
-        o : undefined,
+        xAxis : undefined,
+        yAxis : undefined,
+        origin : undefined,
         type:"Transform",
         copy : function(){
-            return new Transform(this.xa.copy(),this.ya.copy(),this.o.copy());
+            return new Transform(this.xAxis.copy(),this.yAxis.copy(),this.origin.copy());
         },
-        setAs : function (transform) {
-            xa.setAs(transform.xa);
-            ya.setAs(transform.ya);
-            o.setAs(transform.o);
+        reset : function(){  // sets the matrix to the identity matrix
+            this.xAxis.x = this.yAxis.y = 1;
+            this.xAxis.y = this.yAxis.x = this.origin.x = this.origin.y = 0;
             return this;
         },
-        setCtx : function(){
-            ctx.setTransform(this.xa.x,this.xa.y,this.ya.x,this.ya.y,this.o.x,this.o.y);
+        applyToVec : function(vec){
+            return vec;
+        },
+        applyToLine : function(line){
+            return line;
+        },
+        applyToRectangle : function(rectangle){
+            return rectangle;
+        },
+        applyToCircle : function(circle){
+            return circle;
+        },
+        applyToArc : function(arc){
+            return arc;
+        },
+        applyToTriangle : function(triangle){
+            return triangle;
+        },
+        applyToVecArray : function(vecArray){
+            return vecArray;
+        },
+        applyToPrimitiveArray : function(primitiveArray){
+            return primitiveArray;
+        },
+        isIdentity : function(){
+            if(Math.abs(this.origin.x) > EPSILON){ return false; }
+            if(Math.abs(this.origin.y) > EPSILON){ return false; }
+            if(Math.abs(this.xAxis.y) > EPSILON){ return false; }
+            if(Math.abs(this.yAxis.x) > EPSILON){ return false; }
+            if(Math.abs(this.xAxis.x - 1) > EPSILON){ return false; }
+            if(Math.abs(this.yAxis.y - 1) > EPSILON){ return false; }
+            return true;            
+        },
+        lerpFastSet : function(from, dest){ // sets up fast lerp by pre decomposing from and destination transforms.
+            var fl = this.fastLerp = [];
+            fl[0] = Math.atan2(from.xAxis.y,from.xAxis.x)
+            fl[1] = Math.atan2(-from.yAxis.x,from.yAxis.y) - fl[0];
+            fl[2] = Math.hypot(from.xAxis.y,from.xAxis.x);
+            fl[3] = Math.hypot(from.yAxis.y,from.yAxis.x);
+            fl[4] = from.origin.x;
+            fl[5] = from.origin.y;
+            fl[6] = Math.atan2(dest.xAxis.y,dest.xAxis.x)
+            fl[7] = (Math.atan2(-dest.yAxis.x,dest.yAxis.y) - fl[6]) - fl[1];
+            fl[6] -= fl[0];
+            fl[8] = Math.hypot(dest.xAxis.y,dest.xAxis.x)- fl[2];
+            fl[9] = Math.hypot(dest.yAxis.y,dest.yAxis.x) - fl[3];
+            fl[10] = dest.origin.x - fl[4];
+            fl[11] = dest.origin.y - fl[5];
+            return this;
+        },
+        lerpFast : function(amount){
+            var fl = this.fastLerp;
+            if(fl === undefined){
+                return this;
+            }
+            v1.x = fl[0] + fl[6] * amount;
+            v1.y = v1.x + fl[1] + fl[7] * amount;
+            v2.x = fl[2] + fl[8] * amount;
+            v2.x = fl[3] + fl[9] * amount;
+            this.xAxis.x = Math.cos(v1.x) * v2.x;
+            this.xAxis.y = Math.sin(v1.x) * v2.x;
+            this.yAxis.x = -Math.sin(v1.y) * v2.y;
+            this.yAxis.y = Math.cos(v1.y) * v2.y;
+            this.origin.x = fl[4] + fl[10] * amount;
+            this.origin.y = fl[4] + fl[11] * amount;     
+            return this;            
+        },
+        lerp : function(from, dest, amount){
+            var fromComp = from.decompose();
+            var destComp = dest.decompose();
+            this.recompose( {
+                rotation : fromComp.rotation + (destComp.rotation - fromComp.rotation) * amount,
+                skew : fromComp.skew + (destComp.skew - fromComp.skew) * amount,
+                scaleX : fromComp.scaleX + (destComp.scaleX - fromComp.scaleX) * amount,
+                scaleY : fromComp.scaleY + (destComp.scaleY - fromComp.scaleY) * amount,
+                originX : fromComp.originX + (destComp.originX - fromComp.originX) * amount,
+                originY : fromComp.originY + (destComp.originY - fromComp.originY) * amount
+            });
+            return this;
+        },
+        asInverseTransform : function(transform){  // creates a new or uses supplied transform to return the inverse of this matrix
+            var cross =  this.xAxis.x * this.yAxis.y - this.xAxis.y * this.yAxis.x;
+            v1.x = this.yAxis.y / cross;
+            v1.y = -this.xAxis.y / cross;
+            v2.x = -this.yAxis.x / cross;
+            v2.y = this.xAxis.x / cross;
+            v3.x = (this.yAxis.x * this.origin.y - this.yAxis.y * this.origin.x) / cross;
+            v3.y = -(this.xAxis.x * this.origin.y - this.xAxis.y * this.origin.x) / cross;
+            if(transform === undefined){
+                transform = new Transform();
+                this.xAxis = v1.copy();
+                this.yAxis = v2.copy();
+                this.origin = v3.copy();
+                return transform;
+            }
+            transform.xAxis.x = v1.x;
+            transform.xAxis.y = v1.y;
+            transform.yAxis.x = v2.x;
+            transform.yAxis.y = v2.y;
+            transform.origin.x = v3.x;
+            transform.origin.y = v3.y;
+            return transform;
+            
+        },
+        invert: function() {
+            var cross =  this.xAxis.x * this.yAxis.y - this.xAxis.y * this.yAxis.x;
+            v1.x = this.yAxis.y / cross;
+            v1.y = -this.xAxis.y / cross;
+            v2.x = -this.yAxis.x / cross;
+            v2.y = this.xAxis.x / cross;
+            v3.x = (this.yAxis.x * this.origin.y - this.yAxis.y * this.origin.x) / cross;
+            v3.y = -(this.xAxis.x * this.origin.y - this.xAxis.y * this.origin.x) / cross;
+            this.xAxis.x = v1.x;
+            this.xAxis.y = v1.y;
+            this.yAxis.x = v2.x;
+            this.yAxis.y = v2.y;
+            this.origin.x = v3.x;
+            this.origin.y = v3.y;
+            return this;
+        },        
+        mult : function(transform){
+            var t = transform;
+            v1.x = this.xAxis.x * t.xAxis.x + this.yAxis.x * t.xAxis.y;
+            v1.y = this.xAxis.y * t.xAxis.x + this.yAxis.y * t.xAxis.y;
+            v2.x = this.xAxis.x * t.yAxis.x + this.yAxis.x * t.yAxis.y;
+            v2.y = this.xAxis.y * t.yAxis.x + this.yAxis.y * t.yAxis.y;
+            v3.y = this.xAxis.x * t.origin.x + this.yAxis.x * t.origin.y + this.origin.x;
+            v3.y = this.xAxis.y * t.origin.x + this.yAxis.y * t.origin.y + this.origin.y;
+            this.xAxis.x = v1.x;
+            this.xAxis.y = v1.y;
+            this.yAxis.x = v2.x;
+            this.yAxis.y = v2.y;
+            this.origin.x = v3.x;
+            this.origin.y = v3.y;
+            return this;
+        },
+        rotate : function(angle){
+            var xdx = Math.cos(angle);
+            var xdy = Math.sin(angle);
+            v1.x = this.xAxis.x * xdx + this.yAxis.x * xdy;
+            v1.y = this.xAxis.y * xdx + this.yAxis.y * xdy;
+            v2.x = this.xAxis.x * (-xdy) + this.yAxis.x * xdx;
+            v2.y = this.xAxis.y * (-xdy) + this.yAxis.y * xdx;
+            this.xAxis.x = v1.x;
+            this.xAxis.y = v1.y;
+            this.yAxis.x = v2.x;
+            this.yAxis.y = v2.y;
+            return this;
+        },
+        scaleUniform : function(scale){
+            this.xAxis.x *= scale;
+            this.xAxis.y *= scale;
+            this.yAxis.x *= scale;
+            this.yAxis.y *= scale;
+            return this;            
+        },
+        scale : function(scaleX,scaleY){
+            this.xAxis.x *= scaleX;
+            this.xAxis.y *= scaleX;
+            this.yAxis.x *= scaleY;
+            this.yAxis.y *= scaleY;
+            return this;                        
+        },
+        scaleX : function(scaleX){
+            this.xAxis.x *= scaleX;
+            this.xAxis.y *= scaleX;
+            return this;                        
+        },
+        scaleY : function(scaleY){
+            this.yAxis.x *= scaleY;
+            this.yAxis.y *= scaleY;
+            return this;                        
+        },
+        shear : function(sx, sy){
+            v1.x = this.xAxis.x + this.yAxis.x * sy;
+            v1.y = this.xAxis.y + this.yAxis.y * sy;
+            v2.x = this.xAxis.x * sx + this.yAxis.x;
+            v2.y = this.xAxis.y * sx + this.yAxis.y;
+            this.xAxis.x = v1.x;
+            this.xAxis.y = v1.y;
+            this.yAxis.x = v2.x;
+            this.yAxis.y = v2.y;
+            return this;
+        },
+        shearX : function(sx){
+            this.yAxis.x += this.xAxis.x * sx;
+            this.yAxis.y += this.xAxis.y * sx;
+            return this;
+        },
+        shearY : function(sy){
+            this.xAxis.x += this.yAxis.x * sy;
+            this.xAxis.y += this.yAxis.y * sy;
+            return this;
+        },
+        translate : function(x,y){
+            this.origin.x += this.xAxis.x * x + this.yAxis.x * y;
+            this.origin.y += this.xAxis.y * x + this.yAxis.y * y;
+            return this;            
+        },
+        translateX : function(x,y){
+            this.origin.x += this.xAxis.x * x;
+            this.origin.y += this.xAxis.y * x;
+            return this;            
+        },
+        translateY : function(x,y){
+            this.origin.x += this.yAxis.x * y;
+            this.origin.y += this.yAxis.y * y;
+            return this;            
+        },
+        setAs : function (transform) {
+            this.xAxis.setAs(transform.xAxis);
+            this.yAxis.setAs(transform.yAxis);
+            this.origin.setAs(transform.origin);
+            return this;
+        },
+        setContextTransform : function(ctx){
+            ctx.setTransform(this.xAxis.x,this.xAxis.y,this.yAxis.x,this.yAxis.y,this.origin.x,this.origin.y);
             return this;
         },
         setOrigin : function(vec){
-            this.o.x = vec.x;
-            this.o.y = vec.y;
+            this.origin.x = vec.x;
+            this.origin.y = vec.y;
+            return this;
         },
         setXAxis : function(vec){
-            this.xa.x = vec.x;
-            this.ya.y = vec.y;
+            this.xAxis.x = vec.x;
+            this.xAxis.y = vec.y;
+            return this;
         },
         setYAxis : function(vec){
-            this.ya.x = vec.x;
-            this.ya.y = vec.y;
+            this.yAxis.x = vec.x;
+            this.yAxis.y = vec.y;
+            return this;
         },
+        skew : function(){
+            return Math.atan2(-this.yAxis.x,this.yAxis.y) -  Math.atan2(this.xAxis.y,this.xAxis.x) ;            
+        },
+        setSkew : function(angle){
+            var scaleY = Math.hypot(this.yAxis.y, this.yAxis.x);
+            var rot = Math.atan2(this.xAxis.y, this.xAxis.x) + MPI90 + angle;
+            this.yAxis.x = Math.cos(rot) * scaleY;
+            this.yAxis.y = Math.sin(rot) * scaleY;
+            return this;
+        },   
+        recompose : function(composit){
+            this.xAxis.x = Math.cos(composit.rotation) * composit.scaleX;
+            this.xAxis.y = Math.sin(composit.rotation) * composit.scaleX;
+            this.yAxis.x = -Math.sin(composit.rotation + composit.skew) * composit.scaleY;
+            this.yAxis.y = Math.cos(composit.rotation + composit.skew) * composit.scaleY;
+            this.origin.x = composit.originX;
+            this.origin.y = composit.originY;
+            return this;
+            
+        },
+        decompose : function(){
+            var r;
+            return {
+                rotation : (r = Math.atan2(this.xAxis.y,this.xAxis.x)),
+                skew : Math.atan2(-this.yAxis.x,this.yAxis.y) - r,
+                scaleX : Math.hypot(this.xAxis.y,this.xAxis.x),
+                scaleY : Math.hypot(this.yAxis.y,this.yAxis.x),
+                originX : this.origin.x,
+                originY : this.origin.y
+            };
+        },
+        asSVG : function(svgMatrix){
+            if(svgMatrix === undefined){
+                if( ! ( svgMatrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix() )){
+                    return undefined;
+                }
+            }else{
+                // reset to identity. 
+                svgMatrix.b = svgMatrix.c = svgMatrix.e = svgMatrix.f = 0;
+                svgMatrix.a = svgMatrix.d = 1;
+            }
+            svgMatrix = svgMatrix.translate(this.origin.x, this.origin.y);
+            svgMatrix = svgMatrix.rotate(Math.atan2(this.xAxis.y,this.xAxis.x) * MR2D);		// inDegress degrees
+            svgMatrix = svgMatrix.scaleNonUniform(
+                    Math.hypot(this.xAxis.y,this.xAxis.x), 
+                    Math.hypot(this.yAxis.y,this.yAxis.x)
+            );
+            var skew = Math.atan2(-this.yAxis.x,this.yAxis.y);
+            if(Math.abs(skew) > EPSILON){
+                svgMatrix = svgMatrix.skewY(skew * MR2D); // in degrees
+            } 
+            return svgMatrix;
+        }
+       
+            
+
     }
 
     geom.init();

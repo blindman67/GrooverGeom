@@ -171,6 +171,58 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
 
         };
     }
+    if(geom.PrimitiveArray){
+        var paLineTo = function(primitive){
+            primitive.lineTo();
+        }
+        var paDraw = function(primitive){
+            primitive.moveTo();
+            primitive.draw();
+        }
+        var paMark = function(primitive){
+            primitive.mark();
+        }
+        geom.PrimitiveArray.prototype.moveTo = function(){
+            if(this.primitives.length > 0){
+                this.primitives[0].moveTo();
+            }
+            return this;// returns this
+        };
+        geom.PrimitiveArray.prototype.lineTo = function(){
+            this.each(paLineTo);
+            return this;// returns this
+        };
+        geom.PrimitiveArray.prototype.draw = function(){  // The {odir} is a boolean that if true reveres the direction to the draw
+            this.each(paDraw);
+            return this; // returns this
+        };
+        geom.PrimitiveArray.prototype.mark = function(){
+            this.each(paMark);
+            return this;// returns this
+        };
+        geom.PrimitiveArray.prototype.lable = function (text){
+            if(text === null || text === undefined){
+                this.each(function(primitive){
+                    primitive.lable(null);
+                });            
+            }else
+            if(text === "#"){
+                this.each(function(primitive,i){
+                    primitive.lable(i);
+                });            
+            }else
+            if(typeof text === "string"){
+                this.each(function(primitive,i){
+                    primitive.lable(text);
+                });
+            }else{
+                this.each(function(primitive,i){
+                    primitive.lable(text[i]);
+                });
+            }
+            return this;
+        };        
+    }
     if(geom.VecArray){
         geom.VecArray.prototype.moveTo = function(){
             if(this.vecs.length > 0){
@@ -310,10 +362,13 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
                     text = this.type;
                 }
             }
-            var len = this.top.setTransformToLine().leng()/2;
+            var len = this.top.setTransformToLine(ctx).leng()/2;
             ctx.fillText(text, len , len * this.aspect);
             return this;
         };    
+        geom.Rectangle.prototype.getCTX = function (){
+            return ctx;
+        };
     }
     if(geom.Triangle){
         geom.Triangle.prototype.moveTo = function(){
