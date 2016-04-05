@@ -522,6 +522,17 @@ groover.geom = (function (){
             }
             return str; // returns String
         },
+        lerp : function(from,dest,amount){
+            var i,len = Math.min(from.vecs.length, dest.vecs.length);
+            var v = this.vecs;
+            var d = dest.vecs;
+            var f = from.vecs;
+            for(i = 0; i < len; i++){
+                v[i].x = (d[i].x - f[i].x) * amount + f[i].x;
+                v[i].y = (d[i].y - f[i].y) * amount + f[i].y;
+            }
+            return this;
+        },
         clear : function(){  // removes all vecs from the list
             this.vecs.splice(0,this.vecs.length);
             this.length = 0;
@@ -769,6 +780,15 @@ groover.geom = (function (){
         perimiter: function(){
             return this.p1.distFrom(this.p2) + this.p2.distFrom(this.p3) + this.p3.distFrom(this.p1);
         },
+        lerp : function(from, dest, amount){
+            this.p1.x = (dest.p1.x - from.p1.x) * amount + from.p1.x;
+            this.p1.y = (dest.p1.y - from.p1.y) * amount + from.p1.y;
+            this.p2.x = (dest.p2.x - from.p2.x) * amount + from.p2.x;
+            this.p2.y = (dest.p2.y - from.p2.y) * amount + from.p2.y;
+            this.p3.x = (dest.p3.x - from.p3.x) * amount + from.p3.x;
+            this.p3.y = (dest.p3.y - from.p3.y) * amount + from.p3.y;
+            return this;
+        },        
         asVecArray : function(){
             return new VecArray()
                 .push(this.p1.copy())
@@ -1155,6 +1175,11 @@ groover.geom = (function (){
             }
             return false; // returns boolean            
         },
+        lerp : function(from,dest,amount){
+            this.x = (dest.x-from.x) * amount + from.x;
+            this.y = (dest.y-from.y) * amount + from.y;
+            return this;
+        },
         add : function(vec){ // adds {avec} to this.
             this.x += vec.x;
             this.y += vec.y;
@@ -1379,7 +1404,15 @@ groover.geom = (function (){
             return array;
 
             
-        },                        
+        },    
+        lerp : function(from, dest, amount){
+            this.circle.center.x = (dest.circle.center.x - from.circle.center.x) * amount + from.circle.center.x;
+            this.circle.center.y = (dest.circle.center.y - from.circle.center.y) * amount + from.circle.center.y;
+            this.circle.radius = (dest.circle.radius - from.circle.radius) * amount + from.circle.radius;
+            this.start = (dest.start - from.start) * amount + from.start;
+            this.end = (dest.end - from.end) * amount + from.end;
+            return this;
+        },         
         sweap : function (){
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
@@ -1665,10 +1698,14 @@ groover.geom = (function (){
                 x = xx;
                 y = yy;
             }
-            return array;
-
-            
+            return array;  
         },
+        lerp : function(from, dest, amount){
+            this.center.x = (dest.center.x - from.center.x) * amount + from.center.x;
+            this.center.y = (dest.center.y - from.center.y) * amount + from.center.y;
+            this.radius = (dest.radius - from.radius) * amount + from.radius;
+            return this;
+        },        
         isEmpty : function(){
             if(this.radius === 0){
                 return true;
@@ -1932,6 +1969,13 @@ groover.geom = (function (){
         },
         reverse : function(){
             return this.swap(); // returns this.
+        },
+        lerp : function(from, dest, amount){
+            this.p1.x = (dest.p1.x - from.p1.x) * amount + from.p1.x;
+            this.p1.y = (dest.p1.y - from.p1.y) * amount + from.p1.y;
+            this.p2.x = (dest.p2.x - from.p2.x) * amount + from.p2.x;
+            this.p2.y = (dest.p2.y - from.p2.y) * amount + from.p2.y;
+            return this;
         },
         asVec : function(){
             return new Vec(this.p1,this.p2);
@@ -2562,6 +2606,14 @@ groover.geom = (function (){
             this.top.p2.y = this.top.p1.y + v1.y * num / l;            
             this.aspect = (l * this.aspect) / num;
             return this;
+        },
+        lerp : function(from, dest, amount){
+            this.top.p1.x = (dest.top.p1.x-from.top.p1.x) * amount + from.top.p1.x;
+            this.top.p1.y = (dest.top.p1.y-from.top.p1.y) * amount + from.top.p1.y;
+            this.top.p2.x = (dest.top.p2.x-from.top.p2.x) * amount + from.top.p2.x;
+            this.top.p2.y = (dest.top.p2.y-from.top.p2.y) * amount + from.top.p2.y;
+            this.aspect = (dest.aspect - from.aspect) * amount + from.aspect;
+            return this;            
         },
         setHeight : function (num){
             this.aspect = num / Math.hypot(this.top.p2.y-this.top.p1.y,this.top.p2.x-this.top.p1.x)
@@ -3526,7 +3578,14 @@ groover.geom = (function (){
             box.env(this.left,this.top);
             box.env(this.right,this.bottom);
             return box;
-        },      
+        },   
+        lerp : function(from, dest, amount){
+           this.top = (dest.top - from.top) * amount + from.top;  
+           this.right = (dest.right - from.right) * amount + from.right;  
+           this.left = (dest.left - from.left) * amount + from.left;  
+           this.bottom = (dest.bottom - from.bottom) * amount + from.bottom;  
+           return this;
+        },
         isVecInside : function(vec){
             if(vec.x >= this.left && vec.x <= this.right && vec.y >= this.top && vec.y <= this.bottom){
                 return true;
