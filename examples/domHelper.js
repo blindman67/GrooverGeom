@@ -52,15 +52,17 @@ function addCheckBoxes(items,element,action){
     }
     if(element !== null){
         items.forEach(function(item){
-            var t = $C("div");
-            $A(element,t);
+            var div = $C("div");
+            var t = $C("span");
+            t.innerHTML += item;
             var cb = $C("input","exampleCB","checkBox_"+$ID()+item.replace(/ /g,"-"));
             cb.type = "checkbox";
             cb.checked = true;
             cb.value = item.replace(/ /g,"_");
             elements.push(cb);
-            $A(t,cb);
-            //t.innerHTML += item;
+            $A(div,cb);
+            $A(div,t);
+            $A(element,div);
         });
         if(typeof action === "function"){
             elements.forEach(function(checkbox){
@@ -128,3 +130,7 @@ var beginFontStyle = function(font,size,col,align,alignH){
     if(col !== undefined && col !== null){ ctx.fillStyle = col;}
     ctx.beginPath();
 }
+
+
+
+    // set up GrooverGeom.    

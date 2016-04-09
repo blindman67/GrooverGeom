@@ -3,8 +3,8 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-8">
         <title>Example template</title>
-        <meta name="keywords" content="Geometry, Math, JavaScript, Mark Spronck" />
-        <meta name="description" content="Example for the use of GrooverGeom API" />
+        <meta name="keywords" content="Geometry, Math, JavaScript, Mark Spronck, Groover, GrooverGeom" />
+        <meta name="description" content="Example for the use of GrooverGeom.js. GrooverGeom is a Javascript geometry libarry" />
         <meta name="author" content="Mark Spronck" />
         <link rel="stylesheet" type="text/css" href="grooverGeomExamples.css">
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom.js"></script>
@@ -15,28 +15,7 @@
     <h1 class="exampleH1" >GrooverGeom Example</h1>
     <h2 class="exampleH2" >Primitive: groover.geom.Rectangle</h2>
     <div>
-        <p>This examples uses primitives Vec, VecArray, Line, and Rectangle and rendered with render extention that is added via groover.geom.addRender(). To set the current context use groover.geom.setCtx(context).</p>
-        <p>The render extention adds the following functions to each primitive
-            <ul>
-                <li>primitive.moveTo()  moves the current path to the start of the primitive.</li>
-                <li>primitive.lineTo()  creates a line to the start of the primitive.</li>
-                <li>primitive.draw() creates a path that represents the primitive.</li>
-                <li>primitive.mark() adds marks to the current path to display primitive's defining points.</li>
-                <li>primitive.lable(text) display a text lable, text is optional, if omited then will use the lable set by primitive.setLable(text), if that us undefined then will lable the primitive with its type. </li>
-            </ul>
-        
-        </p>
-        <p>Rectanles are defined by a groover.geom.line that describes the top of the rectangle and aspect that describles the height in terms of the length of the top. A square thus would have an aspect of 1.</p>
-        <p>Constructing a rectangle via new.
-            <ul>
-                <li>new groover.geom.Rectangle(); Creates a unit square with the top aligned to the x axis and the aspect 1.</li>
-                <li>new groover.geom.Rectangle(Line); Creates a square with the top as an instance of line and the aspect 1.</li>
-                <li>new groover.geom.Rectangle(Line, aspect); Creates a rectangle with the top as an instance of line with aspect being the aspect.</li>
-                <li>new groover.geom.Rectangle(null,aspect); Creates a rectangle with a unit line as the top and aspect being the aspect</li>
-                <li>new groover.geom.Rectangle(Vec, Vec1); Creates a rectangle with a line constructed from instances of Vec,Vec1 and aspect of 1</li>
-                <li>new groover.geom.Rectangle(Vec, Vec1, aspect); Creates a rectangle with a line constructed from instances of Vec,Vec1 and aspect being the aspect</li>
-            </ul>        
-        </p>
+        <p>A rectangle is defined by a GrooverGeom.Line representing the top of the rectangle and a number called aspect that defines the height of the rectangle in terms of its width.</p>
                 
         
         
@@ -73,46 +52,27 @@
     <script src = "mouse.js"></script>
     <script src = "imageHelper.js"></script>
     <script src = "domHelper.js"></script>
+    <script src = "exampleCommonRun.js"></script>
     
     <script>
     "use strict";
-    // set up GrooverGeom.    
-    if(typeof groover.geom.addRender === "function"){
-        groover.geom.addRender(); // add render extention if it exists
-    }
-    if(typeof groover.geom.addShapes === "function"){
-        groover.geom.addShapes(); // add shape extention if it exists
-    }    
+    // activate drag points;
+    setupDragPoints(); 
     
-    
-    var GG = groover.geom; // shortcut to groover.geom
-    
-    var canvas,ctx,w,h;
-    var mouseV = new GG.Vec(); // create a point for the mouse
-    var dragOffset = new GG.Vec();  // distance from mouse to point
-    var dragPoints = new GG.VecArray(); // create a vec array to hold draggable points.
-    var closePointIndex = undefined;  // index of cloest drag point
-    var currentDragPoint = undefined; // index of current dragging point
-    const SELECT_DIST = 10; // distance from point to be selected
     var rectangles = new GG.PrimitiveArray(); // array of primitives
     
+    // extra info display flags
     var showExtras = {
         boundingBox : true,
         boundingCircle : true,
         innerCircle : true,
         center : true,
     }
-    var background = undefined;
-    var mouseInfoEl = $("#mouseCoords");
-    var mouseNearEl = $("#mouseNear");
-    var currentMarkType = "circle";
     var currentPrimitiveIndex = undefined;
     var currentPrimitive = undefined;
-    var markNameSet = function(event){
-        currentMarkType = this.value;
-        console.log(this);
-    }
-    var displayUpdate = function(event){
+    
+    // Update DOM display
+    var displayExtrasClick = function(event){
         if(this.value === "Bounding_Box"){
             showExtras.boundingBox = this.checked;
         }
@@ -128,36 +88,12 @@
         console.log("Show unshow");
         
     }
-    
-        
-    var markerTypeList = addRadioGroup(GG.markNames,"#markerTypes",null,"circle",markNameSet);
-    var displayExtras = addCheckBoxes(["Bounding Box","Bounding Circle","Inner Circle","Center"],"#displayTypes",displayUpdate);
-    function update(time){
-        var i;
-        // put in the request for next frame
-        requestAnimationFrame(update);
-        // set the mouse Vec to the mouse position.
-        mouseV.setAs(mouse.x,mouse.y);
+    var displayExtras = addCheckBoxes(["Bounding Box","Bounding Circle","Inner Circle","Center"],"#displayTypes",displayExtrasClick);
 
-        // clean transform
-        ctx.setTransform(1,0,0,1,0,0);
-        // clear the canvas
-        ctx.drawImage(background,0,0);
-        
-        // handle drag points
-        closePointIndex = dragPoints.findClosestIndex(mouseV, SELECT_DIST); // find the closest point to the mouse
-        // if mouse B1 is down then draging make sure there is a point to drag
-        if(mouse.buttonRaw === 1 && (closePointIndex !== -1 || currentDragPoint !== undefined)){
-            if(currentDragPoint === undefined){  // set the current drag point
-                currentDragPoint = closePointIndex;
-                dragOffset.setAs(mouseV).sub(dragPoints.vecs[currentDragPoint]); // get the drag offset
-            }
-            dragPoints.vecs[currentDragPoint].setAs(mouseV).sub(dragOffset); // update that point
-        }else{
-            currentDragPoint = undefined;  // undefine the drag index        
-        }
-        mouseNearEl.textContent = currentDragPoint !== undefined ? currentDragPoint : (closePointIndex === -1 ? "none" : closePointIndex);
-        
+
+    function exampleUpdate(time){
+        var i;
+        dragPointsUpdate();
         mouseInfoEl.textContent = mouseV.toString(0);
         if(currentDragPoint !== undefined){
             currentPrimitiveIndex = Math.floor(currentDragPoint/2);
@@ -209,12 +145,7 @@
         }
         
         
-        // display the mouse vector
-        beginStyle("blue","Red",1)
-        GG.setMark(currentMarkType);
-        GG.setMarkSize(4);
-        mouseV.mark();
-        ctx.stroke();
+
         
         
         beginStyle("blue","White",3);
@@ -225,6 +156,7 @@
             beginStyle("blue","#ff0",1);
             
             rectangles.each(function(r){r.asBox().moveTo().draw()});
+            rectangles.asBox().moveTo().draw();
             ctx.stroke();
          }
         if(showExtras.boundingCircle){
@@ -244,7 +176,7 @@
          }
          
          if(currentPrimitive !== undefined){
-            beginStyle("rgba(255,255,255,0.2)","black",1);
+            beginStyle("rgba(255,255,255,0.2)","Red",1);
             currentPrimitive.draw();
             ctx.fill();
             ctx.stroke();
@@ -252,59 +184,28 @@
          }
 
         
-        // display all drag points
-        beginStyle("blue","black",3)
-        GG.setMarkSize(8 + Math.sin(time/100)* 2);      // set the current point size
-        dragPoints.mark();     // mark all the points in dragPoints
-        ctx.stroke();          // render them
-        beginStyle("blue","Red",2)
-        dragPoints.mark();     // mark all the points in dragPoints
-        ctx.stroke();          // render them
-        
 
         
-        // highlite the drag point
-        if(closePointIndex > -1 || currentDragPoint !== undefined ){
-            beginStyle("white","Red",2)
-            GG.setMarkSize(10);      // set the current point size
-            dragPoints.vecs[currentDragPoint !== undefined ? currentDragPoint : closePointIndex].mark();     // mark the points in dragPoints
-            ctx.stroke();          // render them
-            ctx.fill();          // render them
-        
-        }
+
         beginFontStyle("arial",16,"black","center","middle");
-        dragPoints.lable();   
         rectangles.lable();
     }
-    function start(){
+    
+    
+    function exampleStart(){
+        // create drag points and add reactangles;
         var v,r;
-        canvas = document.getElementById("mainCanvas");
-        ctx = canvas.getContext("2d");
-        w = canvas.width;
-        h = canvas.height;
-        if(typeof GG.setCtx === "function"){
-            GG.setCtx(ctx);
-        }
-        mouse.startMouse(canvas);
-        background = createImage(w,h);
-        drawGrid(background, 4, 20, "#aaa", "#000");
-        for(var i = 0; i < 10 ; i += 1){ // add some test points
-            dragPoints.push(v = new GG.Vec(Math.random() * w,Math.random() * h));
+        var points = [0.1,0.1,0.4,0.1,0.6,0.1,0.9,0.1,0.6,7/20,0.9,7/20];
+        var aspects = [1,0.5,2];
+        for(var i = 0; i < 6 ; i += 1){ // add some test points
+            dragPoints.push(v = new GG.Vec(points[i*2]*w,points[i*2+1]*h));
             v.setLable(i);
         }
-        for(var i = 0; i < 5 ; i += 1){ // add rectangles
-            rectangles.push(r = new GG.Rectangle(new GG.Line(dragPoints.vecs[i * 2],dragPoints.vecs[i * 2 + 1]),Math.random() * 2 + 0.1));
+        for(var i = 0; i < 3 ; i += 1){ // add rectangles
+            rectangles.push(r = new GG.Rectangle(new GG.Line(dragPoints.vecs[i * 2],dragPoints.vecs[i * 2 + 1]),aspects[i]));
             r.setLable("Rectangle "+ i);
         }
-            
-        
-        
-        
-        
-        update();
-    
     }
-    window.addEventListener("load",start);
     </script>
     </body>
 </html>
