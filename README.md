@@ -27,6 +27,17 @@ This is currently very much a work in progress
 [Back to top.](#contents)
 
 ## Status notes
+
+###12 April 2016
+-- Fixed some minor bugs.
+-- Fixed `Line.intercept` `Line.interceptSeg` `Line.interceptSegs` `Line.isLineSegsIntercepting`
+-- Exposed internal calculation referances via groover.geom.calcRefs Currently only exposinf 5 vectors v1 to v5
+-- As the calc referances did not have the vec prototype, I attached that to them by moving internal instancing of geom to the bottom of the file.
+-- Improved line.distFrom and line.distFromDir and formalised the calc vars they used.
+-- Just a note tha calcVars will not have any additional prototypes added, like render etc.
+-- dotted some i's and crossed some t's
+-- Added crossUnit and dotUnit to Vec
+
 ###6 April 2016
 -- Long time between drinks so not sure if I have poked about. At most a few minor changes
 -- Added PrimitiveArray though only a stub for the time being

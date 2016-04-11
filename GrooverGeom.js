@@ -68,7 +68,7 @@ groover.geom = (function (){
     // the following are to aid in optimisation. Rather than create new primitives when needed these should be used instead
     // Do not return them.
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2;
-    var vx,vy,v1x,v1y;  
+    var vx,vy,v1x,v1y,u,u1,c,c1;  
     var l1,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;    
     const REGS_LEN = 5;
     // reg for regerstry
@@ -106,6 +106,13 @@ groover.geom = (function (){
         regv = [v1,v2,v3,v4,v5];
         reglSP = 0;
         regvSP = 0;
+        this.calcRefs = {
+            v1 : v1,
+            v2 : v2,
+            v3 : v3,
+            v4 : v4,
+            v5 : v5,
+        }
 
         this.objectNames = [
             "PrimitiveArray",
@@ -296,10 +303,8 @@ groover.geom = (function (){
         }
 
     }
-    var geom = new Geom();
-    geom.Geom = Geom;  // add geom to geom object for use by extentions or anything that needs to 
-                       // extend the prototype of Geom.
 
+    function Helpers(){}; // for stuff that does not fit any catagory
     function Empty(){};
     function PrimitiveArray(){
     };
@@ -1314,8 +1319,14 @@ groover.geom = (function (){
         dot : function(vec){  // get the dot product of this and {avec}
             return this.x * vec.x + this.y * vec.y; // returns number
         },
+        dotUnit : function(vec){  // returns the dot product of this and vec divided by the magnitude of this
+            return (this.x * vec.x + this.y * vec.y) / (this.x * this.x + this.y * this.y);
+        },
         cross : function(vec){ // get the cross product of this and the {avec}
             return this.x * vec.y - this.y * vec.x; // returns number
+        },
+        crossUnit : function(vec){  // returns the dot product of this and vec divided by the magnitude of this
+            return (this.x * vec.y - this.y * vec.x) / (this.x * this.x + this.y * this.y);
         },
         dotNorm : function(vec){ // get the dot product of the normalised this and {avec}
             var la, lb;            
@@ -1807,19 +1818,19 @@ groover.geom = (function (){
         fromCircumference  : function(leng){
             this.radius = leng / (Math.PI * 2);
         },
-        touching : function(circle){
+        isTouching : function(circle){ // returns true if this circle is in contact with circle false if not
             if(this.center.copy().sub(circle.center).leng() > this.radius + circle.radius){
                 return false;
             }
             return true;
         },
-        touchingLine : function(l){
-            if(l.distFrom(this.center) > this.radius){
+        isTouchingLine : function(line){ // returns true is this circle is in contact with the line false if not
+            if(line.distFrom(this.center) > this.radius){
                 return false
             }
             return true;
         },
-        isRectangleInside : function(rectangle){
+        isRectangleInside : function(rectangle){ // return true if rectangle is inside the circle false if not
             var inside = true;
             var me = this;
             rectangle.getCorners().each(function(vec){
@@ -1827,22 +1838,22 @@ groover.geom = (function (){
             });
             return inside;
         },
-        isCircleInside : function(circle){
+        isCircleInside : function(circle){ // returns true is circle is inside this circle
             return (this.distFrom(circle.center) + circle.radius < 0);
         },
-        isLineInside : function(line){
+        isLineInside : function(line){ // returns true is the line segment line is inside the circle
             return (this.isPointInside(line.p1) && this.isPointInside(line.p2) );;
         },
         isPointInside : function(vec){
             return  this.center.distFrom(vec) < this.radius;
         },
-        distFrom : function(vec){
+        distFrom : function(vec){ // returns the distance from the circle circumferance to the point vec
             return  this.center.distFrom(vec)-this.radius;
         },
-        closestPoint : function(vec){
+        closestPoint : function(vec){ // returns the closest point on the circle to the point vec
             return  vec.copy().sub(this.center).setLeng(this.radius).add(this.center);
         },
-        lineSegInside : function(line){
+        lineSegInside : function(line){ // returns a new line that is clipped to inside the circle.
             var pa = this.lineIntercept(line);
             if(pa.vecs.length > 0){
                 return line.copy().sliceToPoints(pa.vecs[0],pa.vecs[1]);
@@ -1870,18 +1881,18 @@ groover.geom = (function (){
             }
             return va;
         },
-        lineIntercept : function(l){
+        lineIntercept : function(line){// find the points if any where this circle intercepts the line
             var va = new VecArray();
-            var d =  l.distFrom(this.center); // dist from line
+            var d =  line.distFrom(this.center); // dist from line
             if(d <= this.radius){
-                var p = l.closestPoint(this.center);  // closest point on line
+                var p = line.closestPoint(this.center);  // closest point on line
                 var d1 = Math.sqrt(this.radius*this.radius- d*d);
-                var v1 = l.asVec().setLeng(d1);
+                var v1 = line.asVec().setLeng(d1);
                 return va.push(p.copy().sub(v1)).push(p.add(v1));
             }
             return va;
         },
-        circleIntercept : function(circle){
+        circleIntercept : function(circle){ // find the points if any where this circle and circle intercept
             var va = new VecArray();
             var l = circle.center.copy().sub(this.center);
             var d = l.leng();
@@ -2022,8 +2033,13 @@ groover.geom = (function (){
             this.p2.y = (dest.p2.y - from.p2.y) * amount + from.p2.y;
             return this;
         },
-        asVec : function(){
-            return new Vec(this.p1,this.p2);
+        asVec : function(vec){  // creates a new vec or uses the supplied ref vec to return the vector representation of line
+            if(vec === undefined){
+                return new Vec(this.p1,this.p2);
+            }
+            vec.x = this.p2.x - this.p1.x;
+            vec.y = this.p2.y - this.p1.y;
+            return vec;
         },
         _asVec : function(){  // do not use, experimental code
             var v = regv[(regvSP ++)%REGS_LEN]; // get next reg vec
@@ -2305,156 +2321,152 @@ groover.geom = (function (){
                 
         },
         intercept : function(line,rVec){  // find the point of intercept between this line and {aline}
-            v1.x = this.p1.x - this.p2.x;
-            v1.y = this.p1.y - this.p2.y;
-            v2.x = line.p1.x - line.p2.x;
-            v2.y = line.p1.y - line.p2.y;
-            var c = v1.x * v2.y - v1.y * v2.x;
-            v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
-            v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
+            // this function uses V1,V2,V3,V4.y where
+            // v1 is the vector of this line
+            // v2 is the vector of line
+            // v3 is the vector from the start of this line to the start of line
+            // v4.x is not used by this function and will have a random
+            // v4.y is unit distance on this line to intercept. Will be undefined if not relevant
             if(rVec === undefined){
                 rVec = new Vec();
             }
-            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
-            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
+            v1.x = this.p2.x - this.p1.x; // line to vector this line
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x; // line to vector arg line
+            v2.y = line.p2.y - line.p1.y;
+            var c = v1.x * v2.y - v1.y * v2.x; // cross of the two vectors
+            if(c !== 0){  // rather than us EPSILON let small values through the result may be infinit but that is more true then no intercept
+                v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
+                v3.y = this.p1.y - line.p1.y;                
+                v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on this line
+                rVec.x = this.p1.x + v1.x * u;
+                rVec.y = this.p1.y + v1.y * u;
+            }else{
+                v4.y = rVec.y = rVec.x = undefined;  // create an empty vector
+            }
             return rVec;
         },
         interceptSeg : function(line,rVec){ // find the point of intercept between this line segment  and {aline}
-            v1.x = this.p1.x - this.p2.x;
-            v1.y = this.p1.y - this.p2.y;
-            v2.x = line.p1.x - line.p2.x;
-            v2.y = line.p1.y - line.p2.y;
-            var c = v1.x * v2.y - v1.y * v2.x;
-            v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
-            v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
+            // this function uses V1,V2,V3,V4.y where
+            // v1 is the vector of this line
+            // v2 is the vector of line
+            // v3 is the vector from the start of this line to the start of line
+            // v4.x is not used by this function and will have a random
+            // v4.y is unit distance on this line to intercept. Will be undefined if not relevant           
             if(rVec === undefined){
                 rVec = new Vec();
             }
-            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
-            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
-            var l = Math.hypot(v1.x,v1.y);
-            if ((this._leng = Math.hypot(rVec.y - this.p1.y, rVec.x - this.p1.x)) / l <= 1) {
-                if (Math.hypot(rVec.y - this.p2.y, rVec.x - this.p2.x) / l <= 1){
-                    return rVec;
+            v1.x = this.p2.x - this.p1.x; // line to vector this line
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x; // line to vector arg line
+            v2.y = line.p2.y - line.p1.y;
+            var c = v1.x * v2.y - v1.y * v2.x; // cross of the two vectors
+            if(c !== 0){  // rather than us EPSILON let small values through 
+                v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
+                v3.y = this.p1.y - line.p1.y;
+                v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on line
+                if(u >= 0 && u <= 1){
+                    rVec.x = this.p1.x + v1.x * u;
+                    rVec.y = this.p1.y + v1.y * u;
+                }else{
+                    rVec.y = rVec.x = undefined;  // make an empty vector                         }
                 }
+            }else{
+                rVec.y = rVec.x = v4.y = undefined; // incase V4 is needed && make an empty vector
             }
-            rVec.p1 = undefined;
-            rVec.p2 = undefined;
-            return rVec;        
-
-        },
-        interceptSegsE : function(line,rVec){ // find the point of intercept between this line segment and and the {aline} as a line segment
-            var ll;
-            v1.x = this.p1.x - this.p2.x;
-            v1.y = this.p1.y - this.p2.y;
-            v2.x = line.p1.x - line.p2.x;
-            v2.y = line.p1.y - line.p2.y;
-            var c = v1.x * v2.y - v1.y * v2.x;
-            v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
-            v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
-            if(rVec === undefined){
-                rVec = new Vec();
-            }
-            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
-            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
-            var l = Math.hypot(v1.x,v1.y);
-            if ( (ll = (this._leng = Math.hypot(rVec.y - this.p1.y, rVec.x - this.p1.x)) / l) <= EPSILON1 && ll >= EPSILON) {
-                if (Math.hypot(rVec.y - this.p2.y, rVec.x - this.p2.x) / l < 1){
-                    l = Math.hypot(v2.x,v2.y);
-                    if ( (ll = (line._leng = Math.hypot(rVec.y - line.p1.y, rVec.x - line.p1.x)) / l) <= EPSILON1 && ll >= EPSILON) {
-                        if (Math.hypot(rVec.y - line.p2.y, rVec.x - line.p2.x) / l < 1){
-                            return rVec;
-                        }
-                    }
-                }
-            }
-            rVec.p1 = undefined;
-            rVec.p2 = undefined;
-
-            return rVec;              
+            return rVec;      
         },
         interceptSegs : function(line,rVec){ // find the point of intercept between this line segment and and the {aline} as a line segment
-            var ll;
-            v1.x = this.p1.x - this.p2.x;
-            v1.y = this.p1.y - this.p2.y;
-            v2.x = line.p1.x - line.p2.x;
-            v2.y = line.p1.y - line.p2.y;
-            var c = v1.x * v2.y - v1.y * v2.x;
-            v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
-            v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
+            // this function uses V1,V2,V3,V4 where
+            // v1 is the vector of this line
+            // v2 is the vector of line
+            // v3 is the vector from the start of this line to the start of line
+            // v4.x is unit distance on line to intercept.  Will be undefined if not relevant
+            // v4.y is unit distance on this line to intercept. Will be undefined if not relevant
+            
             if(rVec === undefined){
                 rVec = new Vec();
             }
-            rVec.x = (v3.x * v2.x - v3.y * v1.x) / c;
-            rVec.y = (v3.x * v2.y - v3.y * v1.y) / c;
-            var l = Math.hypot(v1.x,v1.y);
-            if ( (this._leng = Math.hypot(rVec.y - this.p1.y, rVec.x - this.p1.x)) / l <= 1) {
-                if (Math.hypot(rVec.y - this.p2.y, rVec.x - this.p2.x) / l <= 1){
-                    l = Math.hypot(v2.x,v2.y);
-                    if ( (line._leng = Math.hypot(rVec.y - line.p1.y, rVec.x - line.p1.x) )/ l <= 1) {
-                        if (Math.hypot(rVec.y - line.p2.y, rVec.x - line.p2.x) / l <= 1){
-                            return rVec;
-                        }
+            v1.x = this.p2.x - this.p1.x; // line to vector this line
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x; // line to vector arg line
+            v2.y = line.p2.y - line.p1.y;
+            var c = v1.x * v2.y - v1.y * v2.x; // cross of the two vectors
+            if(c !== 0){  // rather than us EPSILON let small values through 
+                v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
+                v3.y = this.p1.y - line.p1.y;
+                v4.x = u = (v1.x * v3.y - v1.y * v3.x) / c; // unit distance of intercept point on line
+                if(u >= 0 && u <= 1){
+                    v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on this line
+                    if(u >= 0 && u <= 1){
+                        rVec.x = this.p1.x + v1.x * u;
+                        rVec.y = this.p1.y + v1.y * u;
+                    }else{
+                        rVec.y = rVec.x = undefined;  // make an empty vector                    
                     }
+                }else{
+                    v4.y = rVec.y = rVec.x = undefined;  // make an empty vector                         }
                 }
+            }else{
+                rVec.y = rVec.x = v4.x = v4.y = undefined; // incase V4 is needed && make an empty vector
             }
-            rVec.p1 = undefined;
-            rVec.p2 = undefined;
+            return rVec;
 
-            return rVec;  
-         
         },
-        isLineSegIntercepting : function(line){ // Returns true if the {aline} intercepts this line segment
-                                                // if returns true then v4 is intercept, and _leng is the dist from start for line and this line
-            v1.x = this.p1.x - this.p2.x;
-            v1.y = this.p1.y - this.p2.y;
-            v2.x = line.p1.x - line.p2.x;
-            v2.y = line.p1.y - line.p2.y;
-            var c = v1.x * v2.y - v1.y * v2.x;
-            v3.x = this.p1.x * this.p2.y - this.p1.y * this.p2.x;
-            v3.y = line.p1.x * line.p2.y - line.p1.y * line.p2.x;
-
-            v4.x = (v3.x * v2.x - v3.y * v1.x) / c;
-            v4.y = (v3.x * v2.y - v3.y * v1.y) / c;
-
-            var l = Math.hypot(v1.x,v1.y);
-            if ( (this._leng = Math.hypot(v4.y - this.p1.y, v4.x - this.p1.x)) / l <= 1) {
-                if (Math.hypot(v4.y - this.p2.y, v4.x - this.p2.x) / l <= 1){
-                    l = Math.hypot(v2.x,v2.y);
-                    if ( (line._leng = Math.hypot(v4.y - line.p1.y, v4.x - line.p1.x) )/ l <= 1) {
-                        if (Math.hypot(v4.y - line.p2.y, v4.x - line.p2.x) / l <= 1){
-                            return true;
-                        }
+        isLineSegsIntercepting : function(line){ // Returns true if the {aline} intercepts this line segment
+            // this function uses V1,V2,V3,V4 where
+            // v1 is the vector of this line
+            // v2 is the vector of line
+            // v3 is the vector from the start of this line to the start of line
+            // v4.x is unit distance on line to intercept.  Will be undefined if not relevant
+            // v4.y is unit distance on this line to intercept. May be random if not relevant only us if return is true
+            v1.x = this.p2.x - this.p1.x; // line to vector this line
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x; // line to vector arg line
+            v2.y = line.p2.y - line.p1.y;
+            var c = v1.x * v2.y - v1.y * v2.x; // cross of the two vectors
+            if(c !== 0){  // rather than use EPSILON let small values through 
+                v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
+                v3.y = this.p1.y - line.p1.y;
+                v4.x = u = (v1.x * v3.y - v1.y * v3.x) / c; // unit distance of intercept point on line
+                if(u >= 0 && u <= 1){
+                    v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on this line
+                    if(u >= 0 && u <= 1){
+                        v4.x = u;  // in case needed for caculating the position of the intercept
+                        return true;
+                    }else{
+                        return false;
                     }
-                }
+                }else{
+                    return false
+                }                    
             }
+            v4.x = undefined;
             return false;  
         },
-        distFrom : function(p){
+        distFrom : function(point){   // returns the distance from the line a point is
+            // this function uses v1, v2, v3, v4.x is the closest point and sets this._leng
+            // v1 is the vector of this line
+            // v2 is the vector from this line start to point
+            // v3 is the vector from the line start to the closes point. To get the coordinates add the start of the line to this vec;
+            // this._leng is the length of this line;
+            // v4.x is unit dist along this line for close point. That means v4.x <0 or v4.y > 0 and the point is not on this line segment
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            this._leng = l = Math.hypot(v1.y,v1.x);
-            v2.x = p.x - this.p1.x;
-            v2.y = p.y - this.p1.y;
-            var l = (v2.x * v1.x + v2.y * v1.y)/(l * l);
-            v3.x = v1.x * l - v2.x;
-            v3.y = v1.y * l - v2.y;
-            return Math.hypot(v3.y,v3.x);
-        },
-        distFromDir : function(p){ // 
-            var d = this.distFrom(p);
-            // WARNING this is using optimisation vars in distFrom
-            v1.x /= this._leng;
-            v1.y /= this._leng;
-            var l = Math.hypot(v2.x,v2.y);
-            v2.x /= l;
-            v2.y /= l;
-            this._leng = la = Math.hypot(this.x,this.y);
-            p._leng = lb = Math.hypot(p.x,p.y);
-            if(v1.x * v2.y - v1.y * v2.x >= 0 ){
-                return d;
-            }
-            return -d;
+            this._leng = Math.hypot(v1.y,v1.x);
+            v2.x = point.x - this.p1.x;
+            v2.y = point.y - this.p1.y;
+            v4.x = (v2.x * v1.x + v2.y * v1.y)/(this._leng * this._leng);
+            v3.x = v1.x * v4.x;
+            v3.y = v1.y * v4.x;
+            return Math.hypot(v3.y - v2.y, v3.x - v2.x);
+        },        
+        distFromDir : function(point){ // same as distFrom but adds a sign to indicate if the line is left (negative) or right (positive)
+            // this call fromDist Refer to that function for calc vars used.
+            var d = this.distFrom(point);
+            // WARNING this depends on vars set in distFrom
+            c = v1.x * v2.y - v1.y * v2.x;
+            return c < 0 ? -d : d;
         },
         lineTo : function(p, rLine){  // returns the line from vec p to the closest point on the line
             var l;
@@ -4208,7 +4220,20 @@ groover.geom = (function (){
             return svgMatrix;
         }
     }
-
+    Helpers.prototype = { // conceptual at the moment
+        circleToLineContact : function(circle, deltaV, line){ // returns the point of contact if any of a circle moving along deltaV will make contact with the line 
+            
+        },
+        circleToLineSegContact : function(circle, deltaV, lineSeg){ // returns the point of contact if any of a circle moving along deltaV will make contact with the lineSeg 
+            
+        },
+        
+        
+    }
+  
+    var geom = new Geom();
+    geom.Geom = Geom;  // add geom to geom object for use by extentions or anything that needs to 
+                       // extend the prototype of Geom.    
     geom.init();
     return geom
 })();
