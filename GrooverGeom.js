@@ -1216,6 +1216,9 @@ groover.geom = (function (){
             }
             return false;  
         },
+        empty : function(){
+            this.y = this.x = Infinity;
+        },
         isSame : function(vec){ // Returns true if the {avec} is the same as this
             if(vec.x === this.x && vec.y === this.y){
                 return true;
@@ -1772,10 +1775,14 @@ groover.geom = (function (){
             return this;
         },        
         isEmpty : function(){
-            if(this.radius === 0){
+            if(this.radius === 0 || this.radius === Infinity){
                 return true;
             }
             return false;
+        },
+        empty : function(){
+            this.radius = Infinity;
+            return this;
         },
         setRadius : function (r){
             this.radius = r;
@@ -1791,34 +1798,44 @@ groover.geom = (function (){
             this.fromPoints2(line.midPoint(),line.p2);
             return this
         },
-        fromPoints2 : function (vec1, vec2){
-            this.center.x = vec1.x;
-            this.center.y = vec1.y;
-            this.radius = vec2.copy().sub(vec1).leng();
+        fromVec2 : function (vec1, vec2, method){
+            if(method === undefined || method === "radius"){
+                this.center.x = vec1.x;
+                this.center.y = vec1.y;
+                this.radius = Math.hypot(vec1.x - vec2.x,vec1.y - vec2.y);
+                return this;
+            }
+            this.center.x = (vec1.x + vec2.x) / 2;
+            this.center.y = (vec1.y + vec2.y) / 2;
+            this.radius = Math.hypot(vec1.x - vec2.x,vec1.y - vec2.y)/2;
             return this;
         },
-        fromPoints3 : function (vec1, vec2, vec3){
-            var f1 = (vec2.x - vec1.x) / (vec1.y - vec2.y);
-            var m1 = new Vec((vec1.x + vec2.x) / 2, (vec1.y + vec2.y) / 2);
-            var g1 = m1.y - f1 * m1.x;
-            var f2 = (vec3.x - vec2.x) / (vec2.y - vec3.y);
-            var m2 = new Vec((vec2.x + vec3.x) / 2, (vec2.y + vec3.y) / 2);
-            var g2 = m2.y - f2 * m2.x;
+        fromVec3 : function (vec1, vec2, vec3){
+            v3.x = (vec2.x - vec1.x) / (vec1.y - vec2.y);
+            v3.y = (vec3.x - vec2.x) / (vec2.y - vec3.y);
+            if (v3.x === v3.y)  {
+                return this.empty();  // points are in a line 
+            }            
+            v1.x = (vec1.x + vec2.x) / 2;
+            v1.y = (vec1.y + vec2.y) / 2;
+            v2.x = (vec2.x + vec3.x) / 2;
+            v2.y = (vec2.y + vec3.y) / 2;
+            c = v1.y - v3.x * v1.x;
+            c1 = v2.y - v3.y * v2.x;
 
-            if (f1 == f2)  {
-                return false;  // points are in a line 
-            }else 
-            if(a.y == vec2.y){
-                this.center = new Vec(m1.x, f2 * m1.x + g2);  
+            if(vec1.y === vec2.y){
+                this.center.x = v1.x
+                this.center.y = v3.y * v1.x + c1;  
             }else
-            if(vec2.y == vec3.y){
-                this.center = new Vec(m2.x, f1*m2.x + g1);
+            if(vec2.y === vec3.y){
+                this.center.x = v2.x
+                this.center.y = v3.x * v2.x + c;  
             } else{
-                var x = (g2-g1) / (f1 - f2);
-                this.center = new Vec(x, f1*x + g1);
+                this.center.x = (c1 - c) / (v3.x - v3.y);
+                this.center.y = v3.x * this.center.x + c;
             }
 
-            this.radius = vec1.copy().sub(this.center).leng();
+            this.radius = Math.hypot(vec1.x - this.center.x, vec1.y - this.center.y);
             return this;
         },
         fromArea : function(area){
@@ -1840,27 +1857,60 @@ groover.geom = (function (){
             return true;
         },
         isRectangleInside : function(rectangle){ // return true if rectangle is inside the circle false if not
-            var inside = true;
-            var me = this;
-            rectangle.getCorners().each(function(vec){
-               return (inside = me.isPointInside(vec));
-            });
-            return inside;
+            // This function uses V1 and v2
+            // Only if this function can v1 and v2 be considered valid
+            // v1 is the bottom lefy corner of the rectangle only if true returned
+            // v2 is the bottom right corner of the rectangle only if true returned 
+            // Note though it is posible for v2 to hold the correct value it can not be termined from this function alone,
+            // but v2 will be writen to thus looking for a change can be used at your own risk
+            if(Math.hypot(rectangle.top.p1.x - this.center.x, rectangle.top.p1.y - this.center.y) < this.radius &&
+                    Math.hypot(rectangle.top.p2.x - this.center.x, rectangle.top.p2.y - this.center.y) < this.radius){
+                 v1.x = rectangle.top.p2.x - (v2.x = rectangle.top.p1.x);
+                 v1.y = rectangle.top.p2.y - (v2.y = rectangle.top.p1.y);
+                 v2.x += -v1.y * rectangle.aspect;
+                 v2.y += v1.x * rectangle.aspect;
+                 if(Math.hypot(v2.x - this.center.x, v2.y - this.center.y) < this.radius && 
+                        Math.hypot((v1.x += v2.x) - this.center.x,(v1.y += v2.y) - this.center.y) < this.radius){
+                       return true;
+                 }
+            }
+            return false;
         },
         isCircleInside : function(circle){ // returns true is circle is inside this circle
-            return (this.distFrom(circle.center) + circle.radius < 0);
+            return (Math.hypot(this.center.x - circle.center.x,this.center.y - circle.center.y)-this.radius + circle.radius < 0);
         },
         isLineInside : function(line){ // returns true is the line segment line is inside the circle
-            return (this.isPointInside(line.p1) && this.isPointInside(line.p2) );;
+            // using the ? is a little quicker then returning the contional result as ? will return if the first point fails while the conditional method always does both tests
+            return (
+                Math.hypot(this.center.x - line.p1.x,this.center.y - line.p1.y) < this.radius &&
+                Math.hypot(this.center.x - line.p2.x,this.center.y - line.p2.y) < this.radius ) ? true : false;
+            
         },
+        isVecInside : function(vec){
+            return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y) < this.radius;
+        },        
         isPointInside : function(vec){
-            return  this.center.distFrom(vec) < this.radius;
+            return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y) < this.radius;
         },
         distFrom : function(vec){ // returns the distance from the circle circumferance to the point vec
-            return  this.center.distFrom(vec)-this.radius;
+            return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y)-this.radius;
         },
-        closestPoint : function(vec){ // returns the closest point on the circle to the point vec
-            return  vec.copy().sub(this.center).setLeng(this.radius).add(this.center);
+        closestPoint : function(vec,retVec){  // legacy calls closestPointToVec
+            return this.closestPointToVec(vec,retVec);
+        },
+        closestPointToLine : function(line,retVec){ // only valid if the line is not touching the circle
+            return this.closestPointToVec(line.closestPoint(this.center,va),retVec);
+        },
+        closestPointToVec : function(vec,retVec){ // returns the closest point on the circle to the point vec
+            v1.x = vec.x - this.center.x;
+            v1.y = vec.y - this.center.y;
+            var u = this.radius / Math.hypot(v1.x,v1.y);
+            if(retVec === undefined){
+                retVec = new Vec();
+            }
+            retVec.x = this.center.x + (v1.x *= u);
+            retVec.y = this.center.y + (v1.y *= u);
+            return  retVec;
         },
         clipLine : function(line,retLine){ // returns a new line that is clipped to inside the circle.
             // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
@@ -1868,12 +1918,14 @@ groover.geom = (function (){
             // If one or more intercepts are found then the line is returned in the same direction as the input line.
             // The returned line may have zero length 
             
-            // this function uses v1, v2, v3
+            // this function uses v1, v2, v3, v4
             // v1 is the line as a vector
             // v2 is the vector from the line start to the circle center
             // v3.x is the unit distance from the line start to the first intercept point
             // v3.y is this unit distance from the line start to the second intercept point 
             // v3 Both x, and y  may === Infinity or both !== Infinity
+            // v4.x distance squared from circle center of line start
+            // v4.y distance from circle center of line end
 
             if(retLine === undefined){
                 retLine = line.copy();
@@ -1891,12 +1943,18 @@ groover.geom = (function (){
                     retLine.p2.x = line.p2.x;
                     retLine.p2.y = line.p2.y;
                     return retLine;
-                }                    
-            }else
-            if(v4.y < this.radius){
-                retLine.p2.x = line.p2.x;
-                retLine.p2.y = line.p2.y;
-            }                    
+                }else{
+                    retLine.p2.empty();
+                }
+            }else{
+                retLine.p1.empty();
+                if(v4.y < this.radius){
+                    retLine.p2.x = line.p2.x;
+                    retLine.p2.y = line.p2.y;
+                }else{
+                    retLine.p2.empty();
+                }                  
+            }                
 
             
             c = 2 * (v1.x * v1.x + v1.y * v1.y);
@@ -2023,11 +2081,16 @@ groover.geom = (function (){
 
             return va
         },
-        tangentAtPoint : function(p){
-            var l = p.copy().sub(this.center);
-            var at = l.copy().setLeng(this.radius).add(this.center);
-            l.r90();
-            return new Line(at,at.copy().add(l));
+        tangentLineAtVec : function(vec,retLine ){
+            this.closestPointToVec(vec,va);
+            if(retLine === undefined){
+                return new Line(va.copy(),new Vec(va.x - v1.y,va.y + v1.x));                
+            }
+            retLine.p1.x = va.x;
+            retLine.p1.y = va.y;
+            retLine.p2.x = va.x - v1.y;
+            retLine.p2.y = va.y + v1.x;
+            return retLine;
         },
         angleOfPoint : function(p){
             return p.copy().sub(this.center).dir();
@@ -2659,8 +2722,8 @@ groover.geom = (function (){
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             this._leng = l = Math.hypot(v1.y,v1.x);
-            v2.x = p.x - this.p1.x;
-            v2.y = p.y - this.p1.y;
+            v2.x = vec.x - this.p1.x;
+            v2.y = vec.y - this.p1.y;
             l = (v2.x * v1.x + v2.y * v1.y)/(l * l);
             if(rVec === undefined){
                 return new Vec(
@@ -2704,9 +2767,13 @@ groover.geom = (function (){
             return new Line(p1,p2);
         },
         centerOnStart : function(){
-            var v1 = this.asVec().half();
-            this.p2 = this.p1.copy().add(v1)
-            this.p1.sub(v1);
+            this.p2.x = (this.p1.x += (v1.x = this.p2.x - this.p1.x)/2) + v1.x;
+            this.p2.y = (this.p1.x += (v1.y = this.p2.y - this.p1.y)/2) + v1.y;
+            return this; // returns this.
+        },
+        centerOnEnd : function(){
+            this.p1.x = (this.p2.x += (v1.x = this.p1.x - this.p2.x)/2) + v1.x;
+            this.p1.y = (this.p2.x += (v1.y = this.p1.y - this.p2.y)/2) + v1.y;
             return this; // returns this.
         },
         midLine : function(l1){ // this is bad must find a better way
