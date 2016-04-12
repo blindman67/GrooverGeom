@@ -636,8 +636,7 @@ groover.geom = (function (){
             });
             return va;  // returns new VecArray
         },
-        setAs :function (vecArray){  // sets the array of vecs to that of the {avecArray} will only set existing vecs in this Extra items in the {avecArray} are ignored. If the {avecArray} is smaller than this items then 
-                                     
+        setAs :function (vecArray){  // sets the array of vecs to that of the {avecArray} will only set existing vecs in this Extra items in the {avecArray} are ignored. If the {avecArray} is smaller than this items then                         
             this.each(function(vec,i){
                 vec.x = vecArray.vecs[i].x;
                 vec.y = vecArray.vecs[i].y;
@@ -1181,11 +1180,15 @@ groover.geom = (function (){
             return new Vec(this.x,this.y);  // returns a new `this`
         },
         toString : function(precision){  // returns a string representing this object
-                                // the {oprecision} can also be changed. The default is 6;
+                                // the precision can also be changed. The default is 6;
+            var l = this.label === undefined ? "": "'"+this.label+"' ";                                
+            if(this.isEmpty()){
+                return "Vec : "+l+"( Empty )";
+            }
             if(precision === undefined || precision === null){
                 precision = 6;
             }
-            return "Vec: ("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
+            return "Vec: "+l+"("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
         },        
         setAs : function(vec,num){  // Sets this vec to the values in the {avec} or if two args then assumed to be numbers x and y
             if(num === undefined){
@@ -1204,7 +1207,13 @@ groover.geom = (function (){
             box.env (this.x, this.y);
             return box;  // returns box
         },
-        isEmpty : function (){  // Vec can not be empty so always returns true
+        isEmpty : function (){  // returns true if undefined or infinit
+            if(this.x === undefined || this.y === undefined || 
+                this.x === Infinity || this.y === Infinity || 
+                this.x === -Infinity || this.y === -Infinity ||
+                isNaN(this.x) || isNaN(this.y)){
+                    return true;
+            }
             return false;  
         },
         isSame : function(vec){ // Returns true if the {avec} is the same as this
@@ -1480,7 +1489,7 @@ groover.geom = (function (){
             return (e-s); // returns a number
         },
         fromCircleIntercept : function(circle){
-            var pa = this.circle.circleIntercept(circle);
+            var pa = this.circle.intercept(circle);
             if(pa.vecs.length > 0){
                 this.fromPoints(pa.vecs[0],pa.vecs[1]);
             }else{
@@ -1853,46 +1862,149 @@ groover.geom = (function (){
         closestPoint : function(vec){ // returns the closest point on the circle to the point vec
             return  vec.copy().sub(this.center).setLeng(this.radius).add(this.center);
         },
-        lineSegInside : function(line){ // returns a new line that is clipped to inside the circle.
-            var pa = this.lineIntercept(line);
-            if(pa.vecs.length > 0){
-                return line.copy().sliceToPoints(pa.vecs[0],pa.vecs[1]);
-            }
-            return line.createEmpty();
-        },
-        lineSegIntercept : function(l){
-            var va = new VecArray();
-            var d =  l.distFrom(this.center); // dist from line
-            if(d <= this.radius){
-                var p = l.closestPoint(this.center);  // closest point on line
-                var d1 = Math.sqrt(this.radius*this.radius- d*d);
-                var v1 = l.asVec().setLeng(d1);
-                var v2 = p.copy().sub(v1);
-                var pos = line.getUnitDistOfPoint(v2);
-                if(pos >= 0 && pos <= 1){
-                    va.push(v2)
+        clipLine : function(line,retLine){ // returns a new line that is clipped to inside the circle.
+            // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
+            // If no intercepts are found then an empty line is returned. Use Line.isEmpty to determin if a line is empty
+            // If one or more intercepts are found then the line is returned in the same direction as the input line.
+            // The returned line may have zero length 
+            
+            // this function uses v1, v2, v3
+            // v1 is the line as a vector
+            // v2 is the vector from the line start to the circle center
+            // v3.x is the unit distance from the line start to the first intercept point
+            // v3.y is this unit distance from the line start to the second intercept point 
+            // v3 Both x, and y  may === Infinity or both !== Infinity
+
+            if(retLine === undefined){
+                retLine = line.copy();
+            }        
+            v1.x = line.p2.x - line.p1.x;
+            v1.y = line.p2.y - line.p1.y;
+            v2.x = line.p1.x - this.center.x;
+            v2.y = line.p1.y - this.center.y;
+            v4.y = Math.hypot(line.p2.x - this.center.x, line.p2.y - this.center.y);
+            v4.x = v2.x * v2.x + v2.y * v2.y;
+            if(Math.sqrt(v4.x) < this.radius){                
+                retLine.p1.x = line.p1.x;
+                retLine.p1.y = line.p1.y;
+                if(v4.y < this.radius){
+                    retLine.p2.x = line.p2.x;
+                    retLine.p2.y = line.p2.y;
+                    return retLine;
+                }                    
+            }else
+            if(v4.y < this.radius){
+                retLine.p2.x = line.p2.x;
+                retLine.p2.y = line.p2.y;
+            }                    
+
+            
+            c = 2 * (v1.x * v1.x + v1.y * v1.y);
+            var b = -2 * (v1.x * v2.x + v1.y * v2.y);
+            var d = Math.sqrt(b * b - 2 * c * (v4.x  - this.radius * this.radius));
+            if(isNaN(d)){ // no intercept
+                v3.x = v3.y = Infinity;
+            }else{
+                v3.x = (b - d) / c;
+                v3.y = (b + d) / c;
+                // Add second point first incase the line being set is the same line pased as first argument
+                if(v3.y <= 1 && v3.y >= 0){  
+                    retLine.p2.x = line.p1.x + v1.x * v3.y;
+                    retLine.p2.y = line.p1.y + v1.y * v3.y;
                 }
-                v2 = p.copy().add(v1);
-                pos = line.getUnitDistOfPoint(v2);
-                if(pos >= 0 && pos <= 1){
-                    va.push(v2)
+                if(v3.x <= 1 && v3.x >= 0){  
+                    retLine.p1.x = line.p1.x + v1.x * v3.x;
+                    retLine.p1.y = line.p1.y + v1.y * v3.x;
                 }
-                return va;
+                return retLine;
             }
-            return va;
+            return retLine.empty();
+            
+        
         },
-        lineIntercept : function(line){// find the points if any where this circle intercepts the line
-            var va = new VecArray();
-            var d =  line.distFrom(this.center); // dist from line
-            if(d <= this.radius){
-                var p = line.closestPoint(this.center);  // closest point on line
-                var d1 = Math.sqrt(this.radius*this.radius- d*d);
-                var v1 = line.asVec().setLeng(d1);
-                return va.push(p.copy().sub(v1)).push(p.add(v1));
+        interceptLineSeg : function(line, retLine){ // Finds if they exist the intercepts of a line segment and this circle
+            // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
+            // If no intercepts are found then an empty line is returned. Use Line.isEmpty to determin if a line is empty
+            // If one or more intercepts are found then the line is returned in the same direction as the input line.
+            // The returned line may have zero length 
+            
+            // this function uses v1, v2, v3
+            // v1 is the line as a vector
+            // v2 is the vector from the line start to the circle center
+            // v3.x is the unit distance from the line start to the first intercept point
+            // v3.y is this unit distance from the line start to the second intercept point 
+            // v3 Both x, and y  may === Infinity or both !== Infinity
+
+            if(retLine === undefined){
+                retLine = line.copy();
+            }        
+            v1.x = line.p2.x - line.p1.x;
+            v1.y = line.p2.y - line.p1.y;
+            v2.x = line.p1.x - this.center.x;
+            v2.y = line.p1.y - this.center.y;
+            var b = (v1.x * v2.x + v1.y * v2.y);
+
+            
+            c = 2 * (v1.x * v1.x + v1.y * v1.y);
+            b *= -2;
+            var d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - this.radius * this.radius));
+            if(isNaN(d)){ // no intercept
+                v3.x = v3.y = Infinity;
+            }else{
+                v3.x = (b - d) / c;
+                v3.y = (b + d) / c;
+                // Add second point first incase the line being set is the same line pased as first argument
+                if(v3.y <= 1 && v3.y >= 0){  
+                    retLine.p2.x = line.p1.x + v1.x * v3.y;
+                    retLine.p2.y = line.p1.y + v1.y * v3.y;
+                }else{
+                    retLine.p2.x = retLine.p2.y = undefined;
+                }
+                if(v3.x <= 1 && v3.x >= 0){  
+                    retLine.p1.x = line.p1.x + v1.x * v3.x;
+                    retLine.p1.y = line.p1.y + v1.y * v3.x;
+                }else{
+                    retLine.p1.x = retLine.p1.y = undefined;
+                }
+                return retLine;
             }
-            return va;
+            return retLine.empty();
+            
+        
         },
-        circleIntercept : function(circle){ // find the points if any where this circle and circle intercept
+        interceptLine : function(line, retLine){// find the points if any where this circle intercepts the line
+            // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
+            // If no intercepts are found then an empty line is returned. Use Line.isEmpty to determin if a line is empty
+            // If intercepts are found then the line is returned in the same direction as the input line.
+            // The returned line may have zero length 
+            
+            // This function uses v1,v2,v3,v4;  NOTE that this function differs from interceptLineSeg
+            // v1 will hold the vector from the center the cord between the intercepts to the furthest intercept or if no intercept see line.distFrom for value of v2
+            // v2 will hold the center of the cord between the intercepts or if no intercept see line.distFrom for value of v2
+            // v3 Unchanged from line.distFrom(this.center) see that function for details
+            // v4.x is the distance from the center to the line
+            if(retLine === undefined){
+                retLine = line.copy();
+            }        
+
+            var d;
+            v4.x =  line.distFrom(this.center); // dist from line
+            if(v4.x <= this.radius){
+                v2.x = v3.x + line.p1.x; // v3 is from function line.distFrom
+                v2.y = v3.y + line.p1.y;
+                var d = Math.sqrt(this.radius*this.radius- v4.x * v4.x) / line._leng;
+                v1.x *= d;
+                v1.y *= d;
+
+                retLine.p1.x = v2.x - v1.x;
+                retLine.p1.y = v2.y - v1.y;
+                retLine.p2.x = v2.x + v1.x;
+                retLine.p2.y = v2.y + v1.y;
+                return retLine;
+            }
+            return retLine.empty();
+        },
+        intercept : function(circle){ // find the points if any where this circle and circle intercept
             var va = new VecArray();
             var l = circle.center.copy().sub(this.center);
             var d = l.leng();
@@ -1934,7 +2046,7 @@ groover.geom = (function (){
         },
         reflectLine : function(line){ // WTF sorry will fix in time
             var va = new VecArray();
-            var pa = this.lineIntercept(line);
+            var pa = this.interceptLine(line);
             if(pa.vecs.length > 0){
                 return va
                     .push(this.tangentAtPoint(pa.vecs[0]).reflectLine(line))
@@ -2001,6 +2113,7 @@ groover.geom = (function (){
         isEmpty : function(){ // line is empty if either points are undefined or the length is 0 or any point has Infinity or any point has NaN
             var t;
             if(this.p1 === undefined ||  this.p2 === undefined || 
+                    this.p1.x === undefined || this.p1.y === undefined || this.p2.x === undefined || this.p2.y === undefined ||
                     ((this.p1.x - this.p2.x) === 0 &&  (this.p1.y - this.p2.y) === 0) ||
                     (t = Math.abs(this.p1.x + this.p1.y + this.p2.x + this.p2.y)) === Infinity ||
                     isNaN(t)){
@@ -2008,14 +2121,21 @@ groover.geom = (function (){
             }
             return false;
         },
-        createEmpty : function (){
-            return new Line(this.p1.copy(),this.p1.copy());
+        empty : function (){
+            this.p1.x = this.p1.y = this.p2.x = this.p2.y = undefined;
+            return this;
         },
         toString : function (precision){
+            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            
+            if(this.isEmpty()){
+                return "Line: "+l+"( Empty )";
+                
+            }
             if(precision === undefined || precision === null){
                 precision = 6;
             }
-            return "Line: ("+this.p1.toString(precision)+"-"+this.p2.toString(precision)+")";
+            return "Line: "+l+"( "+this.p1.toString(precision)+" - "+this.p2.toString(precision)+" )";
         },
         swap : function(){
             var t = this.p1;
@@ -2124,6 +2244,9 @@ groover.geom = (function (){
         },
         leng : function(){
             return Math.hypot(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
+        },
+        leng2 : function(){ // length squared
+            return Math.pow(this.p2.x-this.p1.x,2) + Math.pow(this.p2.y-this.p1.y,2);
         },
         dir : function(){
             return Math.atan2(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
