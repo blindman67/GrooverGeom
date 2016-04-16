@@ -428,11 +428,11 @@ groover.geom = (function (){
         this.p3 = p3;
     };
     function Line(vec1,vec2){  
-        if((vec1 === undefined || vec1 === null) && (vec2 === undefined || vec2 === null)){
+        if(vec1 === undefined && vec2 === undefined){
             this.p1 = new Vec(0,0);
             this.p2 = new Vec(); // vec defualts to unit vec
         }else
-        if(vec1 !== undefined && vec1.type !== undefined && vec1.type === "Vec" && vec2 !== undefined &&  vec2.type !== undefined && vec2.type === "Vec"){
+        if(vec1 !== undefined && vec1.type === "Vec" && vec2 !== undefined && vec2.type === "Vec"){
             this.p1 = vec1;
             this.p2 = vec2;
         }else{
@@ -1084,7 +1084,14 @@ groover.geom = (function (){
             
         },
         center : function(){
-            return this.p1.copy().add(this.p2).add(this.p3).div(3);
+            v1.x = (this.p1.x + this.p2.x + this.p3.x ) / 3;
+            v1.y = (this.p1.y + this.p2.y + this.p3.y ) / 3;
+            if(retVec === undefined){
+                return new Vec(v1);
+            }
+            retVec.x = v1.x;
+            retVec.y = v1.y;
+            return retVec;
         },
         sumCross : function(){
             return  this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1);
@@ -1308,10 +1315,6 @@ groover.geom = (function (){
                 tris = [];
             }
             return tris;
-                
-
-            
-            
         },
         slice : function(obj){
             
@@ -1323,7 +1326,80 @@ groover.geom = (function (){
             this.p3 = t;
             return this;
         },
+        lengthAll : function(array){ // returns an array containg the length of each side if array supplied the first three items are set
+            if(array === undefined){
+                array = [];
+            }
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = this.p3.x - this.p2.x;
+            v2.y = this.p3.y - this.p2.y;
+            v3.x = this.p1.x - this.p3.x;
+            v3.y = this.p1.y - this.p3.y;
+            array[0] = Math.hypot(v1.x,v1.y);
+            array[1] = Math.hypot(v2.x,v2.y);
+            array[2] = Math.hypot(v3.x,v3.y);
+            return array;
+        },
+        angleAll : function(array){ // returns an array containg the angles at each pount if array supplied the first three items are set
+            if(array === undefined){
+                array = [];
+            }
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = this.p3.x - this.p2.x;
+            v2.y = this.p3.y - this.p2.y;
+            v3.x = this.p1.x - this.p3.x;
+            v3.y = this.p1.y - this.p3.y;
+            a = Math.hypot(v1.x,v1.y);
+            b = Math.hypot(v2.x,v2.y);
+            c = Math.hypot(v3.x,v3.y);
+            array[0] = Math.triPh(a,c,b)
+            array[1] = Math.triPh(a,b,c)
+            array[2] = Math.triPh(b,c,a)
+            return array;
+        },        
         inflate : function(amount){
+            // create vectors for each side
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = this.p3.x - this.p2.x;
+            v2.y = this.p3.y - this.p2.y;
+            v3.x = this.p1.x - this.p3.x;
+            v3.y = this.p1.y - this.p3.y;
+            // find length of each side
+            a = Math.hypot(v1.x,v1.y);
+            b = Math.hypot(v2.x,v2.y);
+            c = Math.hypot(v3.x,v3.y);
+            // normalise each side
+            v1.x /= a;
+            v1.y /= a;
+            v2.x /= b;
+            v2.y /= b;
+            v3.x /= c;
+            v3.y /= c;
+            // one at time get the angle starting at point p1 and caculate the mitter
+            u = Math.triPh(a,c,b) / 2; // need half the angle
+            u1 = Math.cos(u) * amount / Math.sin(u); // the length to add to the line to get to the miter point
+            this.p1.x -= v1.x * u1;  // move the point
+            this.p1.y -= v1.y * u1;            
+            u = Math.triPh(b,a,c) / 2; // need half the angle
+            u1 = Math.cos(u) * amount / Math.sin(u); // the length to add to the line to get to the miter point
+            this.p2.x -= v2.x * u1;  // move the point
+            this.p2.y -= v2.y * u1;                 
+            u = Math.triPh(b,c,a) / 2; // need half the angle
+            u1 = Math.cos(u) * amount / Math.sin(u); // the length to add to the line to get to the miter point
+            this.p3.x -= v3.x * u1;  // move the point
+            this.p3.y -= v3.y * u1;  
+            // now move the points alone the line norm to offset by amount            
+            this.p1.x += v1.y * amount;
+            this.p1.y -= v1.x * amount;
+            this.p2.x += v2.y * amount;
+            this.p2.y -= v2.x * amount;
+            this.p3.x += v3.y * amount;
+            this.p3.y -= v3.x * amount;
+            // all done
+            return this;
         },
         setAs: function(triangle){
             this.p1.x = triangle.p1.x;
@@ -2261,12 +2337,12 @@ groover.geom = (function (){
                 var B = circle2.radius
                 var A = circle1.radius
                 var C = a;
-                // Need to find r. but first where on the line between cir1 and cir2 the circle touches
-                // u1 + u2 = C and 
+                // Need to find radius of this circle. but first where on the line between cir1 and cir2 the circle touches
+                // u1 + u2 = C  where C is the length of the line between circles u1 is from fisrt u2 for second to the point where this circle will touch
                 // r = (u1 * u1 - A * A) / (2 * A) first cir
                 // r = (u2 * u2 - B * B) / (2 * B) second cir
                 // r = ((u1 * u1) - (A * A)) / (2 * A) = ((u2 * u2) - (B * B))/ (2 * B)
-                // Two unknowns so in terms of u2 = C - u1
+                // Two unknowns u1 and u2 so in terms of u2 = C - u1 to give one unknown thus solve the following
                 // I know u2 = C - u1 to give one unknown thus solve the following
                 // 0 = ((u1 * u1) - (A * A)) / (2 * A) - ((C - u1) * (C - u1)) - (B * B)) / (2 * B)
                 // Is quadratic so use quadratic rule to solve positive solution only and get radius using first circle
@@ -2303,67 +2379,6 @@ groover.geom = (function (){
             this.center.x = circle1.center.x + v3.x;
             this.center.y = circle1.center.y + v3.y;
             return this;
-        },
-        fitToCirclesGetVecs : function(circle1, circle2, rule, retCircle){ // this will return the vec that is the center of a fitting circle. return type is a new circle or the supplied circles paramaters set. If no solution can be found the returned circle is empty
-            // rule = "left"  will fit this circle to the left of the line from circle1 to circle 2
-            // rule = "limit" will limit the circle to not cross the line between circle1 and circle 2
-            // rule = "grow" if included will grow the radius of to fit if needed
-            if(retCircle === undefined){
-                retCircle = new Circle(this.center.copy(), this.radius);
-            }else{
-                retCircle.center.x = this.center.x;
-                retCircle.center.y = this.center.y;
-                retCircle.radius = this.radius;
-            }
-            if(rule === undefined){
-                rule = "";
-            }else{
-                rule = rule.toLowerCase();
-            }
-            v1.x = circle2.center.x - circle1.center.x;
-            v1.y = circle2.center.y - circle1.center.y;
-            a = Math.hypot(v1.x,v1.y);  // get the length of the lines between all three
-            b = circle1.radius + retCircle.radius;  // must touch so add radiuss
-            c = circle2.radius + retCircle.radius;
-            if(rule.indexOf("limit") > -1){
-                // need to find a solution that limits te circle to the left or Right of the center line
-                c = circle2.radius
-                b = circle1.radius
-                vx = (2 * a * b) / c;
-                vy = b * b;
-                var r = (Math.pow( (-(vx) + Math.sqrt((vx) * (vx) - (4 - 4 * b / c) * -(- c * b + vy + (a * a * b) / c))) / -(2 -  2 * b / c), 2) - vy) / (2 * b);
-                retCircle.radius = r;
-                b = circle1.radius + r;
-                c = circle2.radius + r;
-
-            }else
-            if(a > b + c){ // gap is too large can not fit
-                if(rule.indexOf("grow") > -1){
-                    retCircle.radius += u = (a - (b+c))/2;
-                    b += u;
-                    c += u;
-                }else{
-                    retCircle.empty();
-                    return retCircle;
-                }
-            }
-            u = Math.sin(u1 = Math.triPh(a,b,c));
-            // u1 is dist from c1 to point on line then out from there at norm  u to line to find center
-            v2.x = v1.x / a; // normalise line between 
-            v2.y = v1.y / a;
-            u1 = Math.cos(u1);
-            v3.x = v2.x * b * u1;
-            v3.y = v2.y * b * u1;
-            if(rule.indexOf("left") > -1){
-                v3.y -= v2.x * b * u;
-                v3.x += v2.y * b * u;
-            }else{
-                v3.y += v2.x * b * u;
-                v3.x -= v2.y * b * u;
-            }
-            retCircle.center.x = circle1.center.x + v3.x;
-            retCircle.center.y = circle1.center.y + v3.y;
-            return retCircle;
         },
         closestPoint : function(vec,retVec){  // legacy calls closestPointToVec
             return this.closestPointToVec(vec,retVec);
@@ -2911,7 +2926,7 @@ groover.geom = (function (){
         setLeng : function(len){
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            var l = Math.hypot(v1.x,v1,y);
+            var l = Math.hypot(v1.x,v1.y);
             this.p2.x = this.p1.x + v1.x * len / l;
             this.p2.y = this.p1.y + v1.y * len / l;
             return this; // returns this.
@@ -3337,6 +3352,21 @@ groover.geom = (function (){
         reflectLine : function(l){
             var p1 = this.intercept(l);
             return new Line(p1,p1.copy().add(this.reflect(l)));
+        },
+        getNormalAsLine : function(retLine){
+            if(retLine === undefined){
+                retLine = new Line();
+            }
+            v1.x = this.p2.x - this.p1.x; // get the vector of the line
+            v1.y = this.p2.y - this.p1.y;
+            retLine.p2.x = retLine.p1.x = this.p1.x + v1.x / 2; // get the center as start of returned line
+            retLine.p2.y = retLine.p1.y = this.p1.y + v1.y / 2; // get the center
+            u = Math.hypot(v1.x,v1.y); // normalise the ve by geting length
+            v1.x /= u;
+            v1.y /= u;
+            retLine.p2.x -= v1.y; // set the end point to the normalised distance from the line
+            retLine.p2.y += v1.x;
+            return retLine;
         },
         mirrorLine : function(line){
             var p1 = this.closestPoint(line.p1);

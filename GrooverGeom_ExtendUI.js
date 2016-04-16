@@ -42,7 +42,10 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var dragged = false;
     var dragSelection = false;
     var quickDrag = false;
+    var draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
+    var pointsUpdated = false; // true if there are point that have been changed. 
     geom.Geom.prototype.UI = {
+        pointOfInterestIndex : undefined,  // this holds a index to a point in one of the exposed vecArrays and is set depending on the function and argument. use it to access the point of interest
         points : points,
         selected : selected,
         closestToPointer : undefined,
@@ -143,6 +146,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                         
                     }else{
                         dragged = true;
+                        draggingFinnalFlag = true;
                         if(this.dragSelecting){
                             selectionBox.left = dragStartX;
                             selectionBox.top = dragStartY;
@@ -159,6 +163,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             dragStartY = mouse.y;
                             selected.add(workVec);
                             boundingBox.add(workVec);
+                            pointsUpdated = true;
                         }
                         
                     }
@@ -182,10 +187,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                         }
                     }else
                     if(this.dragSelecting){
-                        
-                        
-                        
-                        
+
                     }
                     selected.asBox(boundingBox.irrate());
                     this.dragSelecting = false;
@@ -206,11 +208,39 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     buttonDownOn = undefined;
                     buttonDownOnSelected = false;
                     buttonDown = false; 
+                }else
+                if(draggingFinnalFlag){
+                    draggingFinnalFlag = false;
                 }
+
             }
         },
-        
-        
+        hasPointMoved : function(id){ // id can be a point or the index or an array returns true of a point with Id is in the selected vecArray and it is being dragged
+            if(pointsUpdated){
+                pointsUpdated = false; 
+                if(Array.isArray(id)){
+                    for(var i = 0; i < id.length; i ++){
+                        if(id[i] !== undefined && id[i].id !== undefined){
+                            if(selected.isIdInArray(id[i].id)){
+                                this.pointOfInterestIndex = geom.registers.get("c"); 
+                                return true;
+                            }
+                        }else{
+                            if(selected.isIdInArray(id[i])){
+                                this.pointOfInterestIndex = geom.registers.get("c"); 
+                                return true;
+                            }                            
+                        }
+                    }
+                    return false;
+                    
+                }else
+                if(id !== undefined && id.id !== undefined){
+                    return selected.isIdInArray(id.id);
+                }
+                return selected.isIdInArray(id)
+            }
+        },
         addPoint : function(vec,allreadyUnique){
             if(!allreadyUnique){
                 vec.makeUnique();
