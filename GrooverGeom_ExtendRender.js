@@ -1,24 +1,38 @@
 "use strict";
 
 groover.geom.Geom.prototype.addRender = function(ctx1){
-    var geom = this;
-    var ctx = ctx1;
-    var workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
-    this.extentions.render = {   // add extentions for self documenter
+    var mark,  geom, ctx, size, workVec;
+    geom = this;
+    ctx = ctx1;
+    size = 1;
+    geom.Geom.prototype.size = size;    
+    geom.Geom.prototype.ctx = ctx;    
+    workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
+    
+    this.extentions.render = {   // add extentions 
         functions : ["lineTo","moveTo","draw","mark","lable"],
         info : "Provides helper functions to render primitives to the canvas 2D context."
     };
+    function getMarkNames(){  // set the list of names
+        var names = Object.getOwnPropertyNames(geom.marks);
+        geom.markNames = names.filter(function(name){
+            if(typeof geom.marks[name] === "function"){
+                if(name === "vecArray"){
+                    if(geom.marks.vecArrayShape !== undefined){
+                        return true;
+                    }
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        });
+    }
     
-    
-    
-    geom.Geom.prototype.ctx = ctx;
-    geom.Geom.prototype.size = 1;
     geom.Geom.prototype.setCtx = function(ctx1){
         this.ctx = ctx1;
         ctx = ctx1;        
     };
-    var size = 1;
-    geom.Geom.prototype.size = size;
     geom.Geom.prototype.setSize = function(newSize){ // depriciated use setMarkSize
         size = newSize;
         this.size = 1;
@@ -69,27 +83,9 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         }
     }
     geom.Geom.prototype.markNames = null; // list of avalible mark names
-    function getMarkNames(){  // set the list of names
-        var names = Object.getOwnPropertyNames(geom.marks);
-        geom.markNames = names.filter(function(name){
-            if(typeof geom.marks[name] === "function"){
-                if(name === "vecArray"){
-                    if(geom.marks.vecArrayShape !== undefined){
-                        return true;
-                    }
-                    return false;
-                }
-                return true;
-            }
-            return false;
-        });
-    }
-    getMarkNames();
-    // set the vecArray for custom mark shape
-    geom.Geom.prototype.setMarkShape = function(vecArray){
+    geom.Geom.prototype.setMarkShape = function(vecArray){    // set the vecArray for custom mark shape
         geom.marks.vecArrayShape = vecArray;        
     }
-    var mark = geom.marks.cross;  // set current mark shape
     geom.Geom.prototype.setMark = function ( name ){ // set the named mark
         if(typeof geom.marks[name] === "function"){
             mark = geom.marks[name];
@@ -102,12 +98,13 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         }
     }
     
-    
+    getMarkNames(); 
+    mark = geom.marks.cross;  // set current mark shape
+ 
     if(geom.Vec){
         geom.Vec.prototype.moveTo = function (){
             ctx.moveTo(this.x,this.y);   
             return this;// returns this
-            
         };
         geom.Vec.prototype.lineTo = function (){
             ctx.lineTo(this.x,this.y);
@@ -117,7 +114,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             mark(this);
             return this;// returns this
         };
-        geom.Vec.prototype.draw = function (dir){ // The {odir} is a boolean that if true reveres the direction to the draw. Not applicable in this case
+        geom.Vec.prototype.draw = function (dir){ // The dir is a boolean that if true reveres the direction to the draw. Not applicable in this case
             return this;// returns this
         };
         geom.Vec.prototype.lable = function (text){
@@ -171,6 +168,61 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
 
         };
     }
+    if(geom.Bezier){
+        geom.Bezier.prototype.moveTo = function () {
+            this.p1.moveTo();
+            return this;// returns this
+        };
+        geom.Bezier.prototype.lineTo = function () {
+            this.p1.lineTo();
+            return this;// returns this
+        };
+        geom.Bezier.prototype.draw = function (dir) { // The {odir} is a boolean that if true reveres the direction to the draw
+            if(dir){
+                if(this.cp2 === undefined){
+                    ctx.lineTo(this.p2.x, this.p2.y);
+                    ctx.quadraticCurveTo(this.cp1.x, this.cp1.y, this.p1.x, this.p1.y);
+                }else{
+                    ctx.lineTo(this.p2.x, this.p2.y);
+                    ctx.bezierCurveTo(this.cp2.x, this.cp2.y, this.cp1.x, this.cp1.y, this.p1.x, this.p1.y);                    
+                }
+            }else{
+                if(this.cp2 === undefined){
+                    ctx.lineTo(this.p1.x, this.p1.y);
+                    ctx.quadraticCurveTo(this.cp1.x, this.cp1.y, this.p2.x, this.p2.y);
+                }else{
+                    ctx.lineTo(this.p1.x, this.p1.y);
+                    ctx.bezierCurveTo(this.cp1.x, this.cp1.y, this.cp2.x, this.cp2.y, this.p2.x, this.p2.y);                    
+                }
+            }
+            return this;// returns this
+        };
+        geom.Bezier.prototype.mark = function(){
+            this.p1.mark();
+            this.p2.mark();
+            if(this.cp2 === undefined){
+                this.cp1.mark();                
+            }else{
+                this.cp1.mark();
+                this.cp2.mark();
+            }
+            return this;// returns this
+        };
+        geom.Bezier.prototype.lable = function (text,pos){
+            if(pos === undefined){
+                pos = 0.5;
+            }
+            if(text === null || text === undefined){
+                text = this.lableStr;            
+                if(text === null || text === undefined){
+                    text = this.type;
+                }
+            }
+            ;
+            return this;
+
+        };
+    }    
     if(geom.PrimitiveArray){
         var paLineTo = function(primitive){
             primitive.lineTo();
@@ -281,7 +333,11 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             return this;// returns this
         }
         geom.Circle.prototype.draw = function(dir){  // The {odir} is a boolean that if true reveres the direction to the draw
-            ctx.arc(this.center.x, this.center.y, this.radius, 0, Math.PI * 2, dir);
+            if(this.radius < 0){
+                ctx.arc(this.center.x, this.center.y, -this.radius,0, Math.PI * 2, !dir);
+            }else{
+                ctx.arc(this.center.x, this.center.y, this.radius, 0, Math.PI * 2, dir);
+            }
             return this;// returns this
         }
         geom.Circle.prototype.mark = function(){
@@ -300,21 +356,41 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         };    
     }
     if(geom.Arc){
-        geom.Arc.prototype.moveTo = function(){
+        geom.Arc.prototype.moveTo = function(end){ // if end (optional) is true then move to the end else move to the start
             if(this.start !== this.end){
-                this.startAsVec().moveTo();
+                if(end){
+                    this.endAsVec().moveTo();
+                }else{
+                    this.startAsVec().moveTo();
+                }
             }
             return this;// returns this
         };
-        geom.Arc.prototype.lineTo = function(){
+        geom.Arc.prototype.lineTo = function(end){ // if end (optional) is true then line to the end else line to the start
             if(this.start !== this.end){
-                this.startAsVec().lineTo();
+                if(end){
+                    this.endAsVec().lineTo();
+                }else{
+                    this.startAsVec().lineTo();
+                }
             }
             return this;// returns this
         };
         geom.Arc.prototype.draw = function(dir){// The {odir} is a boolean that if true reveres the direction to the draw
             if(this.start !== this.end){
-                ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, dir);
+                if(this.circle.radius < 0){
+                    if(dir){
+                        ctx.arc(this.circle.center.x, this.circle.center.y, -this.circle.radius, this.end, this.start, !dir);
+                    }else{
+                        ctx.arc(this.circle.center.x, this.circle.center.y, -this.circle.radius, this.start, this.end, !dir);
+                    }
+                }else{
+                    if(dir){
+                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.end, this.start, dir);
+                    }else{
+                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, dir);
+                    }
+                }
             }
             return this;// returns this
         };
@@ -418,8 +494,12 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             ctx.lineTo(this.left, this.top);
             return this;// returns this
         };
-        geom.Box.prototype.draw = function(dir ){ // The {odir} is a boolean that if true reveres the direction to the draw
-            ctx.rect(this.left, this.top, this.right - this.left, this.bottom - this.top);
+        geom.Box.prototype.draw = function(expand){ // The {odir} is a boolean that if true reveres the direction to the draw
+            if(expand !== undefined){
+                ctx.rect(this.left - expand, this.top -  expand, this.right - this.left + expand * 2, this.bottom - this.top + expand * 2);
+            }else{
+                ctx.rect(this.left , this.top, this.right - this.left, this.bottom - this.top);
+            }
             return this;// returns this
         };
         geom.Box.prototype.mark = function(){

@@ -26,6 +26,51 @@ groover.geom = (function (){
     Math.triLenC2 = function(a,b,pheta){ // return the length squared of side C given the length of two sides a,b and the angle opisite the edge C
         return a*a + b*b - 2*a*b*Math.cos(pheta);
     }
+    Math.angleBetween = function(x,y,x1,y1){
+        var l = Math.hypot(x,y);
+        x /= l;
+        y /= l;
+        l = Math.hypot(x1,y1);
+        x1 /= l;
+        y1 /= l;
+        if(x * -x1 - y * y1 < 0){
+            l = x * y1 - y * x1;
+            if(l < 0){
+                return -(Math.PI + Math.asin(l));
+            }
+            return (Math.PI - Math.asin(l));
+            
+        }
+        return Math.asin(x * y1 - y * x1);
+    }
+    
+    Math.circle = {};  
+    Math.sphere = {};    
+    Math.circle.area = function(radius){
+        return radius * radius * MPI2;
+    }    
+    Math.circle.circumferance = function(radius){
+        return radius * MPI2;
+    }
+    Math.circle.radiusFromArea = function(area){
+        return Math.sqrt(area / MPI2);
+    }
+    Math.circle.radiusFromCircumferance = function(circumferance){
+        return circumferance / MPI2;
+    }
+    Math.sphere.area = function(radius){
+        return radius * radius * 2 * MPI2;
+    }
+    Math.sphere.radiusFromArea = function(area){
+        return Math.sqrt(area / (2 * MPI2));
+    }    
+    Math.sphere.volume = function(radius){
+        return radius * radius * radius * (4/3) * Math.PI;
+    }
+    Math.sphere.radiusFromVolume = function(volume){
+        return Math.pow(volume / ((4/3) * Math.PI), 1 / 3);
+    }
+
     
     // polyfill for math hypot function.
     if(typeof Math.hypot !== "function"){
@@ -63,19 +108,25 @@ groover.geom = (function (){
         id : null,
     }
     
-    // Closure Vars for internal optimistion
-    
+    // Closure Vars for internal optimistion and now public under the term registers
+    // Geom.registers has V1 to V5 and the function get(name) to get a,b,c,u,c1,u1
+    // The meaning of register values is dependent on the last call to any of Geom withing this scope
+    // DO NOT rely on these registers after you have reliquished your current JavasSript context execution 
+
     // the following are to aid in optimisation. Rather than create new primitives when needed these should be used instead
     // Do not return them.
-    var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2;
-    var vx,vy,v1x,v1y,u,u1,c,c1;  
-    var l1,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;    
-    const REGS_LEN = 5;
+    var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
+    var vx,vy,v1x,v1y,u,u1,c,c1,a,b;  
+    //var l1,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these usefull as yet may return them but want to keep the number of closure variable as low as possible
+    
+    // NOTE dropping this....
+    /*const REGS_LEN = 5; // used in Vec._asVec  Internal uses only and experiment 
     // reg for regerstry
     var regl,regv; // line and vec stack for quick access to optimisition var
                    // these arrays can act like a stack, quew, random access, or cyclic access
  
-    var reglSP, regvSP; // stack pos
+    var reglSP, regvSP; // stack pos*/
+    // NOTE dropping this.... END
     
     function Geom(){
         v1 = new Vec();
@@ -90,7 +141,7 @@ groover.geom = (function (){
         ve = new Vec();
         vr1 = new Vec();
         vr2 = new Vec();
-        l1 = new Line();
+        /*l1 = new Line();
         l2 = new Line();
         l3 = new Line();
         l4 = new Line();
@@ -101,18 +152,40 @@ groover.geom = (function (){
         ld = new Line();
         le = new Line();
         lr1 = new Line();
-        lr2 = new Line();
-        regl = [l1,l2,l3,l4,l5];
+        lr2 = new Line();*/
+        /*For removal */  
+        /* regl = [l1,l2,l3,l4,l5];
         regv = [v1,v2,v3,v4,v5];
         reglSP = 0;
-        regvSP = 0;
-        this.calcRefs = {
+        regvSP = 0;*/
+        this.registers = {
             v1 : v1,
             v2 : v2,
             v3 : v3,
             v4 : v4,
             v5 : v5,
-        }
+            get : function(name){
+                switch(name){
+                    case "c":
+                       return c;
+                    case "u":
+                       return u;
+                    case "a":
+                       return u;  
+                    case "b":
+                       return u;
+                    case "c1":
+                       return c1;
+                    case "u1":
+                       return u1;
+                    case "vx":
+                       return vx;
+                    case "vy":
+                       return vy;
+                }
+                return undefined;
+            }
+        };
 
         this.objectNames = [
             "PrimitiveArray",
@@ -125,6 +198,7 @@ groover.geom = (function (){
             "Arc",
             "Box",
             "Empty",
+            "Bezier",
             "Transform",
         ];
         this.extentions = {
@@ -141,7 +215,7 @@ groover.geom = (function (){
             PrimitiveArray: ["primitives","length","type"],
             Transform: ["xa","ya","o","type"],
             Triangle : ["p1","p2","p3","type"],
-            
+            Bezier : ["p1","p2","cp1","cp2","type"],         
             Empty : ["type"],
         };
         this.Vec = Vec;
@@ -152,6 +226,7 @@ groover.geom = (function (){
         this.Rectangle = Rectangle;
         this.Box = Box;
         this.Transform = Transform;
+        this.Bezier = Bezier;
         this.VecArray = VecArray;
         this.PrimitiveArray = PrimitiveArray;
         this.Geom = Geom;
@@ -313,22 +388,30 @@ groover.geom = (function (){
     function PrimitiveArray(){
         this.primitives = [];
     };
-    function Vec(x,y){
+    function Vec(x,y){ // creates a vector x and y are both optional and can be various types
+        // if x and y are undefined then an empty vec is created
+        // if x is a vec and y is undefined then the vector x is copied
+        // if x and y are vecs then the vec x.sub(x) is created
+        // if y is undefined and none of the above then vec has both x,y set to the argument x
+        // if x is undefined and none of the above then vec is set to the unit vec at angle y in radians
+        // else vec is set tp x, and y
         if(x === undefined && y === undefined){
-            return;
+            this.x = this.y = Infinity;
+
         }else
-        if(x !== undefined && x !== null && x.x !== undefined && y === undefined){
+        if(y === undefined && x !== undefined && x.x !== undefined ){
             this.x = x.x;
             this.y = x.y
         }else
-        if(x !== undefined && x !== null && x.x !== undefined && y !== undefined && y.y !== undefined){
+        if(x !== undefined && x.x !== undefined && y !== undefined && y.y !== undefined){
             this.x = y.x - x.x;
             this.y = y.y - x.y;
         }else
         if(y === undefined){
             this.x = x;
+            this.y = x;
         }else
-        if(x === undefined || x === null){
+        if(x === undefined ){
             this.x = Math.cos(y);
             this.y = Math.sin(y);        
         }else{
@@ -412,6 +495,12 @@ groover.geom = (function (){
         this.right = right;
         this.bottom = bottom;
     };
+    function Bezier(p1,p2,cp1,cp2){
+        this.p1 = p1;
+        this.p2 = p2;
+        this.cp1 = cp1;
+        this.cp2 = cp2;
+    }
     function Transform(xAxis,yAxis,origin){
         this.xAxis = xAxis === undefined?new Vec() : xAxis;
         this.yAxis = yAxis === undefined?new Vec(0,1) : yAxis;
@@ -487,6 +576,15 @@ groover.geom = (function (){
             });
             return box;
         },            
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }
+            this.each(function(prim){
+                prim.asVecArray(vecArray, instance);
+            });
+            return vecArray;
+        },       
         each : function (callback,dir,start){ 
             var i;
             var l = this.primitives.length;      
@@ -597,16 +695,22 @@ groover.geom = (function (){
             return this;
         },
         clear : function(){  // removes all vecs from the list
-            this.vecs.splice(0,this.vecs.length);
-            this.length = 0;
+            this.length = this.vecs.length = 0;
             return this;  // returns this
         },
-        isEmpty : function(){
-            return this.vecs.length === 0;
+        reset : function(){  // I know a little crazzzzy clear,empty, and reset all doing the same but I have yet to decied which it will be and will keep empty, but reset or clear may go.
+            this.length = this.vecs.length = 0;
+            return this; 
         },
         empty : function(){ // removes all vecs from list
-            this.vecs.length = 0;
+            this.length = this.vecs.length = 0;
             return this;
+        },        isEmpty : function(){
+            return this.vecs.length === 0;
+        },
+        normalise : function(){  // set everything correctly. use after manualy manipulating this object
+          this.length = this.vecs.length;  
+          return this;
         },
         reverse : function(){
             this.vecs.reverse();
@@ -618,6 +722,35 @@ groover.geom = (function (){
             }
             this.length = this.vecs.length; 
             return this;
+        },
+        removeById : function(id){ // remove the vert with id. ID should be unique but I will assume that people will incorrectly use ids so to keep the structure consistant and not effect correct use (appart from cpu load) this function will look through all items. id can be a single number or an array of numbers
+            if(this.vecs.length > 0){
+                if(Array.isArray(id)){
+                    for(c = 0; c < this.vecs.length; c ++){ 
+                        if(id.indexOf(this.vecs[c].id) > -1){
+                            this.vecs.splice(c,1);
+                            c -= 1;
+                        }
+                    }                    
+                }else{
+                    for(c = 0; c < this.vecs.length; c ++){ 
+                        if(this.vecs[c].id === id){
+                            this.vecs.splice(c,1);
+                            c -= 1;
+                        }
+                    }
+                }
+                this.length = this.vecs.length;
+            }
+            return this;
+        },        
+        isIdInArray : function (id){
+            for(c = 0; c < this.vecs.length; c ++){ 
+                if(this.vecs[c].id === id){
+                    return true;
+                }
+            }
+            return false;
         },
         copy : function (from, to){  // Creates a new VecArray with a copy of the vecs in this.
                                      // if {ofrom} and {oto} are passed then create a copy of the points from {ofrom} to but not including {oto}.
@@ -687,8 +820,9 @@ groover.geom = (function (){
             return this.vecs.length-1;  // returns the index of the pushed vec
         },
         append : function(vecArray){  // append the {avecArray} to the end of the list of vecs
+            var me = this;
             vecArray.each(function(vec){  
-                this.push(vec);
+                me.push(vec);
             })
             this.length = this.vecs.length;             
             return this;  // returns this
@@ -710,11 +844,11 @@ groover.geom = (function (){
         },
         add : function (vec){ // add the {avec} to each vec in the list
             this.each(function(vec1){
-               vec1.add(v);
+               vec1.add(vec);
             });
             return this; // returns this
         },
-        sum : function (){ // add the {avec} to each vec in the list
+        sum : function (){ // returns a vec that is the sum of all vecs
             var vec1 = new Vec(0,0);
             this.each(function(v){
                vec1.add(v);
@@ -759,6 +893,39 @@ groover.geom = (function (){
                 return new Empty();                
             }
             return this.vecs[ind];
+        },
+        findInsideBox : function(box, vecArray, invVecArray){ // returns a vecArray containing points inside the box. Creates a new vecArray if not supplied or empties the supplied one and fills it. If invVecArray is given and is a VecArray then this is emptied and filled with the vecs that are outside the box
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }
+            a = box.left;
+            b = box.right;
+            u = box.top;
+            u1 = box.bottom;
+            vx = vecArray.vecs;
+            vx.length = 0;
+            if(invVecArray !== undefined && invVecArray.type === "VecArray"){
+                vy = invVecArray.vecs;
+                vy.length = 0;
+                for(c = 0; c < this.vecs.length; c ++){
+                    c1 = this.vecs[c];
+                    if(c1.x >= a && c1.x <= b && c1.y >= u && c1.y <= u1){
+                        vx[vx.length] = c1;
+                    }else{
+                        vy[vy.length] = c1;
+                    }
+                }
+                invVecArray.normalise();
+            }else{
+                for(c = 0; c < this.vecs.length; c ++){
+                    c1 = this.vecs[c];
+                    if(c1.x >= a && c1.x <= b && c1.y >= u && c1.y <= u1){
+                        vx[vx.length] = c1;
+                    }
+                }
+            }
+            vecArray.normalise();   
+            return vecArray;
         },
         getLast : function(){ // returns the last vec on the list
             return this.vecs[this.vecs.length-1]; // returns Vec
@@ -874,11 +1041,16 @@ groover.geom = (function (){
             this.p3.y = (dest.p3.y - from.p3.y) * amount + from.p3.y;
             return this;
         },        
-        asVecArray : function(){
-            return new VecArray()
-                .push(this.p1.copy())
-                .push(this.p2.copy())
-                .push(this.p3.copy())
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            if(instance){
+                vecArray.push(this.p1).push(this.p2).push(this.p3);                
+                return vecArray;                
+            }            
+            vecArray.push(this.p1.copy()).push(this.p2.copy()).push(this.p3.copy());
+            return vecArray;
         },            
         asLines : function(){
             return [
@@ -1153,17 +1325,6 @@ groover.geom = (function (){
         },
         inflate : function(amount){
         },
-        center : function(){
-        },
-        asVecArray: function(va){
-            if(va === undefined){
-                va = new VecArray();
-            }
-            va.push(this.p1.copy());
-            va.push(this.p2.copy());
-            va.push(this.p3.copy());
-            return va;
-        },
         setAs: function(triangle){
             this.p1.x = triangle.p1.x;
             this.p1.y = triangle.p1.y;
@@ -1242,6 +1403,17 @@ groover.geom = (function (){
                 this.y = num;
             }
             return this;  // Returns the existing this
+        }, 
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            if(instance){
+                vecArray.push(this);                
+                return vecArray;                
+            }
+            vecArray.push(this.copy());
+            return vecArray;
         }, 
         asBox : function(box){  // returns the bounding box that envelops this vec
             if(box === undefined){
@@ -1462,6 +1634,17 @@ groover.geom = (function (){
             }
             return box;
         },
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            if(instance){
+                vecArray.push(this.circle.center);                
+                return vecArray;                
+            }                        
+            vecArray.push(this.circle.center.copy());
+            return vecArray;
+        },          
         isEmpty : function(){
             if(this.start === this.end || 
                     this.start === Infinity || this.end === Infinity || 
@@ -1592,10 +1775,39 @@ groover.geom = (function (){
                 return  p - c * d; // area is Pie area - triangle *2
             }
         },
+        fromVec3 : function (vec1, vec2, vec3){ // creates an arc that fits the three vectors if posible If points are on a line then an empty arc is returned
+            // This function uses Geom registers v1
+            // v1 is the center of the circle if return is not empty 
+            this.circle.fromVec3(vec1, vec2, vec3);
+            if(this.circle.radius !== Infinity){
+                this.start = a = ((Math.atan2(vec1.y - v1.y, vec1.x - v1.x) % MPI2) + MPI2) % MPI2;  // start
+                b = ((Math.atan2(vec2.y - v1.y, vec2.x - v1.x) % MPI2) + MPI2) % MPI2;
+                this.end = c = ((Math.atan2(vec3.y - v1.y, vec3.x - v1.x) % MPI2) + MPI2) % MPI2;  // end
+                if(a > c){
+                    a -= MPI2;
+                }
+                if(b > a && b < c){ // based on the assumption that this quicker than || or !(b > a && b < c)
+                }else{
+                    b -= MPI2;
+                    if(b > a && b < c){ // based on the assumption that this quicker than ||
+                    }else{
+                        this.start = c;
+                        this.end = a;
+                    }
+                }
+            }else{
+                this.start = Infinity;
+                this.end = Infinity;
+            }
+            return this;
+        },
+        fromTriangle : function (triangle){// positions and sets radius to fit all 3 points of the triangle if posible. If not returns empty circle
+            return this.fromVec3(triangle.p1,triangle.p2,triangle.p3);
+        },       
         swap : function(){
-            var s = this.start;
+            c = this.start;
             this.start = this.end;
-            this.end = s;
+            this.end = c;
             return this; // returns this.
         },
         fromPoints : function(p1,p2,p3){
@@ -1614,6 +1826,14 @@ groover.geom = (function (){
         setRadius : function (number){ // set the radius of this to the {anumber}
             this.circle.radius = number;
             return this; // returns this.
+        },
+        addToRadius : function ( number ){
+            this.circle.radius += number;
+            return this; // returns this.            
+        },
+        multiplyRadius : function ( number ){
+            this.circle.radius *= number;
+            return this; // returns this.            
         },
         setCenter : function (vec){  // sets the center of this to the {avec}
             this.circle.center.x = vec.x;
@@ -1663,16 +1883,38 @@ groover.geom = (function (){
             }
             return this; // returns this.
         },    
-        endsAsVec : function() { 
-            return new VecArray()
-                .push(new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius))
-                .push(new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius))
+        endsAsVec : function(vecArray, vecEnd) {  // if vecArray is array then vecEnd is ignored if vecArray is a vec then vecEnd nust be included or only start vec is returned
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }
+            if(vecArray.type === "VecArray"){
+                vecArray.push(new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius))
+                        .push(new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius))
+                return vecArray;   
+            }
+            vecArray.x = this.circle.center.x + Math.cos(this.start) * this.circle.radius;
+            vecArray.y = this.circle.center.y + Math.sin(this.start) * this.circle.radius;     
+            if(vecEnd !== undefined){
+                vecEnd.x = this.circle.center.x + Math.cos(this.end) * this.circle.radius;
+                vecEnd.y = this.circle.center.y + Math.sin(this.end) * this.circle.radius;               
+            }
+            return  vecArray;    
         },
-        startAsVec : function() { 
-            return new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius);
+        startAsVec : function(vec) { 
+            if(vec === undefined){
+                return new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius);;
+            }
+            vec.x = this.circle.center.x + Math.cos(this.start) * this.circle.radius;
+            vec.y = this.circle.center.y + Math.sin(this.start) * this.circle.radius;
+            return vec;
         },
-        endAsVec : function() { 
-            return new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius);
+        endAsVec : function(vec) { 
+            if(vec === undefined){
+                return new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius);
+            }
+            vec.x = this.circle.center.x + Math.cos(this.end) * this.circle.radius;
+            vec.y = this.circle.center.y + Math.sin(this.end) * this.circle.radius;
+            return vec
         },
         startFromVec : function(vec){ // sets the start as the angle from this arcs center to vec
             this.start = Math.atan2(vec.y - this.circle.center.y,vec.x - this.circle.center.x);
@@ -1793,6 +2035,17 @@ groover.geom = (function (){
             this.radius = circle.radius;
             return this;
         },
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            if(instance){
+                vecArray.push(this.center);                
+                return vecArray;                
+            }             
+            vecArray.push(this.center.copy());
+            return vecArray;
+        },  
         asBox : function(box){     // Returns the bounding box 
                                    // {abox} is option
                                    // Returns `Box`
@@ -1864,6 +2117,14 @@ groover.geom = (function (){
             this.radius = r;
             return this;
         },
+        addToRadius : function ( number ){
+            this.radius += number;
+            return this; // returns this.            
+        },
+        multiplyRadius : function ( number ){
+            this.radius *= number;
+            return this; // returns this.            
+        },        
         circumference : function(){
             return this.radius * Math.PI * 2;
         },
@@ -1886,36 +2147,39 @@ groover.geom = (function (){
             this.radius = Math.hypot(vec1.x - vec2.x,vec1.y - vec2.y)/2;
             return this;
         },
-        fromVec3 : function (vec1, vec2, vec3){
-            v3.x = (vec2.x - vec1.x) / (vec1.y - vec2.y);
-            v3.y = (vec3.x - vec2.x) / (vec2.y - vec3.y);
-            if (v3.x === v3.y)  {
+        fromVec3 : function (vec1, vec2, vec3){ // positions and sets radius to fit all 3 points if posible. If not returns empty circle
+            // This function uses Geom registers v1
+            // v1 is the center of the circle if not empty
+            // Code Notes
+            // Other functions rely on v1 being the circle center if return is not empty
+            
+            c = (vec2.x - vec1.x) / (vec1.y - vec2.y); // slope of vector from vec 1 to vec 2
+            c1 = (vec3.x - vec2.x) / (vec2.y - vec3.y); // slope of vector from vec 2 to vec 3
+            if (c === c1)  { // Both are vector  so if slope is the same they must be on the same line
                 return this.empty();  // points are in a line 
             }            
-            v1.x = (vec1.x + vec2.x) / 2;
-            v1.y = (vec1.y + vec2.y) / 2;
-            v2.x = (vec2.x + vec3.x) / 2;
-            v2.y = (vec2.y + vec3.y) / 2;
-            c = v1.y - v3.x * v1.x;
-            c1 = v2.y - v3.y * v2.x;
 
-            if(vec1.y === vec2.y){
-                this.center.x = v1.x
-                this.center.y = v3.y * v1.x + c1;  
+            // locate the center
+            if(vec1.y === vec2.y){   // special case with vec1 and 2 have same y 
+                v1.x = ((vec1.x + vec2.x) / 2);
+                v1.y = c1 * v1.x + (((vec2.y + vec3.y) / 2) - c1 * ((vec2.x + vec3.x) / 2));  
             }else
-            if(vec2.y === vec3.y){
-                this.center.x = v2.x
-                this.center.y = v3.x * v2.x + c;  
+            if(vec2.y === vec3.y){ // special case with vec2 and 3 have same y 
+                v1.x = ((vec2.x + vec3.x) / 2);
+                v1.y = c * v1.x + (((vec1.y + vec2.y) / 2) - c * ((vec1.x + vec2.x) / 2));  
             } else{
-                this.center.x = (c1 - c) / (v3.x - v3.y);
-                this.center.y = v3.x * this.center.x + c;
+                v1.x = ((((vec2.y + vec3.y) / 2) - c1 * ((vec2.x + vec3.x) / 2)) - (u = ((vec1.y + vec2.y) / 2) - c * ((vec1.x + vec2.x) / 2))) / (c - c1);
+                v1.y = c * v1.x + u;
             }
 
-            this.radius = Math.hypot(vec1.x - this.center.x, vec1.y - this.center.y);
+            this.radius = Math.hypot(vec1.x - (this.center.x = v1.x), vec1.y - (this.center.y = v1.y));
             return this;
         },
         fromArea : function(area){
             this.radius = Math.sqrt(area / (Math.PI * 2));
+        },
+        fromTriangle : function (triangle){// positions and sets radius to fit all 3 points of the triangle if posible. If not returns empty circle
+            return this.fromVec3(triangle.p1,triangle.p2,triangle.p3);
         },
         fromCircumference  : function(leng){
             this.radius = leng / (Math.PI * 2);
@@ -2103,8 +2367,6 @@ groover.geom = (function (){
                 return retLine;
             }
             return retLine.empty();
-            
-        
         },
         interceptLine : function(line, retLine){// find the points if any where this circle intercepts the line
             // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
@@ -2137,6 +2399,124 @@ groover.geom = (function (){
                 return retLine;
             }
             return retLine.empty();
+        },
+        interceptLineSelect : function(line,which,limit, retVec){// find a point if any where the line intercets the circle. which indicates which point, limit tells what to do when intercept is outside the line seg
+            // which === 0 [defualt] means the closest point from the start (for limit 0,1) and end (for limit -1)
+            // which === 1 means the furerest point from the line start  (for limit 0,1) and end (for limit -1)
+            // limit === 0 [defualt] means only points on the line segment
+            // limit === 1 means only points infront of and including start
+            // limit === -1 means only points behind of and including end
+            
+            
+            // This function uses v1,v2;  
+            // v1 is the line as a vector
+            // v2 is the vector from the line start to the circle center
+            
+            
+            if(retVec === undefined){
+                retVec = new Vec();
+            }        
+      
+            v1.x = line.p2.x - line.p1.x;
+            v1.y = line.p2.y - line.p1.y;
+            v2.x = line.p1.x - this.center.x;
+            v2.y = line.p1.y - this.center.y;
+            var b = (v1.x * v2.x + v1.y * v2.y);
+
+            
+            c = 2 * (v1.x * v1.x + v1.y * v1.y);
+            b *= -2;
+            var d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - this.radius * this.radius));
+            if(isNaN(d)){ // no intercept
+                v3.x = v3.y = Infinity;
+            }else{
+                u = (b - d) / c;
+                u1 = (b + d) / c;
+                // Add second point first incase the line being set is the same line pased as first argument
+                if(which === 0 || which === undefined){
+                    if(limit === 0 || limit === undefined){
+                        if(u >= 0 && u1 >= 0 && u<= 1 && u1 <= 1){
+                            c = Math.min(u,u1);
+                        }else
+                        if(u >= 0 && u<= 1){
+                            c = u;
+                        }else
+                        if(u1 >= 0 && u1 <= 1){
+                            c = u1;
+                        }else{
+                            return retVec.empty();
+                        }
+                    }else
+                    if(limit === 1){
+                        if( u >= 0 && u1 >= 0){
+                            c = Math.min(u,u1);
+                        }else
+                        if( u >= 0 ){
+                            c = u;
+                        }else
+                        if( u1 >= 0){
+                            c = u1;
+                        }else{
+                            return retVec.empty();
+                        }
+                     }else{
+                        if( u <= 1 && u1 <= 1){
+                            c = Math.max(u,u1);
+                        }else
+                        if( u <= 1 ){
+                            c = u;
+                        }else
+                        if( u1 <= 1){
+                            c = u1;
+                        }else{
+                            return retVec.empty();
+                        }                           
+                     }      
+                }else{
+                    if(limit === 0 || limit === undefined){
+                        if(u >= 0 && u1 >= 0 && u<= 1 && u1 <= 1){
+                            c = Math.max(u,u1);
+                        }else
+                        if(u >= 0 && u<= 1){
+                            c = u;
+                        }else
+                        if(u1 >= 0 && u1 <= 1){
+                            c = u1;
+                        }else{
+                            return retVec.empty();
+                        }
+                    }else
+                    if(limit === 1){
+                        if( u >= 0 && u1 >= 0){
+                            c = Math.max(u,u1);
+                        }else
+                        if( u >= 0 ){
+                            c = u;
+                        }else
+                        if( u1 >= 0){
+                            c = u1;
+                        }else{
+                            return retVec.empty();
+                        }
+                     }else{
+                        if( u <= 1 && u1 <= 1){
+                            c = Math.min(u,u1);
+                        }else
+                        if( u <= 1 ){
+                            c = u;
+                        }else
+                        if( u1 <= 1){
+                            c = u1;
+                        }else{
+                            return retVec.empty();
+                        }                           
+                     }      
+                }
+                retVec.x = line.p1.x + v1.x * c;
+                retVec.y = line.p1.y + v1.y * c;
+                return retVec;
+            }
+            return retVec.empty();
         },
         intercept : function(circle){ // find the points if any where this circle and circle intercept
             var va = new VecArray();
@@ -2248,6 +2628,13 @@ groover.geom = (function (){
             this.p2.y = line.p2.y;
             return this;
         },
+        setEnds : function(vec1, vec2){
+            this.p1.x = vec1.x;
+            this.p1.y = vec1.y;
+            this.p2.x = vec2.x;
+            this.p2.y = vec2.y;
+            return this;
+        },
         isEmpty : function(){ // line is empty if either points are undefined or the length is 0 or any point has Infinity or any point has NaN
             var t;
             if(this.p1 === undefined ||  this.p2 === undefined || 
@@ -2297,25 +2684,17 @@ groover.geom = (function (){
             vec.y = this.p2.y - this.p1.y;
             return vec;
         },
-        _asVec : function(){  // do not use, experimental code
-            var v = regv[(regvSP ++)%REGS_LEN]; // get next reg vec
-            v.x = this.p2.x - this.p1.x
-            v.y = this.p2.y - this.p1.y
-            return v;
-        },
-        _asVec1 : function(){ // do not use, experimental code
-            vr1.x = this.p2.x - this.p1.x
-            vr1.y = this.p2.y - this.p1.y
-            return vr1;
-        },
-        _asVec2 : function(){ // do not use, experimental code
-            vr2.x = this.p2.x - this.p1.x
-            vr2.y = this.p2.y - this.p1.y
-            return vr2;
-        },
-        asVecArray : function(){
-            return new VecArray().push(this.p1.copy()).push(this.p2.copy());
-        },
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            if(instance){
+                vecArray.push(this.p1).push(this.p2);    
+                return vecArray;                
+            }             
+            vecArray.push(this.p1.copy()).push(this.p2.copy());
+            return vecArray;
+        },  
         asBox : function(box){
             if(box === undefined){
                 var box = new Box();
@@ -2357,14 +2736,14 @@ groover.geom = (function (){
             return false;
         },
         isLineLeft : function(line){ // Is the {aline} to the left of this line. Left is left of screen when looking at it and the line moves down.
-            var v = this._asVec1();
-            v1.x = line.p1.x - this.p1.x;
-            v1.y = line.p1.y - this.p1.y;
-            var v1 = line.p1.copy().sub(this.p1);
-            if(v.x * v1.y - v.y * v1.y < 0){
-                v1.x = line.p2.x - this.p1.x;
-                v1.y = line.p2.y - this.p1.y;
-                if(v.x * v1.y - v.y * v1.y < 0){
+            v1.x = this.p2.x - (vx = this.p1.x);
+            v1.y = this.p2.y - (vy = this.p1.y);
+            v2.x = line.p1.x - vx;
+            v2.y = line.p1.y - vy;
+            if(v1.x * v2.y - v1.y * v2.y < 0){
+                v2.x = line.p2.x - vx;
+                v2.y = line.p2.y - vy;
+                if(v1.x * v2.y - v1.y * v2.y < 0){
                     return true;
                 }
             }
@@ -2853,6 +3232,13 @@ groover.geom = (function (){
             this.p1.y = (this.p2.x += (v1.y = this.p1.y - this.p2.y)/2) + v1.y;
             return this; // returns this.
         },
+        centerOnVec : function(vec){ // moves the line  so that it is centered on vec
+            // this function uses Geom registers v1
+            // v1 is the vector of this line  
+            this.p1.x = (this.p2.x = vec.x + (v1.x = this.p1.x - this.p2.x)/2) - v1.x;
+            this.p1.y = (this.p2.x = vec.y + (v1.y = this.p1.y - this.p2.y)/2) - v1.y;
+            return this; // returns this.
+        },
         rotate90OnCenter : function(){ // rotates 90 deg clockwise on the center
             // this function uses Geom registers v1, v2
             // v1 is the vector of this line before rotation
@@ -2918,10 +3304,10 @@ groover.geom = (function (){
                 return this;  
             }
             v1.y = this.p2.x - this.p1.x;
-            v1.x = -this.p2.y - this.p1.y;
-            v2.x = distance / Math.hypot(v1.x,v2.y);
-            this.p1.x += (v1.x /= v2.x);
-            this.p1.y += (v1.y /= v2.x);
+            v1.x = -(this.p2.y - this.p1.y);
+            v2.x = distance / Math.hypot(v1.x,v1.y);
+            this.p1.x += (v1.x *= v2.x);
+            this.p1.y += (v1.y *= v2.x);
             this.p2.x += v1.x;
             this.p2.y += v1.y;
             return this;
@@ -3086,15 +3472,40 @@ groover.geom = (function (){
             line.p2.y = line.p1.y - v1.y;            
             return line;
         },
-        corners : function () {
-            var v = this.top.asVec().r90().mult(this.aspect);
-            var vecA = new VecArray();
-            vecA.push(this.top.p1.copy());
-            vecA.push(this.top.p2.copy());
-            vecA.push(this.top.p2.copy().add(v));
-            vecA.push(this.top.p1.copy().add(v));
-            return vecA;
+        corners : function (vecArray) { // returns an vec array containing the corners from top left top right bottom roght bottom left. If vecArray is passed then the first 4 vecs are set to the new points
+            // this function uses the Geom registers v1
+            // v1 is the vector representing the side (height) from top to bottom
+            if(vecArray === undefined){
+                c = (vecArray = new VecArray()).vecs;
+                c[0] = new Vec(this.top.p1);
+                c[1] = new Vec(this.top.p2);
+                v1.y = (c[1].x - c[0].x) * this.aspect;
+                v1.x = -(c[1].y - c[0].y) * this.aspect;
+                c[2] = new Vec(this.top.p2);
+                c[3] = new Vec(this.top.p1);
+            }else{
+                c = vecArray.vecs;
+                v1.y = ((c[2].x = c[1].x = this.top.p2.x) - (c[3].x = c[0].x = this.top.p1.x)) * this.aspect;
+                v1.x = -((c[2].y = c[1].y = this.top.p2.y) - (c[3].y = c[0].y = this.top.p1.y)) * this.aspect;
+            }
+            c[2].x += v1.x;
+            c[2].y += v1.y;  
+            c[3].x += v1.x;
+            c[3].y += v1.y;
+            return vecArray;
         },
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            if(instance){
+                vecArray.push(this.top.p1).push(this.top.p2);    
+                return vecArray;                
+            }             
+            
+            vecArray.push(this.top.p1.copy()).push(this.top.p2.copy());
+            return vecArray;
+        },  
         asBox : function(box){
             if(box === undefined){
                 var box = new Box();
@@ -3106,7 +3517,7 @@ groover.geom = (function (){
             box.env ( this.top.p2.x + v.x, this.top.p2.y + v.y);
             return box;
         },
-        asCircle : function(circle){
+        asCircle : function(circle){ // returns a bounding circle
             var l;
             if(circle === undefined){
                 circle = new Circle();
@@ -3121,7 +3532,7 @@ groover.geom = (function (){
             circle.radius = Math.hypot(l,l * this.aspect);
             return circle;            
         },
-        asInnerCircle : function(circle){
+        asInnerCircle : function(circle){  // returns the largest circle that can fit inside
             var l;
             if(circle === undefined){
                 circle = new Circle();
@@ -4006,6 +4417,12 @@ groover.geom = (function (){
             box.env(this.right,this.bottom);
             return box;
         },   
+        asVecArray : function(vecArray){ // nothing to add to the vecArray
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            return vecArray;
+        },          
         lerp : function(from, dest, amount){
            this.top = (dest.top - from.top) * amount + from.top;  
            this.right = (dest.right - from.right) * amount + from.right;  
@@ -4087,7 +4504,14 @@ groover.geom = (function (){
             str += "Bottom : "+ this.bottom ;
             str += ")";
             return str; // returns String
-        },         
+        },   
+        add : function(vec){
+            this.top += vec.y;
+            this.bottom += vec.y;
+            this.left += vec.x;
+            this.right += vec.x;
+            return this;
+        },        
         asRectange : function () {
             var a = (this.bottom- this.top)  / (this.right- this.left);
             return new Rectangle ( new Line( new Vec(this.left,this.top)), a)
@@ -4143,6 +4567,199 @@ groover.geom = (function (){
             return this; // returns this.
         } 
     }
+    Bezier.prototype = {
+        p1 : undefined,
+        p2 : undefined,
+        cp1 : undefined,
+        cp2 : undefined,
+        type : "Bezier",
+        copy : function(){
+            return new Bezier(this.p1, this.p2, this.cp1, this.cp2);
+        },
+        toString : function(precision){
+            var str;
+            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            if(this.isEmpty()){
+                return "Bezier : "+l+"( Empty )";
+            }
+            if(precision === undefined || precision === null){
+                precision = geom.defaultPrecision;;
+            }
+            str = "Bezier : "+l+"(";
+            str += " API incomplete )";
+            return str; // returns String
+        },
+        empty : function(){
+            this.p1.x = this.p1.y = this.p2.x = this.p2.y = Infinity;
+            return this;
+        },
+        isEmpty : function(){
+            if(this.p1 === undefined || this.p2 === undefined || this.cp1 === undefined){
+                return true;
+            }
+            if(this.p1.isEmpty() || this.p2.isEmpty() || this.cp1.isEmpty()){
+                return true;
+            }            
+        },
+        lerp : function(from, dest, amount){
+            this.p1.x = (dest.p1.x - from.p1.x) * amount + from.p1.x;
+            this.p1.y = (dest.p1.y - from.p1.y) * amount + from.p1.y;
+            this.p2.x = (dest.p2.x - from.p2.x) * amount + from.p2.x;
+            this.p2.y = (dest.p2.y - from.p2.y) * amount + from.p2.y;
+            this.cp1.x = (dest.cp1.x - from.cp1.x) * amount + from.cp1.x;
+            this.cp1.y = (dest.cp1.y - from.cp1.y) * amount + from.cp1.y;
+            if(this.cp2 !== undefined){
+                this.cp2.x = (dest.cp2.x - from.cp2.x) * amount + from.cp2.x;
+                this.cp2.y = (dest.cp2.y - from.cp2.y) * amount + from.cp2.y;
+            }
+            return this;
+        },          
+        isQuadratic : function(){
+            if(this.cp2 === undefined && !this.isEmpty()){
+                return true;
+            }
+            return false;
+        },
+        isCubic : function(){
+            if(!this.cp2.isEmpty() && !this.isEmpty()){
+                return true;
+            }            
+            return false;
+        },
+        asVecArray : function(vecArray, instance){
+            if(vecArray === undefined){
+                vecArray =  new VecArray();
+            }
+            if(instance){
+                vecArray.push(this.p1).push(this.p2).push(this.cp1);
+                if(this.cp2 !== undefined){
+                    vecArray.push(this.cp2);
+                }
+                return vecArray;                
+            }             
+            
+            vecArray.push(this.p1.copy()).push(this.p2.copy()).push(this.cp1.copy());
+            if(this.cp2 !== undefined){
+                vecArray.push(this.cp2.copy());
+            }
+            return vecArray;
+        },          
+        asBox : function(box){
+            if(box === undefined){
+                var box = new Box();
+            }
+            box.env ( this.p1.x, this.p1.y);
+            box.env ( this.p2.x, this.p2.y);
+            box.env ( this.cp1.x, this.cp1.y);
+            if(this.cp2 !== undefined){
+                box.env ( this.cp2.x, this.cp2.y);
+            }
+            return box;
+        },
+        asQuadratic : function(){
+            if(this.cp2 === undefined){
+                return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy());
+            }
+            v1.x = (this.cp1.x + this.cp2.x)/2;
+            v1.y = (this.cp1.y + this.cp2.y)/2;
+            return new Bezier(this.p1.copy(), this.p2.copy(), v1.copy());
+        },
+        asCubic : function(extraVec){ // this is just a stub for now untill I workout the best solution for the missing point
+            if(this.cp2 === undefined){
+                if(extraVec === undefined){
+                    var v = this.p2.copy().sub(this.p1).mult(1/3);
+                    v = this.p2.copy().sub(v).sub(v.r90());
+                    return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), v);
+                }
+                return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), extraVec);
+            }
+             return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), this.cp2.copy());
+        },
+        fromCircle : function(circle){ // stub
+            return this;
+        },
+        fromArc : function(arc){ // stub
+            return this;
+        },
+        fromVecArray : function(vecArray){ // stub
+            return this;
+        },
+        fromTriangle : function(triangle){ // stub
+            return this;
+        },
+        fromRectangle : function(rectangle){ // stub
+            return this;
+        },
+        fromBox : function(box){ // stub
+            return this;
+        },
+        vecAt : function(position,vec){
+            if(vec === undefined){
+                vec = new Vec();
+            }
+            if(position <= 0){
+                vec.x = this.p1.x;
+                vec.y = this.p1.y;
+                return vec;
+            }else
+            if(position >= 1){
+                vec.x = this.p2.x;
+                vec.y = this.p2.y;
+                return vec;
+            }
+                
+            v1.x = this.p1.x;
+            v1.y = this.p1.y;
+            c = position;
+            if(this.cp2 === undefined){
+                v2.x = this.cp1.x;
+                v2.y = this.cp1.y;
+                v1.x += (v2.x - v1.x) * c;
+                v1.y += (v2.y - v1.y) * c;
+                v2.x += (this.p2.x - v2.x) * c;
+                v2.x += (this.p2.y - v2.y) * c;
+                vec.x = v1.x + (v2.x - v1.x) * c;
+                vec.y = v1.y + (v2.x - v1.x) * c;
+                return vec;
+            }
+            v2.x = this.cp1.x;
+            v2.y = this.cp1.y;
+            v3.x = this.cp2.x;
+            v3.y = this.cp2.y;
+            v1.x += (v2.x - v1.x) * c;
+            v1.y += (v2.y - v1.y) * c;
+            v2.x += (v3.x - v2.x) * c;
+            v2.y += (v3.y - v2.y) * c;
+            v3.x += (this.p2.x - v3.x) * c;
+            v3.y += (this.p2.y - v3.y) * c;
+            v1.x += (v2.x - v1.x) * c;
+            v1.y += (v2.y - v1.y) * c;
+            v2.x += (v3.x - v2.x) * c;
+            v2.y += (v3.y - v2.y) * c;
+            vec.x = v1.x + (v2.x - v1.x) * c;
+            vec.y = v1.y + (v2.x - v1.x) * c;
+            return vec;                    
+        },
+        approxLength : function(resolution){
+            if(resolution === undefined || resolution === Infinity){
+                resolution = 100;
+            }
+            u = 1/Math.abs(resolution);
+            u1 = 0;
+            a = 1 + u/2; // to ensure that the for loop  does not miss 1 because of floating point error
+            v4.x = this.p1.x;
+            v4.y = this.p1.y;
+            for(c1 = u; c1 <= a; c1 += u){
+                this.vecAt(c1,v5);
+                u1 += Math.hypot(v5.x - v4.x, v5.y - v4.y);
+                v4.x = v5.x;
+                v4.y = v5.y;
+            }
+            return u1;
+        },
+
+            
+    }
     Transform.prototype = {
         xAxis : undefined,
         yAxis : undefined,
@@ -4191,6 +4808,17 @@ groover.geom = (function (){
             this.yAxis.empty();
             this.origin.empty();
             return this;            
+        },
+        asVecArray : function(va, instance) { // currently this just returns a new or passed vecArray with the origin only. Though may consider passing the axis
+            if(va === undefined){
+                va = new VecArray();
+            }
+            if(instance){
+                va.push(this.origin);                
+                return va;                
+            }
+            va.push(this.origin.copy());
+            return va;
         },
         applyToCoordinate : function(x, y, point){
             if(point !== undefined){
