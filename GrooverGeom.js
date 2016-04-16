@@ -1804,6 +1804,13 @@ groover.geom = (function (){
         fromTriangle : function (triangle){// positions and sets radius to fit all 3 points of the triangle if posible. If not returns empty circle
             return this.fromVec3(triangle.p1,triangle.p2,triangle.p3);
         },       
+        fitToCircles : function(cir1,cir2,rule){ // fits this arc to the two circle 
+            this.circle.fitToCircles(cir1,cir2,rule);
+            if(!this.circle.isEmpty()){
+                this.startFromVec(cir1.center).endFromVec(cir2.center);
+            }
+            return this;
+        },
         swap : function(){
             c = this.start;
             this.start = this.end;
@@ -2234,6 +2241,129 @@ groover.geom = (function (){
         },
         distFrom : function(vec){ // returns the distance from the circle circumferance to the point vec
             return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y)-this.radius;
+        },
+        fitToCircles : function(circle1, circle2, rule){ // fits this circle so that it touches circle1 and circle2 using the rules in rule
+            // rule = "left"  will fit this circle to the left of the line from circle1 to circle 2
+            // rule = "limit" will limit the circle to not cross the line between circle1 and circle 2
+            // rule = "grow" if included will grow the radius of to fit if needed
+            if(rule === undefined){
+                rule = "";
+            }else{
+                rule = rule.toLowerCase();
+            }
+            v1.x = circle2.center.x - circle1.center.x;
+            v1.y = circle2.center.y - circle1.center.y;
+            a = Math.hypot(v1.x,v1.y);  // get the length of the lines between all three
+            b = circle1.radius + this.radius;  // must touch so add radiuss
+            c = circle2.radius + this.radius;
+            if(rule.indexOf("limit") > -1){
+                // need to find a solution that limits te circle to the left or Right of the center line
+                var B = circle2.radius
+                var A = circle1.radius
+                var C = a;
+                // Need to find r. but first where on the line between cir1 and cir2 the circle touches
+                // u1 + u2 = C and 
+                // r = (u1 * u1 - A * A) / (2 * A) first cir
+                // r = (u2 * u2 - B * B) / (2 * B) second cir
+                // r = ((u1 * u1) - (A * A)) / (2 * A) = ((u2 * u2) - (B * B))/ (2 * B)
+                // Two unknowns so in terms of u2 = C - u1
+                // I know u2 = C - u1 to give one unknown thus solve the following
+                // 0 = ((u1 * u1) - (A * A)) / (2 * A) - ((C - u1) * (C - u1)) - (B * B)) / (2 * B)
+                // Is quadratic so use quadratic rule to solve positive solution only and get radius using first circle
+                var r = (Math.pow( (-((2 * C * A) / B) + Math.sqrt(((2 * C * A) / B) * ((2 * C * A) / B) - (4 - 4 * A / B) * -(- B * A + A * A + (C * C * A) / B))) / -(2 -  2 * A / B), 2) - A * A) / (2 * A);
+                this.radius = r;
+                b = circle1.radius + r;
+                c = circle2.radius + r;
+
+            }else
+            if(a > b + c){ // gap is too large can not fit
+                if(rule.indexOf("grow") > -1){
+                    this.radius += u = (a - (b+c))/2;
+                    b += u;
+                    c += u;
+                }else{
+                    this.empty();
+                    return this;
+                }
+            }
+            u = Math.sin(u1 = Math.triPh(a,b,c));
+            // u1 is dist from c1 to point on line then out from there at norm  u to line to find center
+            v2.x = v1.x / a; // normalise line between 
+            v2.y = v1.y / a;
+            u1 = Math.cos(u1);
+            v3.x = v2.x * b * u1;
+            v3.y = v2.y * b * u1;
+            if(rule.indexOf("left") > -1){
+                v3.y -= v2.x * b * u;
+                v3.x += v2.y * b * u;
+            }else{
+                v3.y += v2.x * b * u;
+                v3.x -= v2.y * b * u;
+            }
+            this.center.x = circle1.center.x + v3.x;
+            this.center.y = circle1.center.y + v3.y;
+            return this;
+        },
+        fitToCirclesGetVecs : function(circle1, circle2, rule, retCircle){ // this will return the vec that is the center of a fitting circle. return type is a new circle or the supplied circles paramaters set. If no solution can be found the returned circle is empty
+            // rule = "left"  will fit this circle to the left of the line from circle1 to circle 2
+            // rule = "limit" will limit the circle to not cross the line between circle1 and circle 2
+            // rule = "grow" if included will grow the radius of to fit if needed
+            if(retCircle === undefined){
+                retCircle = new Circle(this.center.copy(), this.radius);
+            }else{
+                retCircle.center.x = this.center.x;
+                retCircle.center.y = this.center.y;
+                retCircle.radius = this.radius;
+            }
+            if(rule === undefined){
+                rule = "";
+            }else{
+                rule = rule.toLowerCase();
+            }
+            v1.x = circle2.center.x - circle1.center.x;
+            v1.y = circle2.center.y - circle1.center.y;
+            a = Math.hypot(v1.x,v1.y);  // get the length of the lines between all three
+            b = circle1.radius + retCircle.radius;  // must touch so add radiuss
+            c = circle2.radius + retCircle.radius;
+            if(rule.indexOf("limit") > -1){
+                // need to find a solution that limits te circle to the left or Right of the center line
+                c = circle2.radius
+                b = circle1.radius
+                vx = (2 * a * b) / c;
+                vy = b * b;
+                var r = (Math.pow( (-(vx) + Math.sqrt((vx) * (vx) - (4 - 4 * b / c) * -(- c * b + vy + (a * a * b) / c))) / -(2 -  2 * b / c), 2) - vy) / (2 * b);
+                retCircle.radius = r;
+                b = circle1.radius + r;
+                c = circle2.radius + r;
+
+            }else
+            if(a > b + c){ // gap is too large can not fit
+                if(rule.indexOf("grow") > -1){
+                    retCircle.radius += u = (a - (b+c))/2;
+                    b += u;
+                    c += u;
+                }else{
+                    retCircle.empty();
+                    return retCircle;
+                }
+            }
+            u = Math.sin(u1 = Math.triPh(a,b,c));
+            // u1 is dist from c1 to point on line then out from there at norm  u to line to find center
+            v2.x = v1.x / a; // normalise line between 
+            v2.y = v1.y / a;
+            u1 = Math.cos(u1);
+            v3.x = v2.x * b * u1;
+            v3.y = v2.y * b * u1;
+            if(rule.indexOf("left") > -1){
+                v3.y -= v2.x * b * u;
+                v3.x += v2.y * b * u;
+            }else{
+                v3.y += v2.x * b * u;
+                v3.x -= v2.y * b * u;
+            }
+            retCircle.center.x = circle1.center.x + v3.x;
+            retCircle.center.y = circle1.center.y + v3.y;
+            return retCircle;
         },
         closestPoint : function(vec,retVec){  // legacy calls closestPointToVec
             return this.closestPointToVec(vec,retVec);

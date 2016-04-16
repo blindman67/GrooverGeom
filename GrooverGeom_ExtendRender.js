@@ -386,7 +386,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
                     }
                 }else{
                     if(dir){
-                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.end, this.start, dir);
+                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, dir);
                     }else{
                         ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, dir);
                     }
