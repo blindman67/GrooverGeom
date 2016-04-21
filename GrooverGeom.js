@@ -43,6 +43,18 @@ groover.geom = (function (){
         }
         return Math.asin(x * y1 - y * x1);
     }
+    Math.unitDistOnLine = function(px,py,l1x,l1y,l2x,l2y){
+        var v1x,v1y,v2x,v2y,l;
+        v1x = l2x - l1x;
+        v1y = l2y - l1y;
+        l = Math.hypot(v1y,v1x);
+        v2x = px - l1x;
+        v2y = py - l1y;
+        return (v2x * v1x + v2y * v1y)/(l * l);
+    }
+    Math.unitDistOnVec = function(px,py,v1x,v1y){
+        return (px * v1x + py * v1y)/(v1y * v1y + v1x * v1x);     
+    }    
     Math.dist2Line = function(px,py,l1x,l1y,l2x,l2y){
         var v1x,v1y,v2x,v2y,l,c;
         v1x = l2x - l1x;
@@ -51,12 +63,12 @@ groover.geom = (function (){
         v2x = px - l1x;
         v2y = py - l1y;
         c = (v2x * v1x + v2y * v1y)/(l * l);
-        return Math.hypot(v1y * c - v2y, v1x * c - v2x);        
+        return Math.hypot(v1x * c - v2x, v1y * c - v2y);        
     }
     Math.dist2Vector = function(px,py,v1x,v1y){
         var c;
         c = (px * v1x + py * v1y)/(v1y * v1y + v1x * v1x);
-        return Math.hypot(v1y * c - px, v1x * c - py);        
+        return Math.hypot(v1x * c - px, v1y * c - py);        
     }    
     Math.circle = {};  
     Math.sphere = {};    
@@ -131,7 +143,7 @@ groover.geom = (function (){
     // Do not return them.
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
     var vx,vy,v1x,v1y,u,u1,c,c1,a,b,d,e;  
-    //var l1,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these usefull as yet may return them but want to keep the number of closure variable as low as possible
+    var l1; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these usefull as yet may return them but want to keep the number of closure variable as low as possible
     
     // NOTE dropping this....
     /*const REGS_LEN = 5; // used in Vec._asVec  Internal uses only and experiment 
@@ -155,8 +167,8 @@ groover.geom = (function (){
         ve = new Vec();
         vr1 = new Vec();
         vr2 = new Vec();
-        /*l1 = new Line();
-        l2 = new Line();
+        l1 = new Line();
+        /*l2 = new Line();
         l3 = new Line();
         l4 = new Line();
         l5 = new Line(); 
@@ -178,6 +190,7 @@ groover.geom = (function (){
             v3 : v3,
             v4 : v4,
             v5 : v5,
+            l1 : l1,
             get : function(name){
                 switch(name){
                     case "c":
@@ -1187,27 +1200,28 @@ groover.geom = (function (){
             if(!this.isVecInside(line.p1)){
                 return false;
             }
+
             return this.isVecInside(line.p2)
         },
-        isCircleInside : function(circle){
+        isCircleInside : function(circle){ // return true is circle is inside triangle. Only valid for clockwise triangles
             if(!this.isVecInside(circle.center)){
                 return false;
             }
             v1.x = circle.center.x;
             v1.y = circle.center.y;
             a = circle.radius;
-            if(a > Math.dist2(v1.x - this.p1.x, v1.y - this.p1.y, v2.x, v2.y)){
+            if(a > Math.dist2Vector(v1.x - this.p1.x, v1.y - this.p1.y, v2.x, v2.y)){
                 return false;                
             }
-            if(a > Math.dist2(v1.x - this.p2.x, v1.y - this.p2.y, v3.x, v3.y)){
+            if(a > Math.dist2Vector(v1.x - this.p2.x, v1.y - this.p2.y, v3.x, v3.y)){
                 return false;                
             }
-            if(a > Math.dist2(v1.x - this.p3.x, v1.y - this.p3.y, v4.x, v4.y)){
+            if(a > Math.dist2Vector(v1.x - this.p3.x, v1.y - this.p3.y, v4.x, v4.y)){
                 return false;                
             }
             return true;
         },
-        isArcInside : function(arc){
+        isArcInside : function(arc){ // not finnished
             if(!this.isVecInside(arc.circle.center)){
                 return false;
             }
@@ -1314,10 +1328,72 @@ groover.geom = (function (){
             return this.isVecInside(triangle.p3)
         },
         isLineTouching : function(line){
-            return undefined;            
+            if(this.isVecInside(line.p1) || this.isVecInside(line.p2)){
+                return true;
+            }
+            l1.p1.x = this.p1.x;
+            l1.p1.y = this.p1.y;
+            l1.p2.x = this.p2.x;
+            l1.p2.y = this.p2.y;           
+            if(line.isLineSegsIntercepting(l1)){
+                return true;
+            }
+            l1.p1.x = this.p3.x;
+            l1.p1.y = this.p3.y;
+            if(line.isLineSegsIntercepting(l1)){
+                return true;
+            }
+            l1.p2.x = this.p1.x;
+            l1.p2.y = this.p1.y;
+            if(line.isLineSegsIntercepting(l1)){
+                return true;
+            }
+            return false;            
         },
-        isCircleTouching : function(circle){
-            return undefined;            
+        isCircleTouching : function(circle){ // returns true is the circle touches the triangle; currently only valid for clockwise triangles
+            if(this.isVecInside(circle.center)){ // is center inside
+                return true;
+            }
+            // create short quick acess
+            v1.x = circle.center.x;
+            v1.y = circle.center.y;
+            u1 = circle.radius;
+            // are any triangle vertex inside circle
+            if(u1 > Math.hypot(v1.x - this.p1.x, v1.y - this.p1.y)){
+                return true;
+            }
+            if(u1 > Math.hypot(v1.x - this.p2.x, v1.y - this.p2.y)){
+                return true;
+            }
+            if(u1 > Math.hypot(v1.x - this.p3.x, v1.y - this.p3.y)){
+                return true;
+            }
+            // is circle within radius of each line
+            v2.x = this.p2.x - this.p1.x;
+            v2.y = this.p2.y - this.p1.y;            
+            a = Math.unitDistOnVec(v1.x - this.p1.x, v1.y - this.p1.y, v2.x, v2.y);
+            if(a >= 0 && a <= 1){
+                if(u1 > Math.dist2Vector(v1.x - this.p1.x, v1.y - this.p1.y, v2.x, v2.y)){
+                    return true;
+                }
+            }
+            v2.x = this.p3.x - this.p2.x;
+            v2.y = this.p3.y - this.p2.y;            
+            a = Math.unitDistOnVec(v1.x - this.p2.x, v1.y - this.p2.y, v2.x, v2.y);
+            if(a >= 0 && a <= 1){
+                if(u1 > Math.dist2Vector(v1.x - this.p2.x, v1.y - this.p2.y, v2.x, v2.y)){
+                    return true;
+                }
+            }      
+            v2.x = this.p1.x - this.p3.x;
+            v2.y = this.p1.y - this.p3.y;            
+            a = Math.unitDistOnVec(v1.x - this.p3.x, v1.y - this.p3.y, v2.x, v2.y);
+            if(a >= 0 && a <= 1){
+                if(u1 > Math.dist2Vector(v1.x - this.p3.x, v1.y - this.p3.y, v2.x, v2.y)){
+                    return true;
+                }
+            }             
+            return false;            
         },
         isArcTouching : function(arc){
             return undefined;            
@@ -1668,10 +1744,36 @@ groover.geom = (function (){
             }
             return false;        
         },
-        reverse : function(){
-            var t = this.p1;
-            this.p1 = this.p3,
-            this.p3 = t;
+        reverse : function(){ // if swap is supplied then swaps that point and the next. Defualts to 0 if not given. swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
+            if(swap === undefined || swap === 0){
+                v1.x  = this.p1.x;
+                v1.y  = this.p1.y;
+                this.p1.x = this.p2.x,
+                this.p1.y = this.p2.y,
+                this.p2.x = v1.x;
+                this.p2.y = v1.y;
+            }else
+            if(swap === 1){
+                v1.x  = this.p2.x;
+                v1.y  = this.p2.y;
+                this.p2.x = this.p3.x,
+                this.p2.y = this.p3.y,
+                this.p3.x = v1.x;
+                this.p3.y = v1.y;
+            }else{
+                v1.x  = this.p3.x;
+                v1.y  = this.p3.y;
+                this.p3.x = this.p1.x,
+                this.p3.y = this.p1.y,
+                this.p1.x = v1.x;
+                this.p1.y = v1.y;
+            }
+            return this;
+        },
+        makeClockwise : function(swap){ // ensures the triangle is clockwise. if swap is supplied then swaps that point and the next swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
+            if(this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1) < 0){
+                this.reverse(swap);
+            }
             return this;
         },
         lengthAllQuick2 : function(){ // sets registers a,b,c to the square length of the sides. Returns this;
