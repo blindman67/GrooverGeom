@@ -1,7 +1,7 @@
 "use strict";
 
 groover.geom.Geom.prototype.addRender = function(ctx1){
-    var mark,  geom, ctx, size, workVec;
+    var mark,  geom, ctx, size, workVec,a,b,c;  // a,b,c are general registers for this scope
     geom = this;
     ctx = ctx1;
     size = 1;
@@ -231,6 +231,9 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             primitive.moveTo();
             primitive.draw();
         }
+        var paDrawJoined = function(primitive){
+            primitive.draw();
+        }
         var paMark = function(primitive){
             primitive.mark();
         }
@@ -244,8 +247,12 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             this.each(paLineTo);
             return this;// returns this
         };
-        geom.PrimitiveArray.prototype.draw = function(){  // The {odir} is a boolean that if true reveres the direction to the draw
-            this.each(paDraw);
+        geom.PrimitiveArray.prototype.draw = function(join){  // The {odir} is a boolean that if true reveres the direction to the draw
+            if(join){
+                this.each(paDrawJoined);
+            }else{
+                this.each(paDraw);
+            }
             return this; // returns this
         };
         geom.PrimitiveArray.prototype.mark = function(){
@@ -276,16 +283,46 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         };        
     }
     if(geom.VecArray){
-        geom.VecArray.prototype.moveTo = function(){
-            if(this.vecs.length > 0){
-                this.vecs[0].moveTo();
+        geom.VecArray.prototype.moveTo = function(position){ // position is the index of the vec 
+                                                             // unless it is undefined, negative, or greater than vecArray.length
+                                                             // if undefined then the first vec if any is used.
+                                                             // if negative then the index starts from the end vecArray.length - position. 
+                                                             //    if the negative offset indexs a point less than 0 then 0 is used
+                                                             // if position is greater than length-1 then length is used;
+            if(position === undefined){                    
+                if(this.vecs.length > 0){
+                    this.vecs[0].moveTo();
+                }
+            }else
+            if((a = this.vecs.length) > 0){
+                if(position < 0){
+                    position = Math.max(0,a + position);
+                }else{
+                    position = Math.min(a-1,position);
+                }
+                this.vecs[position].moveTo();
             }
             return this;// returns this
         };
-        geom.VecArray.prototype.lineTo = function(){
-            this.each(function(vec,i){
-                vec.lineTo();
-            });
+        geom.VecArray.prototype.lineTo = function(position){ // position is the index of the vec 
+                                                             // unless it is undefined, negative, or greater than vecArray.length
+                                                             // if undefined then the first vec if any is used.
+                                                             // if negative then the index starts from the end vecArray.length - position. 
+                                                             //    if the negative offset indexs a point less than 0 then 0 is used
+                                                             // if position is greater than length-1 then length is used;
+            if(position === undefined){                    
+                if(this.vecs.length > 0){
+                    this.vecs[0].lineTo();
+                }
+            }else
+            if((a = this.vecs.length) > 0){
+                if(position < 0){
+                    position = Math.max(0,a + position);
+                }else{
+                    position = Math.min(a-1,position);
+                }
+                this.vecs[position].lineTo();
+            }
             return this;// returns this
         };
         geom.VecArray.prototype.draw = function(){  // The {odir} is a boolean that if true reveres the direction to the draw
@@ -358,6 +395,9 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     if(geom.Arc){
         geom.Arc.prototype.moveTo = function(end){ // if end (optional) is true then move to the end else move to the start
             if(this.start !== this.end){
+                if(end === undefined){
+                    end = this.direction;
+                }                
                 if(end){
                     this.endAsVec().moveTo();
                 }else{
@@ -368,6 +408,9 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         };
         geom.Arc.prototype.lineTo = function(end){ // if end (optional) is true then line to the end else line to the start
             if(this.start !== this.end){
+                if(end === undefined){
+                    end = this.direction;
+                }
                 if(end){
                     this.endAsVec().lineTo();
                 }else{
@@ -378,18 +421,14 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         };
         geom.Arc.prototype.draw = function(dir){// The {odir} is a boolean that if true reveres the direction to the draw
             if(this.start !== this.end){
-                if(this.circle.radius < 0){
-                    if(dir){
-                        ctx.arc(this.circle.center.x, this.circle.center.y, -this.circle.radius, this.end, this.start, !dir);
+                if(this.circle.radius >= 0){
+                    if(dir === undefined){
+                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, this.direction);
                     }else{
-                        ctx.arc(this.circle.center.x, this.circle.center.y, -this.circle.radius, this.start, this.end, !dir);
+                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, dir);
                     }
                 }else{
-                    if(dir){
-                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, dir);
-                    }else{
-                        ctx.arc(this.circle.center.x, this.circle.center.y, this.circle.radius, this.start, this.end, dir);
-                    }
+                    // ignoring negative radius
                 }
             }
             return this;// returns this

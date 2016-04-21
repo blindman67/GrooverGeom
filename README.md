@@ -4,6 +4,9 @@
 
 groover.Geom is designed to provide as complete set of 2D geometry functions as possible and is based and some standardised primitives.
 
+
+Because some functions are not yet complete (and there are many functions) to cover missing function results a return of undefined means code not complete unless otherwise noted in the source code.
+
 The basic primitives
 
 Vector. 
@@ -25,6 +28,19 @@ Animation
 
 Extensions
 I have included some extensions for more complex geometry (shapes) and rendering (render)
+The list of extensions is growing
+Render, for rendering to the 2D canvas context, adds the following functions to primitives
+    moveTo // move to the start
+    lineTo // line to start
+    draw  // adds the primitive to the current path
+    lable // lables the primitive with text
+    mark // marks the primitve at its defing vecs
+shapes, for complex shapes made of groups of primitive. polygon, roundedPill, roundedPath
+UI, Simple UI interface for selecting and moving points. Will be a full UI for all primitives when done.
+SVG, For SVG (currently just a stub) adds the following functions to primitives
+   toSVG    // returns a string representation of the primitive as SVG
+   toSVGPath  // returns a string representation of the primitive as a SVG path
+   fromSVG  // set the primitive to conform to the supplied SVG
 
 
 An important aim of this code is speed I do this via duplication and what will seem a very unstructured approch.

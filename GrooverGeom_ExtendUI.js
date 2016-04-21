@@ -1,6 +1,13 @@
 groover.geom.Geom.prototype.addUI = function(element1){
     var geom, element, mouse, points, selected, unselected, boundingBox, selectionBox, buttonMain,buttonRight,buttonMiddle;
     var dragOffsetX, dragOffsetY,dragStartX, dragStartY, pointerLoc, mouseOveBounds;
+    if(this.UI !== undefined){
+        if(element1 === undefined){
+            console.log("Call to groover.geom.Geom.prototype.addUI() failed. Groover.Geom.Shape extension already exists");        
+            return;
+        }
+        throw new Error("Could not add UI for element because UI already exists. Use  groover.Geom.setUIElement(element) istead.");
+    }    
     geom = this;
     element = element1;
     
@@ -25,6 +32,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         functions : [],
         info : "Provides a User interface for basic interaction."
     };
+    this.objectNames.push("UI");
     geom.Geom.prototype.setUIElement = function(element1){
         if(element1 === undefined || element1 === null){
             if(mouse.active){
@@ -36,6 +44,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
         mouse.start(element)
         
     }
+
+        
     var buttonDown = false;
     var buttonDownOnSelected = false;
     var buttonDownOn = undefined;
@@ -44,7 +54,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var quickDrag = false;
     var draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
     var pointsUpdated = false; // true if there are point that have been changed. 
-    geom.Geom.prototype.UI = {
+    this.UI = function(){};
+    this.UI.prototype = {
         pointOfInterestIndex : undefined,  // this holds a index to a point in one of the exposed vecArrays and is set depending on the function and argument. use it to access the point of interest
         points : points,
         selected : selected,
@@ -55,6 +66,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         selectionBox : selectionBox,
         dragSelecting : false,
         pointerOverBounds : false,
+        changed : true,  // this is set to true if a point has been moved or there has been any change in any geom stored, changed is flaged true of points are added or removed. Changed does not include changes in selection
 
         pointerLoc : pointerLoc,
         pointerDistLimit : 10,
@@ -79,7 +91,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
             this.draggingItem = undefined;
             this.closestToPointer = undefined;
             mouse.remove();
-            
         },
         buttonDown : function(){
             
@@ -138,7 +149,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
                         dragged = false;
                         this.dragging = true;
                         this.dragSelecting = true;
-                        
                     }
                 }else
                 if(this.dragging){
@@ -155,7 +165,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             selectionBox.normalise();
                             points.findInsideBox(selectionBox,selected,unselected);
                             this.dragSelecting = true;
-                            
                         }else{
                             workVec.x = mouse.x- dragStartX;
                             workVec.y = mouse.y- dragStartY;
@@ -163,12 +172,9 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             dragStartY = mouse.y;
                             selected.add(workVec);
                             boundingBox.add(workVec);
-                            pointsUpdated = true;
+                            this.changed = pointsUpdated = true;
                         }
-                        
                     }
-                    
-                    
                 }else
                 if(buttonDown){
                     
@@ -246,6 +252,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 vec.makeUnique();
             }
             points.push(vec);
+            this.selectPoint(vec);
+            this.changed = true;
             return this;
         },
         addPoints : function(vecArray, allreadyUnique){
@@ -255,6 +263,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 }
                 points.push(vec);
             });
+            this.selectPoints(vecArray);
+            this.changed = true;
             return this;
         },
         selectPointToggle : function(point, safe){ // point is a vec and safe is true if you want the selection to check for violations.
@@ -402,7 +412,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }    
         }            
     }
-    
+    this.ui = new this.UI();
     geom.Geom.prototype.UIMouse = mouse = (function(){
         function preventDefault(e) { e.preventDefault(); }
         var interfaceId = 0;
@@ -443,7 +453,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }
         }
         mouse.start = function(element = document, blockContextMenu = false){
-            if(mouse.element !== undefined){ mouse.removeMouse();}
+            if(mouse.element !== undefined){ mouse.remove();}
             mouse.element = element;
             mouse.mouseEvents.forEach(n => { element.addEventListener(n, mouseMove); } );
             if(blockContextMenu === true){

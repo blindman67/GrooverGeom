@@ -1,11 +1,16 @@
 "use strict";
 
 groover.geom.Geom.prototype.addShapes = function(){
+    if(this.Shape !== undefined){
+        console.log("Call to groover.geom.Geom.prototype.addShapes() failed. Groover.Geom.Shape extension already exists");        
+        return;
+    }
     var geom = this;
     this.extentions.shapes = {   // add extentions for self documenter
         functions : [],
         info : "Provides helper functions to create complex shapes."
     };
+    this.objectNames.push("Shape");
     this.Shape = function(){
         this.items = [];
     }
@@ -573,7 +578,7 @@ groover.geom.Geom.prototype.addShapes = function(){
                 return this; // returns this;
 
             }                
-            if(c1.mark !== undefined){
+            if(geom.extentions.render){
                 this.lineTo = function(){
                     if(this.isCircle){
                         mainC.lineTo();
@@ -651,8 +656,129 @@ groover.geom.Geom.prototype.addShapes = function(){
             }
             this.calculate();
             return this;
-        }
+        },
+        roundedPath : function(vecArray,radius,closed){
+            var lastVecCount;
+            this.vecArray = vecArray;
+            this.dirty = true;
+            this.closed = closed;
+            this.radius = radius;
+            lastVecCount = vecArray.vecs.length;
+            this.setArray = function(vecArray){
+                this.vecArray = vecArray()
+                lastVecCount = vecArray.vecs.length;
+                this.dirty = true;
+                return this;
+            };
+            this.closePath = function(state){
+                if(state !== this.closed){
+                    this.dirty = true;
+                    closed = this.closed = state;
+                }
+                return this;
+            };
+            this.setRadius = function(rad){
+                if(rad !== this.radius){
+                    this.dirty = true;
+                    radius = this.radius = rad;
+                }
+                return this;
+            };
+            this.makeDirty = function(){
+                this.dirty = true;
+                return this;
+            };            
+            this.calculate = function(){
+                if(this.dirty || lastVecCount !== this.vecArray.vecs.length){
+                    var lastV;
+                    this.items.length = 0;
+                    var arc,line1,line2,items,va,i,len;
+                    va = this.vecArray;
+                    items = this.items;
+                    if(va.vecs.length > 2){
+                        va.each(function(v){
+                            if(lastV !== undefined){
+                                items.push(new geom.Line(lastV.copy(),v.copy()));
+                                items.push(new geom.Arc(new geom.Circle(v.copy(), radius),0,0));
+                            }
+                            lastV = v;
+                        });
+                        if(closed){
+                            items.push(new geom.Line(lastV.copy(),vecArray.vecs[0].copy()));
+                            items.push(new geom.Arc(new geom.Circle(vecArray.vecs[0].copy(), radius),0,0));
+                        }else{
+                            items.pop();  // if open then dont need the last arc
+                        }
+                        len = items.length;
+                        for(i = 0; i < len; i +=2){
+                            line1 = items[i];
+                            line2 = items[(i+2)%len];
+                            arc = items[i + 1];
+                            arc.fitCorner(line1,line2);
+                        }
+                        for(i = 0; i < len; i += 2){
+                            line1 = items[i];
+                            line2 = items[(i+2)%len];
+                            arc = items[i + 1];
+                            arc.startAsVec(line1.p2);
+                            arc.endAsVec(line2.p1);
+                        }
+                    }
+                    this.dirty = false;
+                    lastVecCount = vecArray.vecs.length;                    
+                }
+                return this;                
+            }
+            if(geom.extentions.render){
+                this.mark = function(){
+                    var it,i,len;
+                    this.calculate();
+                    it = this.items;
+                    len = this.items.length;
+                    for(i = 0; i < len; i ++){
+                        it[i].mark();
+                    }    
+                    return this;
+                    
+                }
+                this.moveTo = function(){
+                    this.calculate();
+                    if(this.items.length > 0){
+                        this.items[0].moveTo();
+                    }                    
+                    return this;
+                }
+                this.lineTo = function(){
+                    this.calculate();                    
+                    if(this.items.length > 0){
+                        this.items[0].lineTo();
+                    }                    
+                    return this;
+                }
+                this.draw = function(){
+                    var it,i,len;
+                    this.calculate();
+                    it = this.items;
+                    len = this.items.length;
+                    for(i = 0; i < len; i ++){
+                        it[i].draw();
+                    }
+                    return this;
+                }
+                this.lable = function(text){
+                    return this;
+                }
+            }
+
+            this.calculate();
+            return this;
+                
+                
+                
+                
+        }        
     }
+    
     
     
 }

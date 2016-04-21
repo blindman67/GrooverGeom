@@ -43,7 +43,21 @@ groover.geom = (function (){
         }
         return Math.asin(x * y1 - y * x1);
     }
-    
+    Math.dist2Line = function(px,py,l1x,l1y,l2x,l2y){
+        var v1x,v1y,v2x,v2y,l,c;
+        v1x = l2x - l1x;
+        v1y = l2y - l1y;
+        l = Math.hypot(v1y,v1x);
+        v2x = px - l1x;
+        v2y = py - l1y;
+        c = (v2x * v1x + v2y * v1y)/(l * l);
+        return Math.hypot(v1y * c - v2y, v1x * c - v2x);        
+    }
+    Math.dist2Vector = function(px,py,v1x,v1y){
+        var c;
+        c = (px * v1x + py * v1y)/(v1y * v1y + v1x * v1x);
+        return Math.hypot(v1y * c - px, v1x * c - py);        
+    }    
     Math.circle = {};  
     Math.sphere = {};    
     Math.circle.area = function(radius){
@@ -116,7 +130,7 @@ groover.geom = (function (){
     // the following are to aid in optimisation. Rather than create new primitives when needed these should be used instead
     // Do not return them.
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
-    var vx,vy,v1x,v1y,u,u1,c,c1,a,b;  
+    var vx,vy,v1x,v1y,u,u1,c,c1,a,b,d,e;  
     //var l1,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these usefull as yet may return them but want to keep the number of closure variable as low as possible
     
     // NOTE dropping this....
@@ -186,7 +200,20 @@ groover.geom = (function (){
                 return undefined;
             }
         };
-
+        this.primitiveTypes = [
+            "PrimitiveArray",
+            "Vec",
+            "VecArray",
+            "Line",
+            "Triangle",
+            "Rectangle",
+            "Circle",
+            "Arc",
+            "Box",
+            "Empty",
+            "Bezier",
+            "Transform",
+        ];
         this.objectNames = [
             "PrimitiveArray",
             "Vec",
@@ -202,6 +229,7 @@ groover.geom = (function (){
             "Transform",
         ];
         this.extentions = {
+
             
         },
         this.properties = {
@@ -263,7 +291,41 @@ groover.geom = (function (){
                 }
             });        
         },
-        isGeom : function (obj){
+        isEmpty : function (obj){
+            if(this.isPrimitive(obj)){
+                if(typeof obj.isEmpty === "function"){
+                    return obj.isEmpty();
+                }
+            }
+            return undefined;
+        },
+        validatePrimitive : function(obj){
+            if(typeof obj === "object"){
+                if(typeof obj.type === "string"){
+                    if(primitiveTypes.indexOf(obj.type) > -1){
+                        var temp = new Geom[obj.type];
+                        for(var i in temp){
+                            if(typeof temp[i] !== typeof obj[i]){
+                                if(typeof temp[i] === "number" && typeof obj[i] === "string"){
+                                    if(isNaN(obj[i])){
+                                        return false;
+                                    }
+                                    obj[i] = Number(ob[i]);
+                                }else
+                                if(typeof temp[i] === "string" && typeof obj[i] !== "function"  && typeof obj[i].toString === "function"){
+                                    obj[i] = obj[i].toString();
+                                }else{
+                                    return false;
+                                }
+                            }
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
+        },
+        isPrimitive : function (obj){
             if(obj !== undefined && typeof obj.type === "string"){
                 if(this.types.indexOf(obj.type) > -1){
                     return true;
@@ -453,7 +515,7 @@ groover.geom = (function (){
             this.radius = 1;
         }
     };
-    function Arc(circle,start,end){
+    function Arc(circle,start,end,direction){
         this.circle = circle === undefined || circle === null ? new Circle() : circle;
         if(start === undefined && end === undefined){
             start = 0;
@@ -473,6 +535,7 @@ groover.geom = (function (){
             this.start = start;
             this.end = end;
         }
+        this.direction = direction;
     };
     function Rectangle(top,v2Aspect,aspect){
         if(top !== undefined && v2Aspect !== undefined && aspect !== undefined){
@@ -1003,7 +1066,6 @@ groover.geom = (function (){
             if(this.p1.isEmpty() || this.p1.isEmpty() || this.p1.isEmpty()){
                 return true;
             }
-            
             return false;
         },
         empty : function(){ //
@@ -1098,25 +1160,25 @@ groover.geom = (function (){
         },
         isVecInside : function(vec){
             var x,y,x1,y1,c; // use the cross product of the vec and each line to find it the point is left off all lines
-            x = vec.x - this.p1.x;
-            y = vec.y - this.p1.y;
-            x1 = this.p2.x-this.p1.x;
-            y1 = this.p2.y-this.p1.y;
-            if((x1 * y - y1 * x) < 0){
+            v1.x = vec.x - this.p1.x;
+            v1.y = vec.y - this.p1.y;
+            v2.x = this.p2.x-this.p1.x;
+            v2.y = this.p2.y-this.p1.y;
+            if((v2.x * v1.y - v2.y * v1.x) < 0){
                 return false;
             }
-            x = vec.x - this.p2.x;
-            y = vec.y - this.p2.y;
-            x1 = this.p3.x-this.p2.x;
-            y1 = this.p3.y-this.p2.y;
-            if((x1 * y - y1 * x) < 0){
+            v1.x = vec.x - this.p2.x;
+            v1.y = vec.y - this.p2.y;
+            v3.x = this.p3.x-this.p2.x;
+            v3.y = this.p3.y-this.p2.y;
+            if((v3.x * v1.y - v3.y * v1.x) < 0){
                 return false;
             }
-            x = vec.x - this.p3.x;
-            y = vec.y - this.p3.y;
-            x1 = this.p1.x-this.p3.x;
-            y1 = this.p1.y-this.p3.y;
-            if((x1 * y - y1 * x) < 0){
+            v1.x = vec.x - this.p3.x;
+            v1.y = vec.y - this.p3.y;
+            v4.x = this.p1.x-this.p3.x;
+            v4.y = this.p1.y-this.p3.y;
+            if((v4.x * v1.y - v4.y * v1.x) < 0){
                 return false;
             }
             return true;
@@ -1128,31 +1190,282 @@ groover.geom = (function (){
             return this.isVecInside(line.p2)
         },
         isCircleInside : function(circle){
+            if(!this.isVecInside(circle.center)){
+                return false;
+            }
+            v1.x = circle.center.x;
+            v1.y = circle.center.y;
+            a = circle.radius;
+            if(a > Math.dist2(v1.x - this.p1.x, v1.y - this.p1.y, v2.x, v2.y)){
+                return false;                
+            }
+            if(a > Math.dist2(v1.x - this.p2.x, v1.y - this.p2.y, v3.x, v3.y)){
+                return false;                
+            }
+            if(a > Math.dist2(v1.x - this.p3.x, v1.y - this.p3.y, v4.x, v4.y)){
+                return false;                
+            }
+            return true;
         },
         isArcInside : function(arc){
+            if(!this.isVecInside(arc.circle.center)){
+                return false;
+            }
+            
+            return undefined;
         },
         isRectangleInside : function(rectangle){
+            if(!this.isVecInside(rectangle.top.p1)){
+                return false;
+            }
+            if(!this.isVecInside(rectangle.top.p2)){
+                return false;
+            }
+            rectangle.heightVec(v5);
+            va.x = rectangle.top.p1.x + v5.x;
+            va.y = rectangle.top.p1.y + v5.y;
+            if(!this.isVecInside(va)){
+                return false;
+            }
+            va.x = rectangle.top.p2.x + v5.x;
+            va.y = rectangle.top.p2.y + v5.y;
+            if(!this.isVecInside(va)){
+                return false;
+            }
+            return true;
         },
         isBoxInside : function(box){
+            v1.x = box.left - this.p1.x;
+            v1.y = box.top - this.p1.y;
+            v2.x = this.p2.x-this.p1.x;
+            v2.y = this.p2.y-this.p1.y;
+            if((v2.x * v1.y - v2.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.left - this.p2.x;
+            v1.y = box.top - this.p2.y;
+            v3.x = this.p3.x-this.p2.x;
+            v3.y = this.p3.y-this.p2.y;
+            if((v3.x * v1.y - v3.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.left - this.p3.x;
+            v1.y = box.top - this.p3.y;
+            v4.x = this.p1.x-this.p3.x;
+            v4.y = this.p1.y-this.p3.y;
+            if((v4.x * v1.y - v4.y * v1.x) < 0){
+                return false;
+            }          
+            
+            v1.x = box.right - this.p1.x;
+            v1.y = box.top - this.p1.y;
+            if((v2.x * v1.y - v2.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.right - this.p2.x;
+            v1.y = box.top - this.p2.y;
+            if((v3.x * v1.y - v3.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.right - this.p3.x;
+            v1.y = box.top - this.p3.y;
+            if((v4.x * v1.y - v4.y * v1.x) < 0){
+                return false;
+            }            
+            v1.x = box.right - this.p1.x;
+            v1.y = box.bottom - this.p1.y;
+            if((v2.x * v1.y - v2.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.right - this.p2.x;
+            v1.y = box.bottom - this.p2.y;
+            if((v3.x * v1.y - v3.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.right - this.p3.x;
+            v1.y = box.bottom - this.p3.y;
+            if((v4.x * v1.y - v4.y * v1.x) < 0){
+                return false;
+            }               
+            v1.x = box.left - this.p1.x;
+            v1.y = box.bottom - this.p1.y;
+            if((v2.x * v1.y - v2.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.left - this.p2.x;
+            v1.y = box.bottom - this.p2.y;
+            if((v3.x * v1.y - v3.y * v1.x) < 0){
+                return false;
+            }
+            v1.x = box.left - this.p3.x;
+            v1.y = box.bottom - this.p3.y;
+            if((v4.x * v1.y - v4.y * v1.x) < 0){
+                return false;
+            }               
+            return true;
         },
         isTriangleInside : function(triangle){
+            if(!this.isVecInside(triangle.p1)){
+                return false;
+            }
+            if(!this.isVecInside(triangle.p2)){
+                return false;
+            }
+            return this.isVecInside(triangle.p3)
         },
         isLineTouching : function(line){
+            return undefined;            
         },
         isCircleTouching : function(circle){
+            return undefined;            
         },
         isArcTouching : function(arc){
+            return undefined;            
         },
         isBoxTouching : function(box){
+            return undefined;            
         },
         isRectangleTouching : function(rectangle){
+            return undefined;            
         },
         isTriangleTouching : function(triangle){
+            return undefined;            
         },
         isClockwise : function(){
             return  this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1)> 0 ? true : false;
         },
-        isInside : function(primitive){
+        isRight : function(){ // returns true if this is a right triangle. This function uses EPSILON to filter out any floating point error.
+            this.lengthAllQuick2();
+            if(c > a && c > b){
+                if(Math.abs(a + b - c) < EPSILON){
+                    return true;
+                }
+            }else
+            if(a > c && a > b){
+                if(Math.abs(c + b - a) < EPSILON){
+                    return true;
+                }
+            }else
+            if(b > c && b > a){
+                if(Math.abs(c + a - b) < EPSILON){
+                    return true;
+                }
+            }
+            if(a < EPSILON || b < EPSILON || c < EPSILON){ // degenerate right triangle
+                return true;
+            }                
+            return false; // not a right triangle
+        },
+        isOblique : function(){ // returns true if this triangle is Oblique. This function uses EPSILON to filter out any floating point error.
+            return ! this.isRight();  
+        },
+        isDegenerate : function(){
+            this.lengthAllQuick2();
+            if(a < EPSILON || b < EPSILON || c < EPSILON){ // degenerate right triangle
+                 return true;
+            }else
+            if(c > a && c > b){
+                if(Math.abs(-1 - (c - (a + b) / (-2 * Math.sqrt(a) * Math.sqrt(b)))) < EPSILON){
+                    return true;
+                }
+            }else
+            if(a > c && a > b){
+                if(Math.abs(-1 - (a - (c + b) / (-2 * Math.sqrt(c) * Math.sqrt(b)))) < EPSILON){
+                    return true;
+                }
+            }else
+            if(b > c && b > a){
+                if(Math.abs(-1 - (b - (a + c) / (-2 * Math.sqrt(a) * Math.sqrt(c)))) < EPSILON){
+                    return true;
+                }
+            }
+            return false;            
+        },
+        isObtuse : function(){ // returns true if this is a obtuse triangle. Has a corner greater than 90deg. This function uses EPSILON to filter out any floating point error.
+            this.lengthAllQuick2();
+            if(c > a && c > b){
+                if(c - a + b > EPSILON){
+                    return true;
+                }
+            }else
+            if(a > c && a > b){
+                if(a - c + b > EPSILON){
+                    return true;
+                }
+            }else
+            if(b > c && b > a){
+                if(b - a + c > EPSILON){
+                    return true;
+                }
+            }            
+            return false; // not a Obtuse triangle        
+        },
+        isAcute : function(){ // returns true if this is a acute triangle. Has all corners less than 90deg. This function uses EPSILON to filter out any floating point error.
+            this.lengthAllQuick2();
+            if(c > a && c > b){
+                if(a + b - c > EPSILON){
+                    return true;
+                }
+            }else
+            if(a > c && a > b){
+                if(c + b - a > EPSILON){
+                    return true;
+                }
+            }else
+            if(b > c && b > a){
+                if(a + c - b > EPSILON){
+                    return true;
+                }
+            }            
+            return false; // not a acute triangle        
+        },
+        isEquilateral : function(){ // returns true is this is an equilateral triangle all angle and length are equal. This function uses EPSILON to filter out any floating point error.
+            this.lengthAllQuick2();        
+            if(Math.abs(a - b) < EPSILON && Math.abs(b - c) < EPSILON && Math.abs(c - a) < EPSILON){
+                return true;
+            }
+            return false;
+        },
+        isIsosceles : function(){ // returns true is this is an isosceles triangle two sides and two angles are equal. This function uses EPSILON to filter out any floating point error.
+            this.lengthAllQuick2();        
+            u = Math.abs(a - b); // use extra registers to save time calculating the differance
+            u1 = Math.abs(b - c);
+            c1 = Math.abs(c - a);
+            if(u < EPSILON && u1 < EPSILON && c1 > EPSILON){
+                return true;
+            }else
+            if(u < EPSILON && u1 > EPSILON && c1 < EPSILON){
+                return true;
+            }else
+            if(u > EPSILON && u1 < EPSILON && c1 < EPSILON){
+                return true;
+            }
+            return false;
+        },
+        isScalene : function(){ // returns true is this is a scalene triangle all sides and all angles are not equal. This function uses EPSILON to filter out any floating point error.
+            this.lengthAllQuick2();        
+            if(Math.abs(a - b) > EPSILON && Math.abs(b - c) > EPSILON && Math.abs(c - a) > EPSILON){
+                return true;
+            }
+            return false;
+        },
+        description : function(){  // returns a simple text description of the triangle with any of the following words if applicable right,obtuse,acute,equilateral,isosceles,scalene,degenerate,oblique
+            this.lengthAllQuick2();
+            var tf = this.lengthAllQuick2();
+            this.lengthAllQuick2 = function(){}; // temp replace this function. MUST FIND OUT HOW THIS EFFECT OPTIMISATION on different browsers
+            var name = [];
+            this.isRight() ? name.push("right") : name.push("oblique");
+            this.isDegenerate() ? name.push("degenerate") :"" ;
+            this.isObtuse() ? name.push("obtuse") : "";
+            this.isAcute() ? name.push("acute") : "";
+            this.isEquilateral() ? name.push("equilateral") : "";
+            this.isIsosceles() ? name.push("isosceles") :"";
+            this.isScalene() ? name.push("scalene") :"";
+            this.isEquilateral() ? name.push("Equilateral") :"";
+            this.lengthAllQuick2 = tf;
+            return name.join(",");
+        },
+        isInside : function(primitive){ // returns true if this is inside the primitive primitive
             var call = this["is"+primitive.type+"Inside"];
             if(call !== undefined){
                 return call(primitive);
@@ -1320,10 +1633,57 @@ groover.geom = (function (){
             
             
         },
+        circumcenter : function(vec){ //returns the circumcenter as a vec of this triangle or an empty vec if the triangle is colinear. vec is optional and if supplied will be set to the cirumcenter else a new vec will be returned. This function uses Circle.fromVec3
+           // This function uses the registers b and v1
+           // b is the circle that fits the three points on the triangle if any
+           // v1 is the center
+           // set Circle.fromVec3 for deatail on more registers being used.
+           b = new Circle().fromVec3(this.p1, this.p2, this.p3);
+           if(vec === undefined){
+               vec = new Vec();
+           }
+           if(b.center.x === Infinity){
+               return vec.empty();               
+           }
+           vec.x = v1.x;
+           vec.y = v1.y;
+           return vec;        
+        },
+        meanCenter : function(vec){ // the center of mass (Though I could be wrong as I can not find this formular to confirm it to be but I need this and as I am at aloss as what to call it for now it is the mean center)
+            if(vec === undefined){
+                vec = new Vec();
+            }
+            vec.x = (this.p1.x + this.p2.x + this.p3.x) / 3;
+            vec.y = (this.p1.y + this.p2.y + this.p3.y) / 3;
+            return vec;
+        },
+        isSimilar : function(triangle){// returns true if supplied triangle is a similar to this triangle. A similar triangle has the same ratio betwwen the sides though the sides may be rotated within the point p1,p2,p3
+            u = this.angleAll();
+            u1 = triangle.angleAll();
+            c1 = function(a,b){return a-b;};
+            u.sort(c1);
+            u1.sort(c1);
+            if(Math.abs(u[0] - u1[0]) <= EPSILON && Math.abs(u[1] - u1[1]) <= EPSILON && Math.abs(u[2] - u1[2]) <= EPSILON){
+                return true;
+            }
+            return false;        
+        },
         reverse : function(){
             var t = this.p1;
             this.p1 = this.p3,
             this.p3 = t;
+            return this;
+        },
+        lengthAllQuick2 : function(){ // sets registers a,b,c to the square length of the sides. Returns this;
+            a = Math.pow(this.p2.x - this.p1.x, 2) * Math.pow(this.p2.y - this.p1.y, 2);
+            b = Math.pow(this.p3.x - this.p2.x, 2) * Math.pow(this.p3.y - this.p2.y, 2);
+            c = Math.pow(this.p1.x - this.p3.x, 2) * Math.pow(this.p1.y - this.p3.y, 2);
+            return this;
+        },
+        lengthAllQuick : function(){ // sets registers a,b,c to the length of the sides. Returns this;
+            a = Math.hypot(this.p2.x - this.p1.x, this.p2.y - this.p1.y);
+            b = Math.hypot(this.p3.x - this.p2.x, this.p3.y - this.p2.y);
+            c = Math.hypot(this.p1.x - this.p3.x, this.p1.y - this.p3.y);
             return this;
         },
         lengthAll : function(array){ // returns an array containg the length of each side if array supplied the first three items are set
@@ -1345,21 +1705,13 @@ groover.geom = (function (){
             if(array === undefined){
                 array = [];
             }
-            v1.x = this.p2.x - this.p1.x;
-            v1.y = this.p2.y - this.p1.y;
-            v2.x = this.p3.x - this.p2.x;
-            v2.y = this.p3.y - this.p2.y;
-            v3.x = this.p1.x - this.p3.x;
-            v3.y = this.p1.y - this.p3.y;
-            a = Math.hypot(v1.x,v1.y);
-            b = Math.hypot(v2.x,v2.y);
-            c = Math.hypot(v3.x,v3.y);
+            this.lengthAllQuick();
             array[0] = Math.triPh(a,c,b)
             array[1] = Math.triPh(a,b,c)
             array[2] = Math.triPh(b,c,a)
             return array;
         },        
-        inflate : function(amount){
+        inflate : function(amount){ // only currently for for clockwise triangles need to use a different approch to correcyly mitter and should be quicker
             // create vectors for each side
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
@@ -1528,6 +1880,20 @@ groover.geom = (function (){
             this.y = (dest.y-from.y) * amount + from.y;
             return this;
         },
+        vectorToPolar : function(){
+            v1.x = this.x;
+            v1.y = this.y;
+            this.x = Math.hypot(v1.y,v1.x);
+            this.y = Math.atan2(v1.y,v1.x);            
+            return this;
+        },
+        polarToVector : function(){
+            v1.x = this.x;
+            v1.y = this.y;
+            this.x = Math.cos(v1.y) * v1.x;
+            this.y = Math.sin(v1.y) * v1.x;            
+            return this;            
+        },
         add : function(vec){ // adds {avec} to this.
             this.x += vec.x;
             this.y += vec.y;
@@ -1674,14 +2040,16 @@ groover.geom = (function (){
         circle : undefined,
         start : 0,
         end : 0,
+        direction : undefined, // defaults to undefined which is the same as false and means clockwise, if true makes the are anticlockwise. This is an late addition and thus makes all of arc a little obsolete but for rendering this is needed.
         type : "Arc",
         copy : function(){
-            return new Arc(this.circle.copy(),this.start,this.end);
+            return new Arc(this.circle.copy(), this.start, this.end, this.direction);
         },
         setAs : function (arc){
             this.circle.setAs(arc.circle);
             this.start = arc.start;
             this.end = arc.end;
+            this.direction = arc.direction;
             return this;         // returns this.    
         },
         asBox : function(box){
@@ -1744,6 +2112,13 @@ groover.geom = (function (){
             if(precision === undefined || precision === null){
                 precision = geom.defaultPrecision;
             }
+            var str =  "Arc : "+l+"( "+this.circle.toString(precision)+", ";
+            str += "Start : " + this.start.toFixed(precision) + ", "
+            str += "End : " + this.end.toFixed(precision) + ", "
+            str += this.direction ? "Clockwise" : "Anticlockwise";
+            str += ")";
+            return str;
+            
         },
         asCircle : function(){
             return this.circle.copy();
@@ -1887,12 +2262,16 @@ groover.geom = (function (){
             }
             return this;
         },
-        swap : function(){
+        swap : function(direction){ // start and end points, or is direction is true then swaps the direction between clockwise and anti clockwise
+            if(direction){
+                this.direction = ! this.direction;
+                return this;
+            }
             c = this.start;
             this.start = this.end;
             this.end = c;
             return this; // returns this.
-        },
+        },        
         fromPoints : function(p1,p2,p3){
             if(p3 === undefined){
                 this.start = this.circle.angleOfPoint(p1);
@@ -2035,6 +2414,14 @@ groover.geom = (function (){
                 new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius)
             );
         },
+        clockwise : function(){
+            this.direction = false;
+            return this;
+        },
+        anticlockwise : function(){
+            this.direction = true;
+            return this;
+        },
         great : function(){
             var s = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;
@@ -2083,9 +2470,60 @@ groover.geom = (function (){
             
             return this;    // returns this.
         },
-        roundCorner : function(l1,l2){
-            this.circle.fitCorner(l1,l2);
-            this.fromTangentsToPoint(l1.p2).towards(l1.p2);
+        fitCornerConstrain : function(line1,line2,cornerUnknown,constraint,data){ // set Circle.fitCornerConstrain for full details as this function calls that function
+            this.circle.fitCornerConstrain(line1,line2,cornerUnknown,constraint,data);
+            if(this.circle.center.x !== Infinity){ // if the solution is found        
+                v4.x = v3.x + v1.x * c1; // contact point on line1
+                v4.y = v3.y + v1.y * c1;
+                v5.x = v3.x + v2.x * c1; // contact point on line2
+                v5.y = v3.y + v2.y * c1;
+                if(b < 0){  // swap start and end depending corner is left inside or right inside
+                    this.start = Math.atan2(v4.y-this.circle.center.y,v4.x-this.circle.center.x);
+                    this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
+                    this.direction = true; // make this anti-clockwise
+                    //this.swap(true).swap();
+                }else{
+                    this.start = Math.atan2(v4.y-this.circle.center.y,v4.x-this.circle.center.x);
+                    this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
+                    this.direction = false; // make this clockwise
+                }
+                    
+            }            
+            return this;
+        },
+        fitCorner : function(line1,line2,cornerUnknown){ // set Circle.fitCorner for full details as this function calls that function
+            // This uses Geom.registers v1,v2,v3,v4,v5,a,b,c1,c
+            // v1,v2,v3 if cornerUnknown is true may be invalid if return circle is empty, all other cases they will be valid
+            // v1 is the vector of line1 in the directio away from the corner
+            // v2 is the vector of line2 in the directio away from the corner
+            // v3 is the corner location           
+            // v4 and v5 are set only if the is a valid solution is found for this.circle.fitCorner
+            // v4 is contact point on line1;
+            // v5 is contact point on line2;
+            // if result is not empty or cornerUnknow is undefined or false then a,b,c,c1 will be valid
+            // a distance along the normal from line2 to center of circle (can be + or -)
+            // b the cross product of the outgoing and incoming lines
+            // c half the the angle in radians between the incoming and out going lines
+            // c1 distance from the corner point v3 along the vectors V1,v2 to the tangent points
+            this.circle.fitCorner(line1,line2,cornerUnknown);
+            if(this.circle.center.x !== Infinity){ // if the solution is found
+                v4.x = v3.x + v1.x * c1; // contact point on line1
+                v4.y = v3.y + v1.y * c1;
+                v5.x = v3.x + v2.x * c1; // contact point on line2
+                v5.y = v3.y + v2.y * c1;
+                if(b < 0){  // swap start and end depending corner is left inside or right inside
+                    this.start = Math.atan2(v4.y-this.circle.center.y,v4.x-this.circle.center.x);
+                    this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
+                    this.direction = true; // make this anti-clockwise
+                    //this.swap(true).swap();
+                }else{
+                    this.start = Math.atan2(v4.y-this.circle.center.y,v4.x-this.circle.center.x);
+                    this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
+                    this.direction = false; // make this clockwise
+                }
+                    
+            }
+
             return this; // returns this.
         },
         scale : function(scale){
@@ -2181,8 +2619,9 @@ groover.geom = (function (){
             this.radius = (dest.radius - from.radius) * amount + from.radius;
             return this;
         },        
-        isEmpty : function(){
-            if(this.radius === 0 || 
+        isEmpty : function(){  // returns true for empty circle
+            if( this.center.x === Infinity || // many cases see a divid by zero the result will have both x and y as Infinity. This assumes this empty circle is more common than a radius === infinity. It also alows better performance and conveniance by having the function Circle.empty set this.center.x to infinity rather than radius which many times is requiered to be preserved despite the circle center being unknown
+                    this.radius === 0 ||                    
                     this.radius === Infinity || 
                     this.radius === -Infinity ||
                     isNaN(this.radius) ||
@@ -2193,7 +2632,7 @@ groover.geom = (function (){
             return false;
         },
         empty : function(){
-            this.radius = Infinity;
+            this.center.x = Infinity;
             return this;
         },
         setRadius : function (r){
@@ -2231,7 +2670,7 @@ groover.geom = (function (){
             return this;
         },
         fromVec3 : function (vec1, vec2, vec3){ // positions and sets radius to fit all 3 points if posible. If not returns empty circle
-            // This function uses Geom registers v1
+            // This function uses Geom registers v1,c,c1u
             // v1 is the center of the circle if not empty
             // Code Notes
             // Other functions rely on v1 being the circle center if return is not empty
@@ -2241,7 +2680,6 @@ groover.geom = (function (){
             if (c === c1)  { // Both are vector  so if slope is the same they must be on the same line
                 return this.empty();  // points are in a line 
             }            
-
             // locate the center
             if(vec1.y === vec2.y){   // special case with vec1 and 2 have same y 
                 v1.x = ((vec1.x + vec2.x) / 2);
@@ -2254,7 +2692,6 @@ groover.geom = (function (){
                 v1.x = ((((vec2.y + vec3.y) / 2) - c1 * ((vec2.x + vec3.x) / 2)) - (u = ((vec1.y + vec2.y) / 2) - c * ((vec1.x + vec2.x) / 2))) / (c - c1);
                 v1.y = c * v1.x + u;
             }
-
             this.radius = Math.hypot(vec1.x - (this.center.x = v1.x), vec1.y - (this.center.y = v1.y));
             return this;
         },
@@ -2705,8 +3142,8 @@ groover.geom = (function (){
             var a = Math.acos(this.radius / d);
             var a1 = this.center.angleTo(vec);
             return va
-                .push(new Vec(null,a1-a).mult(this.radius).add(this.center))
-                .push(new Vec(null,a1+a).mult(this.radius).add(this.center))
+                .push(new Vec(undefined,a1-a).mult(this.radius).add(this.center))
+                .push(new Vec(undefined,a1+a).mult(this.radius).add(this.center))
         },
         reflectLine : function(line){ // WTF sorry will fix in time
             var va = new VecArray();
@@ -2731,14 +3168,163 @@ groover.geom = (function (){
             }
             return [];
         },*/
-        fitCorner : function(l1,l2){
-            var v1 = l1.asVec().rev();
-            var v2 = l2.asVec();
-            var v3 = v1.mid(v2);
-            var angle = v3.angleBetween(v2);
-            var d = this.radius / Math.sin(angle);
+        fitCornerConstrain : function(line1,line2,cornerUnknown,constraint,data){ // fits the corner with constraints
+            // set this.fitCorner for details
+            // constraint is optional and of not defined returns the same as fitCorner
+            // constraint is a command string, 
+            // data is extra data requiered to complet the commands
+            // data is optional and dependent on the command string
+            // commands are case insensitive
+            // "limit" Limits the distance from the corner that the circle can be. It will reduce or increase the radius to fit this limit
+            //    if
+            //       "max" limit is on the max line length
+            //       "min" limit is on the min line length            
+            //    else 
+            //        the limit is on the average line length
+            //
+            //    if
+            //       "half" is halves the limit length
+            //       "quarter" quarters the limit
+            //    else
+            //       if data then use data as a scale
+            //       else do not change the line length;
+            //    The circle is now changed to fit the corner with limit
+            //
+            this.fitCorner(line1,line2,cornerUnknown);
+            if(this.center.x === Infinity){
+                return this;
+            }
+            if(constraint === undefined){
+                return this;
+            }else{
+                constraint = constraint.toLowerCase();
+            }
+            if(constraint.indexOf("limit") >= -1){
+                if(constraint.indexOf("max") >= -1){
+                    d = Math.max(u1,u);
+                }else
+                if(constraint.indexOf("min") >= -1){
+                    d = Math.min(u1,u);
+                }else{
+                    d = (u1 + u)/2;
+                }
+                    
+                if(constraint.indexOf("half") >= -1){
+                    d /= 2;
+                }else
+                if(constraint.indexOf("quarter") >= -1){
+                    d /= 4;
+                }else{
+                    if(data !== undefined){
+                        d *= data;
+                    }
+                }
+                // move the circle and adjust center to not go past the limit
+                if( c1 > d){
+                    a *= d/c1;
+                    this.radius *= d/c1;
+                    c1 = d;
+                    this.center.x = v3.x + v2.x * c1 - v2.y * a;
+                    this.center.y = v3.y + v2.y * c1 + v2.x * a;
+                }                    
+            }
             
-            this.center.setAs(v3.norm().mult(d).add(l2.p1));
+            return this;
+            
+        },
+        fitCorner : function(line1,line2,cornerUnknown){ // fits this circle, keeping its radius to the corner made by the two lines where the end of l1 is the start of line2
+                                            // it is made to fit so that the lines become tagents at the ponits of contact
+                                            // The optional argument. cornerUnknown if set true means that it is unknown which point is the corner
+                                            // thus this function will find it for you. If cornerUnknown and no points are within EPSILON to each other then this can not resolve the problem and will return this as an empty circle;
+                                            
+            // this function uses registers v1,v2,v3,u,u1,c,c1,b
+            // if cornerUnknown and the corner is not found returning empty circle then no registers can be relied onLine
+            // v1 is the normalised vector of line2 from corner point
+            // v2 is the normalised vector of line2 from corner point
+            // v3 is the corner points takend from line2 if cornerUnknown is true then this will be the corner if falsy then the corner may not be the true corner but the start of line2
+            // u is the length of line 1
+            // u1 is the length of line 2
+            // c is half the angle between the lines
+            // c1 is the distance from the corner to where the circle touches
+            // a is the magnitude of the normal from line2 to the circle center
+            // b is the cross product of the vectors v1 and v2 and its sign indicates the side (+left -right) of the line the circle is
+            if(cornerUnknown){ // find corner can be one of four cases
+                // line1 end and line2 start
+                c = Math.hypot(line1.p2.x - line2.p1.x,line1.p2.y - line2.p1.y); // dist 
+                if(c <= EPSILON){
+                    v1.x = line1.p1.x - line1.p2.x; // reverse incoming line
+                    v1.y = line1.p1.y - line1.p2.y;
+                    v2.x = line2.p2.x - (v3.x = line2.p1.x);
+                    v2.y = line2.p2.y - (v3.y = line2.p1.y);
+                }else{
+                    // line1 end and line2 end
+                    c = Math.hypot(line1.p2.x - line2.p2.x,line1.p2.y - line2.p2.y); // dist 
+                    if(c <= EPSILON){
+                        v1.x = line1.p1.x - line1.p2.x; // reverse incoming line
+                        v1.y = line1.p1.y - line1.p2.y;
+                        v2.x = line2.p1.x - (v3.x = line2.p2.x);
+                        v2.y = line2.p1.y - (v3.y = line2.p2.y);
+                    }else{
+                        // line1 start and line2 start
+                        c = Math.hypot(line1.p1.x - line2.p1.x,line1.p1.y - line2.p1.y); // dist 
+                        if(c <= EPSILON){
+                            v1.x = line1.p2.x - line1.p1.x; // reverse incoming line
+                            v1.y = line1.p2.y - line1.p1.y;
+                            v2.x = line2.p2.x - (v3.x = line2.p1.x);
+                            v2.y = line2.p2.y - (v3.y = line2.p1.y);
+                        }else{
+                            // line1 start and line2 end
+                            c = Math.hypot(line1.p1.x - line2.p2.x,line1.p1.y - line2.p2.y); // dist 
+                            if(c <= EPSILON){
+                                v1.x = line1.p2.x - line1.p1.x; // reverse incoming line
+                                v1.y = line1.p2.y - line1.p1.y;
+                                v2.x = line2.p1.x - (v3.x = line2.p2.x);
+                                v2.y = line2.p1.y - (v3.y = line2.p2.y);
+                            }else{   
+                                // can not resolve corner so return empty circle
+                                this.center.x = Infinity;
+                            }
+                        }
+                    }
+                }
+            } else {            
+                v1.x = line1.p1.x - line1.p2.x; // reverse incoming line
+                v1.y = line1.p1.y - line1.p2.y;
+                v2.x = line2.p2.x - (v3.x = line2.p1.x);
+                v2.y = line2.p2.y - (v3.y = line2.p1.y);
+            }
+            // normalise both vectors
+            u = Math.hypot(v1.x,v1.y);
+            u1 = Math.hypot(v2.x,v2.y);
+            v1.x /= u;
+            v1.y /= u;
+            v2.x /= u1;
+            v2.y /= u1;
+            c = Math.asin(b=(v2.x * v1.y - v2.y * v1.x)); // cross product as angle
+            c1 = v2.y * v1.y - -v2.x * v1.x;  //
+            if(c1 < 0){ // is the angle greater the -90 or 90
+                if(c < 0){  // is negative?
+                    c = MPI + c;
+                    a = -this.radius; // move left of line2
+                }else{
+                    c = MPI - c;
+                    a = this.radius; // // move right of line2
+                }                    
+            }else{
+                if(c < 0){
+                    a = -this.radius; // move left of line2                    
+                    c = -c;
+                }else{
+                    a = this.radius; // move right of line2
+                }
+            }
+            // the circle is on the line midway between both lines so div angle by two
+            c = c/2;
+            // find dist from line2 start to point of circle touching
+            c1 = this.radius * Math.cos(c) / Math.sin(c);
+            // move center along line2 and then away along the normal of line two
+            this.center.x = v3.x + v2.x * c1 - v2.y * a;
+            this.center.y = v3.y + v2.y * c1 + v2.x * a;
             return this;
         },    
         scale : function(scale){
@@ -2803,7 +3389,7 @@ groover.geom = (function (){
             if(precision === undefined || precision === null){
                 precision = geom.defaultPrecision;;
             }
-            return "Line: "+l+"( "+this.p1.toString(precision)+" - "+this.p2.toString(precision)+" )";
+            return "Line: "+l+"( "+this.p1.toString(precision)+", "+this.p2.toString(precision)+" )";
         },
         swap : function(){
             var t = this.p1;
@@ -3632,6 +4218,14 @@ groover.geom = (function (){
             line.p2.y = line.p1.y - v1.y;            
             return line;
         },
+        heightVec : function(vec){ // returns the vector from top to bottom. If vec is undefined a new vec is created else the supplied vec is used
+            if(vec === undefined){
+                vec = new Vec();
+            }
+            vec.x = -(this.top.p2.y - this.top.p1.y) * this.aspect;
+            vec.y = (this.top.p2.x - this.top.p1.x) * this.aspect;
+            return vec;
+        },     
         corners : function (vecArray) { // returns an vec array containing the corners from top left top right bottom roght bottom left. If vecArray is passed then the first 4 vecs are set to the new points
             // this function uses the Geom registers v1
             // v1 is the vector representing the side (height) from top to bottom
@@ -4721,7 +5315,7 @@ groover.geom = (function (){
             return this; // returns this.
         },
         envelop : function (obj){
-            if(geomInfo.isGeom(obj)){
+            if(geomInfo.isPrimitive(obj)){
                 this.envBox(obj.asBox());
             }
             return this; // returns this.
@@ -4917,7 +5511,43 @@ groover.geom = (function (){
             }
             return u1;
         },
+        lengthChange_Just_messing_about : function(resolution, vecArray , timer = 0){
+            var create = false;
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+                create = true;
+            }
 
+            if(resolution === undefined || resolution === Infinity){
+                resolution = 100;
+            }
+            var l,ll, i = 0;
+            u = 1/Math.abs(resolution);
+            u1 = 0;
+            a = 1 + u/2; // to ensure that the for loop  does not miss 1 because of floating point error
+            v4.x = this.p1.x;
+            v4.y = this.p1.y;
+            for(c1 = u; c1 <= a; c1 += u){
+                this.vecAt(c1,v5);
+                u1 += l = Math.hypot(v5.x - v4.x, v5.y - v4.y);
+                if(ll !== undefined){
+                    if(create || vecArray.vecs[i] === undefined){
+                        vecArray.push( new Vec(200-(ll - l)*500,i * 4));
+                    }else{
+                        var ang = c1 * Math.PI * 2 + timer /400; 
+
+                        vecArray.vecs[i].x = Math.cos(ang)* (100 +(ll - l)*250) + 200;
+                        vecArray.vecs[i].y = Math.sin(ang)* (100 +(ll - l)*250) + 200;;
+                    }
+                    i ++;
+                }
+                ll = l
+                v4.x = v5.x;
+                v4.y = v5.y;
+            }
+            vecArray.normalise();
+            return vecArray;
+        },
             
     }
     Transform.prototype = {
