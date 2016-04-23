@@ -8,6 +8,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         }
         throw new Error("Could not add UI for element because UI already exists. Use  groover.Geom.setUIElement(element) istead.");
     }    
+    this.UI = function(){};    
     geom = this;
     element = element1;
     
@@ -24,6 +25,75 @@ groover.geom.Geom.prototype.addUI = function(element1){
     workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
     boundingBox = new geom.Box();
     selectionBox = new geom.Box();
+    
+    boundsCorners = [
+        new geom.Vec().setLable("TopLeft"),
+        new geom.Vec().setLable("TopRight"),
+        new geom.Vec().setLable("BottomRight"),
+        new geom.Vec().setLable("BottomLeft"),
+        new geom.Vec().setLable("Top"),
+        new geom.Vec().setLable("Right"),
+        new geom.Vec().setLable("Bottom"),
+        new geom.Vec().setLable("Left"),
+        new geom.Vec().setLable("Rotate"),
+    ]; // from top left around clockwise
+    var rotationLine = new geom.Line(boundsCorners[4],boundsCorners[8]);
+    boundsLines = [ 
+        new geom.Line(boundsCorners[0],boundsCorners[1]),
+        new geom.Line(boundsCorners[1],boundsCorners[2]),
+        new geom.Line(boundsCorners[2],boundsCorners[3]),
+        new geom.Line(boundsCorners[3],boundsCorners[0])
+    ];
+    var boundsTransform = new geom.Transform();
+    var workTransform = new geom.Transform();
+    var cIndex = {
+            topLeft : 0,
+            topRight : 1,
+            bottomRight : 2,
+            bottomLeft : 3,
+            top : 4,
+            right : 5,
+            bottom : 6,
+            left : 7,
+            rotate : 8,
+    };   
+    var bounds = {
+        box : boundingBox,
+        rotationLine : rotationLine,
+        padBy : 7,
+        points : new geom.VecArray(boundsCorners),
+        lines : boundsLines,
+        pointerOverPointIndex : -1,
+        controls : false,  // if true then control points are active. Usualy when only a single point is selected
+        active : false, // if true then bounds is set and active
+        pointerOverPointIndex : -1,
+        transform : boundsTransform,
+        boundControlePointIndexs : cIndex,
+        mainCursor : "move",
+        controlPointCursors : [
+            "nw-resize",
+            "ne-resize",
+            "se-resize",
+            "sw-resize",
+            "n-resize",
+            "e-resize",
+            "s-resize",
+            "w-resize",
+            "rotate",
+        ],
+        controlPointsTransformOriginIndex : [
+           cIndex.bottomRight,
+           cIndex.bottomLeft,
+           cIndex.topLeft,
+           cIndex.topRight,
+           cIndex.bottom,
+           cIndex.left,
+           cIndex.top,
+           cIndex.right,
+         ],  
+        
+    }
+
     buttonMain = 1;
     buttonRight = 4;
     buttonMiddle = 2;
@@ -54,7 +124,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var quickDrag = false;
     var draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
     var pointsUpdated = false; // true if there are point that have been changed. 
-    this.UI = function(){};
+
     this.UI.prototype = {
         pointOfInterestIndex : undefined,  // this holds a index to a point in one of the exposed vecArrays and is set depending on the function and argument. use it to access the point of interest
         points : points,
@@ -62,12 +132,13 @@ groover.geom.Geom.prototype.addUI = function(element1){
         closestToPointer : undefined,
         dragging : false,
         draggingItem : undefined,
-        boundingBox : boundingBox,
+        bounds : bounds,
+        rotationLine : rotationLine,
         selectionBox : selectionBox,
         dragSelecting : false,
         pointerOverBounds : false,
         changed : true,  // this is set to true if a point has been moved or there has been any change in any geom stored, changed is flaged true of points are added or removed. Changed does not include changes in selection
-
+        cursor : "default",
         pointerLoc : pointerLoc,
         pointerDistLimit : 10,
         setDragMode : function(mode){
@@ -99,7 +170,35 @@ groover.geom.Geom.prototype.addUI = function(element1){
             var sel;
             pointerLoc.x = mouse.x;
             pointerLoc.y = mouse.y;
-            this.pointerOverBounds = boundingBox.isVecInside(pointerLoc);
+            if(this.bounds.active){
+                if(this.bounds.controls){
+                    this.bounds.pointerOverPointIndex = this.bounds.points.findClosestIndex(pointerLoc,this.pointerDistLimit, true);
+                    if(this.bounds.pointerOverPointIndex === -1){ 
+                        this.bounds.pointerOverPointIndex = -1;
+                        this.pointerOverBounds = boundingBox.isVecInside(pointerLoc);
+                    }else{
+                        this.pointerOverBounds = false;
+                    }
+                }else{
+                    this.bounds.pointerOverPointIndex = -1;
+                    this.pointerOverBounds = boundingBox.isVecInside(pointerLoc);
+                }
+            }else{
+                this.bounds.pointerOverPointIndex = -1;
+                this.pointerOverBounds = false;
+            }
+            if(!this.dragging){
+                if(this.bounds.pointerOverPointIndex > -1){
+                    mouse.requestCursor(this.bounds.controlPointCursors[this.bounds.pointerOverPointIndex]);
+                }else
+                if(this.pointerOverBounds){
+                    mouse.requestCursor(this.bounds.mainCursor);
+                }else{
+                    mouse.releaseCursor();
+                }
+            }else{
+                mouse.requestCursor("none");
+            }
 
             var ind = points.findClosestIndex(pointerLoc,this.pointerDistLimit);
             if(ind !== -1){
@@ -131,12 +230,18 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             dragged = false;
                         }
                     }else
-                    if(this.pointerOverBounds){
+                    if(this.pointerOverBounds || this.bounds.pointerOverPointIndex > -1){
                         buttonDownOnSelected = false;
                         this.dragging = true;
                         dragStartX = mouse.x;
                         dragStartY = mouse.y;
                         buttonDownOn = undefined;
+                        if(this.bounds.pointerOverPointIndex > -1){
+                            this.bounds.draggingPointIndex = this.bounds.pointerOverPointIndex;
+                        }else{
+                            this.bounds.draggingPointIndex = -1;
+                        }
+                            
                         dragged = false;                        
                     }else{
                         buttonDownOn = undefined;
@@ -170,9 +275,51 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             workVec.y = mouse.y- dragStartY;
                             dragStartX = mouse.x;
                             dragStartY = mouse.y;
-                            selected.add(workVec);
-                            boundingBox.add(workVec);
-                            this.changed = pointsUpdated = true;
+                            if(this.bounds.draggingPointIndex > -1){
+                                if(this.bounds.draggingPointIndex !== cIndex.rotate){
+                                    var oldWidth = boundingBox.right - boundingBox.left;
+                                    var oldHeight = boundingBox.bottom - boundingBox.top;
+                                    this.bounds.points.vecs[this.bounds.draggingPointIndex].add(workVec);
+                                    switch(this.bounds.draggingPointIndex){
+                                        case cIndex.topLeft:
+                                        case cIndex.topRight:
+                                        case cIndex.top:
+                                           boundingBox.top += workVec.y;
+                                           break;
+                                        case cIndex.bottomRight:
+                                        case cIndex.bottomLeft:
+                                        case cIndex.bottom:
+                                           boundingBox.bottom += workVec.y;
+                                           break;
+                                    }
+                                    switch(this.bounds.draggingPointIndex){
+                                        case cIndex.topLeft:
+                                        case cIndex.bottomLeft:
+                                        case cIndex.left:
+                                           boundingBox.left += workVec.x;
+                                           break;
+                                        case cIndex.topRight:
+                                        case cIndex.bottomRight:
+                                        case cIndex.right:
+                                           boundingBox.right += workVec.x;
+                                           break;
+                                    }
+                                    var v1 = this.bounds.points.vecs[this.bounds.controlPointsTransformOriginIndex[this.bounds.draggingPointIndex]];
+                                    this.bounds.transform.reset()
+                                        .setOrigin(v1)
+                                        .negateOrigin()
+                                        .scale((boundingBox.right - boundingBox.left) / oldWidth, (boundingBox.bottom - boundingBox.top) / oldHeight)
+                                        .translate(v1.x,v1.y)
+                                    this.bounds.transform.applyToVecArray(selected);        
+                                    this.updateBounds();
+                                }
+                                this.changed = pointsUpdated = true;
+                            }else{
+                                selected.add(workVec);
+                                boundingBox.add(workVec);
+                                this.bounds.points.add(workVec);
+                                this.changed = pointsUpdated = true;
+                            }
                         }
                     }
                 }else
@@ -195,11 +342,12 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     if(this.dragSelecting){
 
                     }
-                    selected.asBox(boundingBox.irrate());
+                    this.selectionChanged();
                     this.dragSelecting = false;
                     buttonDown = false;
                     buttonDownOn = undefined;
                     this.dragging = false;
+                    this.bounds.draggingPointIndex = -1;
                     dragged = false;
                 }else
                 if(buttonDown){
@@ -293,7 +441,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     selected.push(point);
                 }
             }
-            selected.asBox(boundingBox.irrate());
+            this.selectionChanged();
             return this;
         },
         selectPoint : function(point, safe){ // point is a vec and safe is true if you want the selection to check for violations.
@@ -308,7 +456,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 unselected.removeById(point.id);
                 selected.push(point);
             }
-            selected.asBox(boundingBox.irrate());
+            this.selectionChanged();
             return this;
         },
         unselectPoint : function(point, safe){ // point is a vec and safe is true if you want the selection to check for violations.
@@ -323,7 +471,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 selected.removeById(point.id);
                 unselected.push(point);
             }
-            selected.asBox(boundingBox.irrate());
+            this.selectionChanged();
             return this;
         },        
         selectPoints : function(selPoints, safe){
@@ -337,19 +485,19 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.selectPoint(vec, safe);
                 }).bind(this));
             }
-            selected.asBox(boundingBox.irrate());
+            this.selectionChanged();
             return this;
         },
         selectAll : function(){
             unselected.clear();
             selected.clear().append(points);
-            selected.asBox(boundingBox.irrate());
+            this.selectionChanged();
             return this;
         },
         selectNone : function(){
             unselected.clear().append(points);
             selected.clear();
-            boundingBox.irrate()
+            this.selectionChanged();
             return this;
         },
         selectInvert : function(){
@@ -364,7 +512,47 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     selected.push(vec);
                 }
             });
-            selected.asBox(boundingBox.irrate());
+            this.selectionChanged();
+            return this;
+        },
+        selectionChanged : function(){
+            if(selected.length === 0){
+                boundingBox.irrate();
+                this.bounds.active = false;
+                this.bounds.controls = false;
+            }else
+            if(selected.length === 1){
+                selected.asBox(boundingBox.irrate()).pad(bounds.padBy);
+                this.bounds.active = true;
+                this.bounds.controls = false;
+            }else{
+                selected.asBox(boundingBox.irrate()).pad(bounds.padBy);
+                boundingBox.center(rotationLine.p1);
+                this.bounds.active = true;
+                this.bounds.controls = true;
+                this.updateBounds()
+            }
+            return this;
+        },
+        updateBounds : function(){
+            if(this.bounds.active){
+                if(!this.bounds.controls){
+                }else{
+                    boundingBox.center(rotationLine.p1);
+                    var cy = rotationLine.p1.y
+                    var cx = rotationLine.p1.x
+                    //rotationLine.p1.y = boundingBox.top;
+                    boundsCorners[cIndex.left].x = boundsCorners[cIndex.topLeft].x = boundsCorners[cIndex.bottomLeft].x = boundingBox.left;
+                    boundsCorners[cIndex.right].x = boundsCorners[cIndex.topRight].x = boundsCorners[cIndex.bottomRight].x = boundingBox.right;
+                    boundsCorners[cIndex.top].x = boundsCorners[cIndex.bottom].x = cx;
+                    boundsCorners[cIndex.top].y = boundsCorners[cIndex.topLeft].y = boundsCorners[cIndex.topRight].y = boundingBox.top;
+                    boundsCorners[cIndex.bottom].y = boundsCorners[cIndex.bottomLeft].y = boundsCorners[cIndex.bottomRight].y = boundingBox.bottom;
+                    boundsCorners[cIndex.left].y = boundsCorners[cIndex.right].y = cy;
+                    rotationLine.p2.y = boundingBox.top - 20;
+                    rotationLine.p2.x = rotationLine.p1.x;
+                                        
+                }
+            }
             return this;
         },
         drawPoints : function(what){  // draws UI parts. What is what to draw. "all","selected","unselected"
@@ -417,9 +605,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
         function preventDefault(e) { e.preventDefault(); }
         var interfaceId = 0;
         var i;
+        customCursors = {
+            rotate : "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAARCAYAAAAsT9czAAABWElEQVQ4ja2V20rDQBCGP3JR0pI0ltJTlBIrWi0mUClW8f2fSy/yrxk2m7RBB4btbv5DdjK7hWERBfLP4YtEwAiIgbHJWOsh/FUxMunmE2AKzIEFsNQ41/rEw1t+Z8RAAmQaE4ktge9A3gN3ej41HMeP+4wyieTKlRMOhTF9kOnK8NfSaxmOgNSJirD3TeyuAusvHn8HbKT7W9JI7nMr4v9WfgBn4N03DeBLoJBuLB8i6s5ahMol4qcMjsArcNB47OG8AY/SHftmy47yfMmoFHmrb7LVvOzgnYAn6V42897yGbgFZvoOM827OL1mwTIa8l47SvUN0gv4zjK6Bilsx5l0O8tp2jnTPIQ/A1WoQaBp/VxvU8ngpLGkbuU1zWFNNN/pucVX0nGVaN0mMXAjQCGwy4L6zNhD6na36cDn0uu9RVLCd2AaIA7Ft6Lvdv8PfCuG/m9dhf8BJ+ccqa7A1i0AAAAASUVORK5CYII=') 12 4, pointer",
+        }
+
         var mouse = {
             x : 0, y : 0, w : 0, alt : false, shift : false, ctrl : false, buttonRaw : 0,
             active : false,
+            currentCursor : "default",
+            requestedCursor : "default",
             over : false,  // mouse is over the element
             bm : [1, 2, 4, 6, 5, 3], // masks for setting and clearing button raw bits;
             getInterfaceId : function () { return interfaceId++; }, // For UI functions
@@ -443,6 +637,26 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }
             e.preventDefault();
         }
+        mouse.updateCursor = function(){
+            if(this.requestedCursor !== this.currentCursor){
+                this.currentCursor = this.requestedCursor;
+                if(customCursors[this.requestedCursor] !== undefined){
+                    this.element.style.cursor = customCursors[this.requestedCursor];
+                }else{
+                    this.element.style.cursor = this.currentCursor;
+                }
+            }
+        }
+
+        mouse.requestCursor = function(cursor){
+            this.requestedCursor = cursor;
+            mouse.updateCursor();
+        }
+        mouse.releaseCursor = function(){
+            this.requestedCursor = "default";
+            mouse.updateCursor();
+        }
+        
         mouse.addCallback = function(callback){
             if(typeof callback === "function"){
                 if(mouse.callbacks === undefined){
@@ -464,6 +678,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         }
         mouse.remove = function(){
             if(mouse.element !== undefined){
+                mouse.releaseCursor();
                 mouse.mouseEvents.forEach(n => { mouse.element.removeEventListener(n, mouseMove); } );
                 if(mouse.contextMenuBlocked === true){ mouse.element.removeEventListener("contextmenu", preventDefault);}
                 mouse.contextMenuBlocked = undefined;

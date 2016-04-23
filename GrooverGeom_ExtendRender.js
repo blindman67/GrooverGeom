@@ -61,6 +61,9 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         square : function (vec){
             ctx.rect(vec.x - size / 2, vec.y - size / 2, size, size);
         },
+        box :  function (vec){
+            ctx.rect(vec.x - size / 2, vec.y - size / 2, size, size);
+        },
         tri : function (vec){
             ctx.moveTo(vec.x, vec.y - size);
             ctx.lineTo(vec.x + size, vec.y + size);

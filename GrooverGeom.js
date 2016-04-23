@@ -494,8 +494,16 @@ groover.geom = (function (){
             this.y = y;
         }
     };
-    function VecArray(){
-        this.vecs = [];
+    function VecArray(array){ // array can be an array of vectors. No vetting is done so you must ensure that the array only contains vec compatable objects
+        if(array === undefined){
+            this.vecs = [];
+        }else
+        if(Array.isArray(array)){
+            this.vecs = array;
+            this.normalise();
+        }else{
+            this.vecs = [];
+        }
     };
     function Triangle(p1,p2,p3){
         this.p1 = p1;
@@ -944,23 +952,34 @@ groover.geom = (function (){
             });
             return this; //returns this.
         },
-        findClosestIndex : function(vec, limit){ // returns the index of the point closest to the {avec}{olimit} defines the threshold if defined. Points further away than {olimit} are igonred
+        findClosestIndex : function(vec, limit, retangular){ // returns the index of the point closest to the {avec}{olimit} defines the threshold if defined. Points further away than {olimit} are igonred
+                                                             // For want of a better name retangular if true uses the largest x or y diferance to determin distance. This in effect makes selection of a point by a box of 2*lime size around the vec
             if(this.vecs.length === 0){
                 return -1;
             }
             var minDist = limit = undefined ? Infinity : limit;
             var index = -1;
             var dist = 0;
-            this.each(function(vec1,ind){
-                dist = vec.distTo(vec1);
-                if(dist < minDist){
-                    minDist = dist;
-                    index = ind;
-                }                
-            });
+            if(retangular){
+                this.each(function(vec1,ind){
+                    dist = Math.max(Math.abs(vec1.x-vec.x),Math.abs(vec1.y-vec.y));
+                    if(dist < minDist){
+                        minDist = dist;
+                        index = ind;
+                    }                
+                });
+            }else{
+                this.each(function(vec1,ind){
+                    dist = vec.distTo(vec1);
+                    if(dist < minDist){
+                        minDist = dist;
+                        index = ind;
+                    }                
+                });
+            }
             return index;
         },
-        findClosest : function(vec,limit){ // returns the referance to the point closest to the {avec} {olimit} defines the threshold if defined. Points further away than {olimit} are igonred
+        findClosest : function(vec,limit, retangular){ // returns the referance to the point closest to the {avec} {olimit} defines the threshold if defined. Points further away than {olimit} are igonred
             if(this.vecs.length === 0){
                 return new Empty();
             }
@@ -1744,7 +1763,7 @@ groover.geom = (function (){
             }
             return false;        
         },
-        reverse : function(){ // if swap is supplied then swaps that point and the next. Defualts to 0 if not given. swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
+        reverse : function(swap){ // if swap is supplied then swaps that point and the next. Defualts to 0 if not given. swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
             if(swap === undefined || swap === 0){
                 v1.x  = this.p1.x;
                 v1.y  = this.p1.y;
@@ -5367,10 +5386,33 @@ groover.geom = (function (){
             this.left += vec.x;
             this.right += vec.x;
             return this;
+        },   
+        pad : function(amount){  // pads the box by amount. Amount can be negative.The box may be irrate meaningless as a result of negative amount
+            this.top -= amount;
+            this.bottom += amount;
+            this.left -= amount;
+            this.right += amount;
+            return this;
         },        
-        asRectange : function () {
-            var a = (this.bottom- this.top)  / (this.right- this.left);
-            return new Rectangle ( new Line( new Vec(this.left,this.top)), a)
+        asRectange : function (retRect) {  // returns a rectangle. If retRect is supplied then sets that else creates a new rectangle
+            a = (this.bottom- this.top)  / (this.right- this.left);
+            if(retRect === undefined){
+                return new Rectangle ( new Line( new Vec(this.left,this.top),new Vec(this.right,this.top)), a)
+            }
+            retRect.p1.x = this.left;
+            retRect.p2.y = retRect.p1.y = this.top;
+            retRect.p2.x = this.right;
+            retRect.aspect = a;
+            return retRect;
+        },
+        center : function(vec){ // returns the center as a vec. If vec supplied then use that, else creates a new vec
+            if(vec === undefined){
+                vec = new Vec();
+            }
+            vec.x = (this.left + this.right)/2;
+            vec.y = (this.top + this.bottom)/2;
+            return vec;
+            
         },
         normalise : function (){
             var t,r,l,b;
@@ -5967,13 +6009,14 @@ groover.geom = (function (){
             return this;
         },        
         mult : function(transform){
-            var t = transform;
-            v1.x = this.xAxis.x * t.xAxis.x + this.yAxis.x * t.xAxis.y;
-            v1.y = this.xAxis.y * t.xAxis.x + this.yAxis.y * t.xAxis.y;
-            v2.x = this.xAxis.x * t.yAxis.x + this.yAxis.x * t.yAxis.y;
-            v2.y = this.xAxis.y * t.yAxis.x + this.yAxis.y * t.yAxis.y;
-            v3.y = this.xAxis.x * t.origin.x + this.yAxis.x * t.origin.y + this.origin.x;
-            v3.y = this.xAxis.y * t.origin.x + this.yAxis.y * t.origin.y + this.origin.y;
+            var tt = transform;
+            var t = this;
+            v1.x = tt.xAxis.x * t.xAxis.x + tt.yAxis.x * t.xAxis.y;
+            v1.y = tt.xAxis.y * t.xAxis.x + tt.yAxis.y * t.xAxis.y;
+            v2.x = tt.xAxis.x * t.yAxis.x + tt.yAxis.x * t.yAxis.y;
+            v2.y = tt.xAxis.y * t.yAxis.x + tt.yAxis.y * t.yAxis.y;
+            v3.x = tt.xAxis.x * t.origin.x + tt.yAxis.x * t.origin.y + tt.origin.x;
+            v3.y = tt.xAxis.y * t.origin.x + tt.yAxis.y * t.origin.y + tt.origin.y;
             this.xAxis.x = v1.x;
             this.xAxis.y = v1.y;
             this.yAxis.x = v2.x;
@@ -5985,14 +6028,20 @@ groover.geom = (function (){
         rotate : function(angle){
             var xdx = Math.cos(angle);
             var xdy = Math.sin(angle);
-            v1.x = this.xAxis.x * xdx + this.yAxis.x * xdy;
-            v1.y = this.xAxis.y * xdx + this.yAxis.y * xdy;
-            v2.x = this.xAxis.x * (-xdy) + this.yAxis.x * xdx;
-            v2.y = this.xAxis.y * (-xdy) + this.yAxis.y * xdx;
+            
+            v1.x = xdx * this.xAxis.x + (-xdy) * this.xAxis.y;
+            v1.y = xdy * this.xAxis.x +  xdx * this.xAxis.y;
+            v2.x = xdx * this.yAxis.x + (-xdy) * this.yAxis.y;
+            v2.y = xdy * this.yAxis.x +  xdx * this.yAxis.y;
+            v3.x = xdx * this.origin.x + (-xdy) * this.origin.y;
+            v3.y = xdy * this.origin.x +  xdx * this.origin.y;           
+
             this.xAxis.x = v1.x;
             this.xAxis.y = v1.y;
             this.yAxis.x = v2.x;
             this.yAxis.y = v2.y;
+            this.yAxis.x = v3.x;
+            this.yAxis.y = v3.y;
             return this;
         },
         scaleUniform : function(scale){
@@ -6000,23 +6049,29 @@ groover.geom = (function (){
             this.xAxis.y *= scale;
             this.yAxis.x *= scale;
             this.yAxis.y *= scale;
+            this.origin.x *= scale;
+            this.origin.y *= scale;
             return this;            
         },
         scale : function(scaleX,scaleY){
             this.xAxis.x *= scaleX;
-            this.xAxis.y *= scaleX;
-            this.yAxis.x *= scaleY;
+            this.xAxis.y *= scaleY;
+            this.yAxis.x *= scaleX;
             this.yAxis.y *= scaleY;
+            this.origin.x *= scaleX;
+            this.origin.y *= scaleY;
             return this;                        
         },
         scaleX : function(scaleX){
             this.xAxis.x *= scaleX;
-            this.xAxis.y *= scaleX;
+            this.yAxis.x *= scaleX;
+            this.origin.x *= scaleX;
             return this;                        
         },
         scaleY : function(scaleY){
-            this.yAxis.x *= scaleY;
+            this.xAxis.y *= scaleY;
             this.yAxis.y *= scaleY;
+            this.origin.y *= scaleY;
             return this;                        
         },
         shear : function(sx, sy){
@@ -6041,18 +6096,16 @@ groover.geom = (function (){
             return this;
         },
         translate : function(x,y){
-            this.origin.x += this.xAxis.x * x + this.yAxis.x * y;
-            this.origin.y += this.xAxis.y * x + this.yAxis.y * y;
+            this.origin.x +=  x;
+            this.origin.y +=  y;
             return this;            
         },
-        translateX : function(x,y){
-            this.origin.x += this.xAxis.x * x;
-            this.origin.y += this.xAxis.y * x;
+        translateX : function(x){
+            this.origin.x += x;
             return this;            
         },
-        translateY : function(x,y){
-            this.origin.x += this.yAxis.x * y;
-            this.origin.y += this.yAxis.y * y;
+        translateY : function(y){
+            this.origin.y += y;
             return this;            
         },
         setAs : function (transform) {
@@ -6072,6 +6125,11 @@ groover.geom = (function (){
         setOrigin : function(vec){
             this.origin.x = vec.x;
             this.origin.y = vec.y;
+            return this;
+        },
+        negateOrigin : function(){
+            this.origin.x = -this.origin.x;
+            this.origin.y = -this.origin.y;
             return this;
         },
         setXAxis : function(vec){
