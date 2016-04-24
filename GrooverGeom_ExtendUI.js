@@ -1,6 +1,8 @@
+"use strict";
 groover.geom.Geom.prototype.addUI = function(element1){
     var geom, element, mouse, points, selected, unselected, boundingBox, selectionBox, buttonMain,buttonRight,buttonMiddle;
-    var dragOffsetX, dragOffsetY,dragStartX, dragStartY, pointerLoc, mouseOveBounds;
+    var dragOffsetX, dragOffsetY,dragStartX, dragStartY, pointerLoc, mouseOveBounds,workVec,workVec1,workVec2,workVec3;
+    var inSelectionBox, boundsCorners, boundsLines;
     if(this.UI !== undefined){
         if(element1 === undefined){
             console.log("Call to groover.geom.Geom.prototype.addUI() failed. Groover.Geom.Shape extension already exists");        
@@ -11,21 +13,20 @@ groover.geom.Geom.prototype.addUI = function(element1){
     this.UI = function(){};    
     geom = this;
     element = element1;
-    
     geom.Geom.prototype.UIelement = element;    
     geom.Geom.prototype.UIMouse;    
     geom.Geom.prototype.updatePointer;    
-    
-    
     points = new geom.VecArray();
     selected = new geom.VecArray();
     unselected = new geom.VecArray();
     inSelectionBox = new geom.VecArray();
     pointerLoc = new geom.Vec();
     workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
+    workVec1 = new geom.Vec();  // rather than create a new vec each time just use this onerror
+    workVec2 = new geom.Vec();  // rather than create a new vec each time just use this onerror
+    workVec3 = new geom.Vec();  // rather than create a new vec each time just use this onerror
     boundingBox = new geom.Box();
     selectionBox = new geom.Box();
-    
     boundsCorners = [
         new geom.Vec().setLable("TopLeft"),
         new geom.Vec().setLable("TopRight"),
@@ -62,7 +63,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         rotationLine : rotationLine,
         padBy : 7,
         points : new geom.VecArray(boundsCorners),
-        lines : boundsLines,
+        lines : new geom.PrimitiveArray(boundsLines),
         pointerOverPointIndex : -1,
         controls : false,  // if true then control points are active. Usualy when only a single point is selected
         active : false, // if true then bounds is set and active
@@ -91,13 +92,10 @@ groover.geom.Geom.prototype.addUI = function(element1){
            cIndex.top,
            cIndex.right,
          ],  
-        
     }
-
     buttonMain = 1;
     buttonRight = 4;
     buttonMiddle = 2;
-    
     this.extentions.UI = {   // add extentions 
         functions : [],
         info : "Provides a User interface for basic interaction."
@@ -112,10 +110,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         }
         element = geom.Geom.prototype.UIelement = element1;    
         mouse.start(element)
-        
     }
-
-        
     var buttonDown = false;
     var buttonDownOnSelected = false;
     var buttonDownOn = undefined;
@@ -276,7 +271,25 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             dragStartX = mouse.x;
                             dragStartY = mouse.y;
                             if(this.bounds.draggingPointIndex > -1){
-                                if(this.bounds.draggingPointIndex !== cIndex.rotate){
+                                if(this.bounds.draggingPointIndex === cIndex.rotate){
+                                    boundingBox.center(workVec3);
+                                    workVec1.setAs(this.bounds.points.vecs[this.bounds.draggingPointIndex]).sub(workVec3);
+                                    workVec2.setAs(workVec1).add(workVec);
+                                    var ang = workVec1.angleBetween(workVec2);
+                                    this.bounds.transform.reset()
+                                        .setOrigin(workVec3) // set center
+                                        .negateOrigin()      // invert origin so that all points are move to be relative to center
+                                        .rotate(ang)         // rotate all points
+                                        .translate(workVec3.x,workVec3.y);  // return points to the original position
+                                    log("Ang : "+ang);
+                                    log(workVec2);
+                                    this.bounds.transform.applyToVecArray(selected)
+                                    this.bounds.transform.applyToVecArray(this.bounds.points);        
+                                    //this.updateBounds();                                   
+                                    //this.bounds.points.vecs[this.bounds.draggingPointIndex].setAs(workVec3);
+                                    
+                                    
+                                }else{
                                     var oldWidth = boundingBox.right - boundingBox.left;
                                     var oldHeight = boundingBox.bottom - boundingBox.top;
                                     this.bounds.points.vecs[this.bounds.draggingPointIndex].add(workVec);
@@ -605,7 +618,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         function preventDefault(e) { e.preventDefault(); }
         var interfaceId = 0;
         var i;
-        customCursors = {
+        var customCursors = {
             rotate : "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAARCAYAAAAsT9czAAABWElEQVQ4ja2V20rDQBCGP3JR0pI0ltJTlBIrWi0mUClW8f2fSy/yrxk2m7RBB4btbv5DdjK7hWERBfLP4YtEwAiIgbHJWOsh/FUxMunmE2AKzIEFsNQ41/rEw1t+Z8RAAmQaE4ktge9A3gN3ej41HMeP+4wyieTKlRMOhTF9kOnK8NfSaxmOgNSJirD3TeyuAusvHn8HbKT7W9JI7nMr4v9WfgBn4N03DeBLoJBuLB8i6s5ahMol4qcMjsArcNB47OG8AY/SHftmy47yfMmoFHmrb7LVvOzgnYAn6V42897yGbgFZvoOM827OL1mwTIa8l47SvUN0gv4zjK6Bilsx5l0O8tp2jnTPIQ/A1WoQaBp/VxvU8ngpLGkbuU1zWFNNN/pucVX0nGVaN0mMXAjQCGwy4L6zNhD6na36cDn0uu9RVLCd2AaIA7Ft6Lvdv8PfCuG/m9dhf8BJ+ccqa7A1i0AAAAASUVORK5CYII=') 12 4, pointer",
         }
 

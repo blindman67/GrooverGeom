@@ -460,8 +460,16 @@ groover.geom = (function (){
 
     function Helpers(){}; // for stuff that does not fit any catagory
     function Empty(){};
-    function PrimitiveArray(){
-        this.primitives = [];
+    function PrimitiveArray(array){ // array can be an array of primitives. No vetting is done so you must ensure that the array only contains geom primitives compatable objects
+        if(array === undefined){
+            this.primitives = [];
+        }else
+        if(Array.isArray(array)){
+            this.primitives = array;
+            this.normalise();
+        }else{
+            this.primitives = [];
+        }
     };
     function Vec(x,y){ // creates a vector x and y are both optional and can be various types
         // if x and y are undefined then an empty vec is created
@@ -645,6 +653,25 @@ groover.geom = (function (){
             this.length = this.primitives.length; 
             return this.length - 1;
         },
+        clear : function(){  // removes all primitives from the list
+            this.length = this.primitives.length = 0;
+            return this;  // returns this
+        },
+        reset : function(){  // I know a little crazzzzy clear,empty, and reset all doing the same but I have yet to decied which it will be and will keep empty, but reset or clear may go.
+            this.length = this.primitives.length = 0;
+            return this; 
+        },
+        empty : function(){ // removes all primitives from list
+            this.length = this.primitives.length = 0;
+            return this;
+        },        
+        isEmpty : function(){ // returns true if no objects in the array
+            return this.primitives.length === 0;
+        },
+        normalise : function(){  // set everything correctly. use after manualy manipulating this object
+          this.length = this.primitives.length;  
+          return this;
+        },
         transform : function(transform){
             this.each(function(prim){
                 transform["applyTo"+prim.type](prim);
@@ -789,7 +816,8 @@ groover.geom = (function (){
         empty : function(){ // removes all vecs from list
             this.length = this.vecs.length = 0;
             return this;
-        },        isEmpty : function(){
+        },        
+        isEmpty : function(){
             return this.vecs.length === 0;
         },
         normalise : function(){  // set everything correctly. use after manualy manipulating this object
@@ -6040,8 +6068,8 @@ groover.geom = (function (){
             this.xAxis.y = v1.y;
             this.yAxis.x = v2.x;
             this.yAxis.y = v2.y;
-            this.yAxis.x = v3.x;
-            this.yAxis.y = v3.y;
+            this.origin.x = v3.x;
+            this.origin.y = v3.y;
             return this;
         },
         scaleUniform : function(scale){
