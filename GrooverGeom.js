@@ -719,7 +719,39 @@ groover.geom = (function (){
             }
             return this; // returns this
         },  
-        
+        isIdInArray : function (id){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
+            // uses register c  will be the first id match or this.length if this function return false.
+            // if id is an array and all === true then c will be the last index found
+            if(Array.isArray(id)){
+                if(all){
+                    var idc = [].concat(id);
+                    for(c = 0; c < this.length; c ++){ 
+                       if(idc.indexOf(this.primitives[c].id) > -1){
+                           while((c1 = idc.indexOf(this.primitives[c].id))  > -1){
+                               idc.splice(c1,1);
+                           }
+                           if(idc.length === 0){
+                               return true;
+                           }
+                       }
+                    }
+                }else{
+                    for(c = 0; c < this.length; c ++){ 
+                       if(id.indexOf(this.primitives[c].id) > -1){
+                           return true;
+                       }
+                    }
+                }
+                
+            }else{
+                for(c = 0; c < this.length; c ++){ 
+                    if(this.primitives[c].id == id){  // truthy compare == intended
+                        return true;
+                    }
+                }
+            }
+            return false;
+        },        
     }
     VecArray.prototype =  {
         vecs : [],
@@ -856,10 +888,35 @@ groover.geom = (function (){
             }
             return this;
         },        
-        isIdInArray : function (id){
-            for(c = 0; c < this.vecs.length; c ++){ 
-                if(this.vecs[c].id === id){
-                    return true;
+        isIdInArray : function (id){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
+            // uses register c  will be the first id match or this.length if this function return false.
+            // if id is an array and all === true then c will be the last index found
+            if(Array.isArray(id)){
+                if(all){
+                    var idc = [].concat(id);
+                    for(c = 0; c < this.length; c ++){ 
+                       if(idc.indexOf(this.vecs[c].id) > -1){
+                           while((c1 = idc.indexOf(this.vecs[c].id))  > -1){
+                               idc.splice(c1,1);
+                           }
+                           if(idc.length === 0){
+                               return true;
+                           }
+                       }
+                    }
+                }else{
+                    for(c = 0; c < this.length; c ++){ 
+                       if(id.indexOf(this.vecs[c].id) > -1){
+                           return true;
+                       }
+                    }
+                }
+                
+            }else{
+                for(c = 0; c < this.length; c ++){ 
+                    if(this.vecs[c].id == id){  // truthy compare == intended
+                        return true;
+                    }
                 }
             }
             return false;

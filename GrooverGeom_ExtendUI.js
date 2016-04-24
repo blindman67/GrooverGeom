@@ -67,7 +67,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         pointerOverPointIndex : -1,
         controls : false,  // if true then control points are active. Usualy when only a single point is selected
         active : false, // if true then bounds is set and active
-        pointerOverPointIndex : -1,
+        pointerOverControlIndex : -1,
         transform : boundsTransform,
         boundControlePointIndexs : cIndex,
         mainCursor : "move",
@@ -93,6 +93,13 @@ groover.geom.Geom.prototype.addUI = function(element1){
            cIndex.right,
          ],  
     }
+    var cursorNames = {
+        selectAdd : "add",
+        selectRemove : "remove",
+        move : "move",
+        select : "pointer",
+    }
+
     buttonMain = 1;
     buttonRight = 4;
     buttonMiddle = 2;
@@ -119,6 +126,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var quickDrag = false;
     var draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
     var pointsUpdated = false; // true if there are point that have been changed. 
+    var currentMouseFunction;
 
     this.UI.prototype = {
         pointOfInterestIndex : undefined,  // this holds a index to a point in one of the exposed vecArrays and is set depending on the function and argument. use it to access the point of interest
@@ -131,9 +139,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
         rotationLine : rotationLine,
         selectionBox : selectionBox,
         dragSelecting : false,
-        pointerOverBounds : false,
+        pointerOverBounds : false,        
         changed : true,  // this is set to true if a point has been moved or there has been any change in any geom stored, changed is flaged true of points are added or removed. Changed does not include changes in selection
         cursor : "default",
+        selectCursor : "pointer",
+        dragPointCursor : "move",
+        cursorNames : cursorNames,
+        currentPointerFunction : undefined,   
+        nextPointerFunctionOnDown : undefined,
+        
         pointerLoc : pointerLoc,
         pointerDistLimit : 10,
         setDragMode : function(mode){
@@ -156,231 +170,291 @@ groover.geom.Geom.prototype.addUI = function(element1){
             inSelectionBox.reset();
             this.draggingItem = undefined;
             this.closestToPointer = undefined;
+            this.currentPointerFunction = undefined;
+            this.nextPointerFunctionOnDown = undefined;
+            this.dragging = false;
             mouse.remove();
         },
         buttonDown : function(){
             
         },
-        updatePointer : function(){
-            var sel;
-            pointerLoc.x = mouse.x;
-            pointerLoc.y = mouse.y;
+        mainButton : false,
+        dragComplete : function(updateSelection){
+            if(updateSelection === true){
+                this.selectionChanged();
+            }
+            this.dragging = false;
+            this.currentPointerFunction = this.pointerHover;                    
+        },
+        updatePointerState : function(){
+            this.mainButton = (mouse.buttonRaw & buttonMain) === buttonMain;
+            pointerLoc.x = mouse.x;            
+            pointerLoc.y = mouse.y;   
+            if(this.currentPointerFunction === undefined){
+                this.currentPointerFunction = this.pointerHover;
+            }
+        },
+        pointerHover : function(){
+            this.locateControlsAndPoints();
+            if(this.mainButton){
+                if(this.nextPointerFunctionOnDown !== undefined){
+                    this.currentPointerFunction = this.nextPointerFunctionOnDown;
+                    this.nextPointerFunctionOnDown = undefined;
+                    dragStartX = mouse.x;
+                    dragStartY = mouse.y;                    
+                    return this.currentPointerFunction();
+                }
+            }            
+        },
+        pointerQuickMove : function(){
+            if(!this.dragging){ 
+                this.dragging = true;   
+                this.selectNone()
+                this.selectPoint(this.closestToPointer,true);
+                this.currentPointerFunction = this.pointerDragBounds;
+            }else{            
+                this.dragComplete();                   
+            }
+        },
+        pointerSelectAdd : function(){
+            if(!this.dragging){ 
+                this.dragging = true;   
+                buttonDownOn = this.closestToPointer;
+            }else{            
+                if(!this.mainButton){
+                    this.getPointAtPointer();
+                    if(buttonDownOn.id === this.closestToPointer.id){
+                        this.selectPoint(buttonDownOn,true);  
+                        buttonDownOn = undefined;
+                    }
+                    this.dragComplete();                   
+                }
+            }
+        },
+        pointerSelectRemove : function(){
+            if(!this.dragging){ 
+                this.dragging = true;   
+                buttonDownOn = this.closestToPointer;
+            }else{            
+                if(!this.mainButton){
+                    this.getPointAtPointer();
+                    if(buttonDownOn.id === this.closestToPointer.id){
+                        this.unselectPoint(buttonDownOn,true);  
+                        buttonDownOn = undefined;
+                    }
+                    this.dragComplete();                   
+                }
+            }            
+        },
+        pointerDragBounds : function(){           
+            if(!this.dragging){ 
+                this.dragging = true;   
+            }else{
+                workVec.x = mouse.x- dragStartX;
+                workVec.y = mouse.y- dragStartY;
+                dragStartX = mouse.x;
+                dragStartY = mouse.y;                
+                selected.add(workVec);
+                boundingBox.add(workVec);
+                this.bounds.points.add(workVec);
+                this.changed = pointsUpdated = true;                
+                if(!this.mainButton){
+                    this.dragComplete(true);                   
+                }
+            }
+        },
+        pointerDragBoundsRotate : function(){    
+            if(!this.dragging){ 
+                this.dragging = true;   
+                this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;              
+            }else{
+                workVec.x = mouse.x- dragStartX;
+                workVec.y = mouse.y- dragStartY;
+                dragStartX = mouse.x;
+                dragStartY = mouse.y;                
+                boundingBox.center(workVec3);
+                workVec1.setAs(this.bounds.points.vecs[this.bounds.draggingPointIndex]).sub(workVec3);
+                workVec2.setAs(workVec1).add(workVec);
+                var ang = workVec1.angleBetween(workVec2);
+                this.bounds.transform.reset()
+                    .setOrigin(workVec3) // set center
+                    .negateOrigin()      // invert origin so that all points are move to be relative to center
+                    .rotate(ang)         // rotate all points
+                    .translate(workVec3.x,workVec3.y);  // return points to the original position
+                this.bounds.transform.applyToVecArray(selected)
+                this.bounds.transform.applyToVecArray(this.bounds.points);           
+                this.changed = pointsUpdated = true;                   
+                if(!this.mainButton){
+                    this.dragComplete(true);     
+                    this.bounds.draggingPointIndex = -1;                    
+                }
+            }
+        },
+        pointerDragBoundsScale : function(){           
+            if(!this.dragging){ 
+                this.dragging = true;   
+                this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;              
+            }else{
+                workVec.x = mouse.x- dragStartX;
+                workVec.y = mouse.y- dragStartY;
+                dragStartX = mouse.x;
+                dragStartY = mouse.y;                
+                var oldWidth = boundingBox.right - boundingBox.left;
+                var oldHeight = boundingBox.bottom - boundingBox.top;
+                this.bounds.points.vecs[this.bounds.draggingPointIndex].add(workVec);
+                switch(this.bounds.draggingPointIndex){
+                    case cIndex.topLeft:
+                    case cIndex.topRight:
+                    case cIndex.top:
+                       boundingBox.top += workVec.y;
+                       break;
+                    case cIndex.bottomRight:
+                    case cIndex.bottomLeft:
+                    case cIndex.bottom:
+                       boundingBox.bottom += workVec.y;
+                       break;
+                }
+                switch(this.bounds.draggingPointIndex){
+                    case cIndex.topLeft:
+                    case cIndex.bottomLeft:
+                    case cIndex.left:
+                       boundingBox.left += workVec.x;
+                       break;
+                    case cIndex.topRight:
+                    case cIndex.bottomRight:
+                    case cIndex.right:
+                       boundingBox.right += workVec.x;
+                       break;
+                }
+                var v1 = this.bounds.points.vecs[this.bounds.controlPointsTransformOriginIndex[this.bounds.draggingPointIndex]];
+                this.bounds.transform.reset()
+                    .setOrigin(v1)
+                    .negateOrigin()
+                    .scale((boundingBox.right - boundingBox.left) / oldWidth, (boundingBox.bottom - boundingBox.top) / oldHeight)
+                    .translate(v1.x,v1.y)
+                this.bounds.transform.applyToVecArray(selected);        
+                this.changed = pointsUpdated = true;                   
+                if(!this.mainButton){
+                    this.dragComplete(true);     
+                    this.bounds.draggingPointIndex = -1;                    
+                }else{
+                    this.updateBounds();
+                }
+            }
+        },
+        pointerDragSelect : function(){
+            if(!this.dragging){ 
+                selectionBox.right = selectionBox.left = dragStartX;
+                selectionBox.bottom = selectionBox.top = dragStartY;
+                this.dragging = true;
+                this.dragSelecting = true;                
+            }else{
+                selectionBox.left = dragStartX;
+                selectionBox.top = dragStartY;
+                selectionBox.right = mouse.x;
+                selectionBox.bottom = mouse.y;
+                selectionBox.normalise();
+                points.findInsideBox(selectionBox,selected,unselected);
+                this.dragSelecting = true;                
+                if(!this.mainButton){
+                    this.dragSelecting = false;                
+                    this.dragComplete(true);  
+                }
+            }
+        },       
+        getPointAtPointer : function(){
+            var ind = points.findClosestIndex(pointerLoc,this.pointerDistLimit);
+            if(ind !== -1){
+                this.closestToPointer = points.vecs[ind];
+                return this.isSelected(this.closestToPointer.id);
+            }else{
+                this.closestToPointer = undefined;
+            }         
+            return false;            
+        },
+        locateControlsAndPoints : function(){
+            var vecSelected = false;
+            this.nextPointerFunctionOnDown = undefined;
             if(this.bounds.active){
                 if(this.bounds.controls){
-                    this.bounds.pointerOverPointIndex = this.bounds.points.findClosestIndex(pointerLoc,this.pointerDistLimit, true);
-                    if(this.bounds.pointerOverPointIndex === -1){ 
-                        this.bounds.pointerOverPointIndex = -1;
+                    this.bounds.pointerOverControlIndex = this.bounds.points.findClosestIndex(pointerLoc,this.pointerDistLimit, true);
+                    if(this.bounds.pointerOverControlIndex === -1){ 
+                        this.bounds.pointerOverControlIndex = -1;
                         this.pointerOverBounds = boundingBox.isVecInside(pointerLoc);
                     }else{
                         this.pointerOverBounds = false;
                     }
                 }else{
-                    this.bounds.pointerOverPointIndex = -1;
+                    this.bounds.pointerOverControlIndex = -1;
                     this.pointerOverBounds = boundingBox.isVecInside(pointerLoc);
                 }
             }else{
-                this.bounds.pointerOverPointIndex = -1;
+                this.bounds.pointerOverControlIndex = -1;
                 this.pointerOverBounds = false;
             }
             if(!this.dragging){
-                if(this.bounds.pointerOverPointIndex > -1){
-                    mouse.requestCursor(this.bounds.controlPointCursors[this.bounds.pointerOverPointIndex]);
+                vecSelected = this.getPointAtPointer();
+                if(this.bounds.pointerOverControlIndex > -1){
+                    mouse.requestCursor(this.bounds.controlPointCursors[this.bounds.pointerOverControlIndex]);
+                    if(this.bounds.pointerOverControlIndex !== cIndex.rotate){
+                        this.nextPointerFunctionOnDown = this.pointerDragBoundsScale;
+                    }else{
+                        this.nextPointerFunctionOnDown = this.pointerDragBoundsRotate;
+                    }
                 }else
                 if(this.pointerOverBounds){
-                    mouse.requestCursor(this.bounds.mainCursor);
+                    if(mouse.ctrl && this.closestToPointer !== undefined){
+                        if(vecSelected){
+                            mouse.requestCursor(cursorNames.selectRemove);
+                            this.nextPointerFunctionOnDown = this.pointerSelectRemove;                            
+                        }else{
+                            mouse.requestCursor(cursorNames.selectAdd);
+                            this.nextPointerFunctionOnDown = this.pointerSelectAdd;
+                        }
+                    }else{
+                        mouse.requestCursor(this.bounds.mainCursor);
+                        this.nextPointerFunctionOnDown = this.pointerDragBounds;
+                    }
+                }else
+                if(this.closestToPointer !== undefined){
+                    if(quickDrag){
+                        if(mouse.ctrl){
+                            if(vecSelected){
+                                mouse.requestCursor(cursorNames.selectRemove);
+                                this.nextPointerFunctionOnDown = this.pointerSelectRemove;
+                            }else{
+                                mouse.requestCursor(cursorNames.selectAdd);
+                                this.nextPointerFunctionOnDown = this.pointerSelectAdd;
+                            }
+                        }else{
+                            mouse.requestCursor(cursorNames.move);
+                            this.nextPointerFunctionOnDown = this.pointerQuickMove;
+                        }
+                    }else{
+                        if(vecSelected){
+                            mouse.requestCursor(cursorNames.selectRemove);
+                            this.nextPointerFunctionOnDown = this.pointerSelectRemove;
+                        }else{
+                            mouse.requestCursor(cursorNames.selectAdd);
+                            this.nextPointerFunctionOnDown = this.pointerSelectAdd;
+                        }                            
+                    }
+                            
+
                 }else{
+                    this.nextPointerFunctionOnDown = this.pointerDragSelect;
                     mouse.releaseCursor();
                 }
             }else{
+                this.closestToPointer = undefined;
                 mouse.requestCursor("none");
             }
-
-            var ind = points.findClosestIndex(pointerLoc,this.pointerDistLimit);
-            if(ind !== -1){
-                this.closestToPointer = points.vecs[ind]
-            }else{
-                this.closestToPointer = undefined;
-            }
-            if((mouse.buttonRaw & buttonMain) === buttonMain){
-                if(!this.dragging && !buttonDown){
-                    if(this.closestToPointer !== undefined){
-                        sel = this.selected.isIdInArray(this.closestToPointer.id);
-                        if(quickDrag || sel){
-                            if(quickDrag && !sel){
-                                this.selectNone()
-                                this.selectPoint(this.closestToPointer,true);
-                            }
-                            buttonDownOnSelected = true;
-                            this.dragging = true;
-                            dragOffsetX = this.closestToPointer.x-mouse.x;
-                            dragOffsetY = this.closestToPointer.y-mouse.y;
-                            dragStartX = mouse.x;
-                            dragStartY = mouse.y;
-                            buttonDownOn = this.closestToPointer;
-                            dragged = false;
-                        }else{
-                            buttonDownOn = this.closestToPointer;
-                            buttonDownOnSelected = false;
-                            buttonDown = true;
-                            dragged = false;
-                        }
-                    }else
-                    if(this.pointerOverBounds || this.bounds.pointerOverPointIndex > -1){
-                        buttonDownOnSelected = false;
-                        this.dragging = true;
-                        dragStartX = mouse.x;
-                        dragStartY = mouse.y;
-                        buttonDownOn = undefined;
-                        if(this.bounds.pointerOverPointIndex > -1){
-                            this.bounds.draggingPointIndex = this.bounds.pointerOverPointIndex;
-                        }else{
-                            this.bounds.draggingPointIndex = -1;
-                        }
-                            
-                        dragged = false;                        
-                    }else{
-                        buttonDownOn = undefined;
-                        buttonDownOnSelected = false;
-                        buttonDown = true;
-                        dragStartX = mouse.x;
-                        dragStartY = mouse.y;                        
-                        selectionBox.right = selectionBox.left = dragStartX = mouse.x;
-                        selectionBox.bottom = selectionBox.top = dragStartY = mouse.y;
-                        dragged = false;
-                        this.dragging = true;
-                        this.dragSelecting = true;
-                    }
-                }else
-                if(this.dragging){
-                    if(!dragged && Math.abs(mouse.x- dragStartX) < 2 && Math.abs(mouse.y- dragStartY) < 2){
-                        
-                    }else{
-                        dragged = true;
-                        draggingFinnalFlag = true;
-                        if(this.dragSelecting){
-                            selectionBox.left = dragStartX;
-                            selectionBox.top = dragStartY;
-                            selectionBox.right = mouse.x;
-                            selectionBox.bottom = mouse.y;
-                            selectionBox.normalise();
-                            points.findInsideBox(selectionBox,selected,unselected);
-                            this.dragSelecting = true;
-                        }else{
-                            workVec.x = mouse.x- dragStartX;
-                            workVec.y = mouse.y- dragStartY;
-                            dragStartX = mouse.x;
-                            dragStartY = mouse.y;
-                            if(this.bounds.draggingPointIndex > -1){
-                                if(this.bounds.draggingPointIndex === cIndex.rotate){
-                                    boundingBox.center(workVec3);
-                                    workVec1.setAs(this.bounds.points.vecs[this.bounds.draggingPointIndex]).sub(workVec3);
-                                    workVec2.setAs(workVec1).add(workVec);
-                                    var ang = workVec1.angleBetween(workVec2);
-                                    this.bounds.transform.reset()
-                                        .setOrigin(workVec3) // set center
-                                        .negateOrigin()      // invert origin so that all points are move to be relative to center
-                                        .rotate(ang)         // rotate all points
-                                        .translate(workVec3.x,workVec3.y);  // return points to the original position
-                                    log("Ang : "+ang);
-                                    log(workVec2);
-                                    this.bounds.transform.applyToVecArray(selected)
-                                    this.bounds.transform.applyToVecArray(this.bounds.points);        
-                                    //this.updateBounds();                                   
-                                    //this.bounds.points.vecs[this.bounds.draggingPointIndex].setAs(workVec3);
-                                    
-                                    
-                                }else{
-                                    var oldWidth = boundingBox.right - boundingBox.left;
-                                    var oldHeight = boundingBox.bottom - boundingBox.top;
-                                    this.bounds.points.vecs[this.bounds.draggingPointIndex].add(workVec);
-                                    switch(this.bounds.draggingPointIndex){
-                                        case cIndex.topLeft:
-                                        case cIndex.topRight:
-                                        case cIndex.top:
-                                           boundingBox.top += workVec.y;
-                                           break;
-                                        case cIndex.bottomRight:
-                                        case cIndex.bottomLeft:
-                                        case cIndex.bottom:
-                                           boundingBox.bottom += workVec.y;
-                                           break;
-                                    }
-                                    switch(this.bounds.draggingPointIndex){
-                                        case cIndex.topLeft:
-                                        case cIndex.bottomLeft:
-                                        case cIndex.left:
-                                           boundingBox.left += workVec.x;
-                                           break;
-                                        case cIndex.topRight:
-                                        case cIndex.bottomRight:
-                                        case cIndex.right:
-                                           boundingBox.right += workVec.x;
-                                           break;
-                                    }
-                                    var v1 = this.bounds.points.vecs[this.bounds.controlPointsTransformOriginIndex[this.bounds.draggingPointIndex]];
-                                    this.bounds.transform.reset()
-                                        .setOrigin(v1)
-                                        .negateOrigin()
-                                        .scale((boundingBox.right - boundingBox.left) / oldWidth, (boundingBox.bottom - boundingBox.top) / oldHeight)
-                                        .translate(v1.x,v1.y)
-                                    this.bounds.transform.applyToVecArray(selected);        
-                                    this.updateBounds();
-                                }
-                                this.changed = pointsUpdated = true;
-                            }else{
-                                selected.add(workVec);
-                                boundingBox.add(workVec);
-                                this.bounds.points.add(workVec);
-                                this.changed = pointsUpdated = true;
-                            }
-                        }
-                    }
-                }else
-                if(buttonDown){
-                    
-                }
-            }else{
-                if(this.dragging){
-                    if(! dragged && Math.abs(mouse.x- dragStartX) < 2 && Math.abs(mouse.y- dragStartY) < 2){
-                        if(quickDrag){
-                            
-                        }else{
-                            if(buttonDownOn !== undefined){
-                                this.unselectPoint(buttonDownOn,true);
-                            }else{
-                                this.selectNone();
-                            }
-                        }
-                    }else
-                    if(this.dragSelecting){
-
-                    }
-                    this.selectionChanged();
-                    this.dragSelecting = false;
-                    buttonDown = false;
-                    buttonDownOn = undefined;
-                    this.dragging = false;
-                    this.bounds.draggingPointIndex = -1;
-                    dragged = false;
-                }else
-                if(buttonDown){
-                    if(buttonDownOn === undefined){
-                        this.selectNone();                        
-                    }else{
-                        if(!buttonDownOnSelected && this.closestToPointer !== undefined && this.closestToPointer.id === buttonDownOn.id){
-                            this.selectNone();
-                            this.selectPoint(buttonDownOn,true);                       
-                        }
-                    }
-                    buttonDownOn = undefined;
-                    buttonDownOnSelected = false;
-                    buttonDown = false; 
-                }else
-                if(draggingFinnalFlag){
-                    draggingFinnalFlag = false;
-                }
-
-            }
+            
+            
+        },
+        updatePointer : function(){
+            this.updatePointerState();
+            this.currentPointerFunction()
         },
         hasPointMoved : function(id){ // id can be a point or the index or an array returns true of a point with Id is in the selected vecArray and it is being dragged
             if(pointsUpdated){
@@ -402,7 +476,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     return false;
                     
                 }else
-                if(id !== undefined && id.id !== undefined){
+                if(geom.isPrimitive(id)){
                     return selected.isIdInArray(id.id);
                 }
                 return selected.isIdInArray(id)
@@ -568,6 +642,17 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }
             return this;
         },
+        isSelected : function(id){
+            if(selected.length > 0){
+                if(typeof id === "number" || typeof id === "string" || Array.isArray(id)){
+                    return selected.isIdInArray(id);
+                }else
+                if(geom.isPrimitive(id)){
+                    return selected.isIdInArray(id.id);
+                }
+            }
+            return false;
+        },
         drawPoints : function(what){  // draws UI parts. What is what to draw. "all","selected","unselected"
             if(what === undefined){
                 what = "all";
@@ -619,6 +704,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
         var interfaceId = 0;
         var i;
         var customCursors = {
+            add :    "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAYCAYAAABwZEQ3AAABzElEQVRIicWWX0tCQRDFf6BYJmgP+TcwSiy7FfRgZlqgBPX9P9HtYWdxHO/euzdRB4aVo+6ePXN2dqE4KipPGjWgDjRkrJ2KyBnQBNpAV8am4EeNmiycqhwBA8GPplAVV5I2kKZp6sm8CqG2fF89NBHvkRZOBU1mDiSCtziwh7RHBjgVNJkvNuoMOKCHsjySGjI2D+KhCsYjRUHYQxV2+5LFcvtVBddHuhm7z1NmBjwCfZw6vh/5rKu0eLC0WpmR7HiO84gm8wOsBV8AbzhD38hGukBPyPXY9CaLd4BL4CJEyHvGGzcRUprMGvgApkahJKDcJICPgSFwJUplRsxpmmJ8hSpnCfwFuBNCuQpt9RmVCz151mdLIA8XQkNcyYIe0h3Ye2iG88iOoTMW/Y3BZc4xzkN1ck6Z9dAj4o3QUTdGL8Rx/ktwpm7kkYFtD/WB20hlYstUioxXyHvoukgBq1YOvqJEmXRUhXlPKyIThhpiCnwH8JWoEmVgG1lNcSY5Bd5xJ+1T5VIWnMu4lFzI/6KOdiisoSfAPU7mB1ztn4BnGRP5jc9E4VFNryjsM7QjE3bYtHufe10HsWEf6OfsXoR7XZRlI+aJ8K8nxB+sHLGQMpxpsgAAAABJRU5ErkJggg==') 8 8, pointer",
+            remove : "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAUCAYAAAD2rd/BAAABuUlEQVRIicWXbUtCMRTHf6AoFlyEusrV3hRi+BBRRFk+VFRC3/8D2Ysdce5u8yxFB4dzx862/87+Z+dcKLdKgpy81YAGcK6QhtifrNWBDMiBAuhEpBC7TOYdvdVk81WC9DDgM47s6QrmenNgpWkC+FFAt4AzoEqc47tiQR0nFQwn26R5+AUYYrzcxM/xNV3qhGOjYYkqTmwP98Rzr8AMmFuyAN6BD/meAGPgBuhS5nhLDpKJblGOjUIclYsuUMbJmsMdAT0E7hy5T7yBPnANXO2wG0TGonESeyW64kkvn3192fDB7ofsQuNs4iTHsKDE6dA73BTQ9mI+gFsb+7412pKJ3EBbcASD0JaqGHdigGMHSdHWOt+YWLrF8N/r4dABtgD7rtYH+D8HsOZ+Ac8YSlyQkKBKgEOe9vR/NQAjlDgcYOXGy5idbz1nfC9KFM7pf5y+Tz4jY0vFfFXQ+QD7Esub6CkmySwcmWKy4ZPoKZsENJN+aP5c1t/5rIWam1gGjowpJ5oR5jr7okfW2Fg5f68Cy04sbcIp1U27lx6bWEo+aAlrJ5ZY0aItbDTz9y5dtWWhtnRM+g37A/SOJQU/LgzQAAAAAElFTkSuQmCC') 8 5, pointer",
             rotate : "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAARCAYAAAAsT9czAAABWElEQVQ4ja2V20rDQBCGP3JR0pI0ltJTlBIrWi0mUClW8f2fSy/yrxk2m7RBB4btbv5DdjK7hWERBfLP4YtEwAiIgbHJWOsh/FUxMunmE2AKzIEFsNQ41/rEw1t+Z8RAAmQaE4ktge9A3gN3ej41HMeP+4wyieTKlRMOhTF9kOnK8NfSaxmOgNSJirD3TeyuAusvHn8HbKT7W9JI7nMr4v9WfgBn4N03DeBLoJBuLB8i6s5ahMol4qcMjsArcNB47OG8AY/SHftmy47yfMmoFHmrb7LVvOzgnYAn6V42897yGbgFZvoOM827OL1mwTIa8l47SvUN0gv4zjK6Bilsx5l0O8tp2jnTPIQ/A1WoQaBp/VxvU8ngpLGkbuU1zWFNNN/pucVX0nGVaN0mMXAjQCGwy4L6zNhD6na36cDn0uu9RVLCd2AaIA7Ft6Lvdv8PfCuG/m9dhf8BJ+ccqa7A1i0AAAAASUVORK5CYII=') 12 4, pointer",
         }
 
@@ -709,80 +796,76 @@ groover.geom.Geom.prototype.addUI = function(element1){
     
 }
 console.log("Groover.Geom.UI extension parsed.");
- /*   
-GG.dragPoints = {
-    mouseV : new GG.Vec(),
-    dragOffset : new GG.Vec(),
-    points : new GG.VecArray(),
-    closePointIndex : undefined,
-    dragging : undefined,
-    dragButtonMask : 1,
-    cursor : "pointer",
-    SELECT_DIST : 10,
-    mark : {
-        type : "circle",
-        col : "black",
-        fill : "white",        
-        lineWidth : 3,
-        size : 10,
-    },
-    highlight : {
-        type : "circle",
-        col : "black",
-        fill : "white",
-        lineWidth : 3,
-        size : 10,
-    },
-    update : function(mouse){
-        this.mouseV.setAs(mouse.x, mouse.y);
-        this.closePointIndex = this.points.findClosestIndex(this.mouseV, this.SELECT_DIST); 
-        if((mouse.buttonRaw & this.dragButtonMask) === this.dragButtonMask && 
-                (this.closePointIndex !== -1 || this.dragging !== undefined) ){
-            if(this.dragging === undefined){  
-                this.dragging = this.closePointIndex;
-                this.dragOffset.setAs(this.mouseV).sub(this.points.vecs[this.dragging]); 
-            }
-            ctx.canvas.style.cursor = this.cursor;
-            this.points.vecs[this.dragging].setAs(this.mouseV).sub(this.dragOffset); 
-        }else{
-            if(this.closePointIndex === -1){
-                ctx.canvas.style.cursor = "default";
-            }else{
-                ctx.canvas.style.cursor = this.cursor;
-            }
-            this.dragging = undefined;        
-        }
-    },
-    reset : function(){
-        this.points.clear();
-        this.closePointIndex =-1;
-        this.dragging = undefined;
-    },
-    display : function(what){
-        if(what === undefined || what === "all"){
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.fillStyle = this.highlight.fill;
-            ctx.strokeStyle = this.mark.col;
-            ctx.lineWidth = this.mark.lineWidth;
-            GG.setMark(this.mark.type);
-            GG.setMarkSize(this.mark.size);      // set the current point size
-            ctx.beginPath();
-            this.points.mark();     // mark all the points in dragPoints
-            ctx.stroke();          // render them      
-        }
 
-        if(what === undefined || what === "drag"){
-            if(this.closePointIndex > -1 || this.dragging !== undefined ){
-                ctx.fillStyle = this.highlight.fill;
-                ctx.strokeStyle = this.highlight.col;
-                ctx.lineWidth = this.highlight.lineWidth;
-                GG.setMark(this.highlight.type);
-                GG.setMarkSize(this.highlight.size);      // set the current point size
-                ctx.beginPath();
-                this.points.vecs[this.dragging !== undefined ? this.dragging : this.closePointIndex].mark();     // mark the points in dragPoints
-                ctx.stroke();          // render them
-                ctx.fill();          // render them
-            }  
+/* example code for displaying ui gisom        
+// GG is groover.geom
+// Requiers 
+// groover.geom.extension.render
+// groover.geom.extension.ui
+// ui can run without render but you will have to supply the rendering
+
+// then this resets, adds element 
+GG.ui.reset()
+GG.setUIElement(canvas);
+GG.setCtx(ctx);  // sets render target for render extention.
+GG.ui.setDragMode("quickDrag")
+GG.ui.addPoints(tri.asVecArray(undefined,true));
+GG.ui.addPoints(cir.asVecArray(undefined,true));
+// ctx is context
+// begin style set style for fill, stroke, and lineWidth then calls beginPath
+
+var drawGeomUI = function(){
+    
+    // Highligh vec near mouse
+    GG.setMark("circle");
+    GG.setMarkSize(6)
+    beginStyle("blue","red",3);
+    GG.ui.drawPoints("nearmouse");
+    ctx.fill();
+    ctx.stroke();
+    
+    // draw all unselected    
+    GG.setMark("circle");
+    GG.setMarkSize(4)
+    beginStyle("blue","#000",1);
+    GG.ui.drawPoints("unselected");
+    ctx.stroke();
+
+    // draw all selected
+    GG.setMark("circle");
+    GG.setMarkSize(5)
+    beginStyle("blue","red",2);
+    GG.ui.drawPoints("selected");
+    ctx.stroke();
+
+    // draw the bounding box
+    if(GG.ui.bounds.active){
+        if(GG.ui.pointerOverBounds){  // is mouse over
+            beginStyle("blue","Yellow",2);
+        }else{
+            beginStyle("blue","Yellow",1);
+        }
+        GG.ui.bounds.lines.moveTo().draw(); // draw the lines
+        if(GG.ui.bounds.controls){          // draw controls if active (single points have no controls)
+            GG.ui.bounds.rotationLine.moveTo().draw();
+            GG.setMark("box");
+            GG.setMarkSize(GG.ui.pointerDistLimit)
+            GG.ui.bounds.points.mark();
+        }
+        ctx.stroke();
+        // highlight bounds control if point over it
+        if(GG.ui.bounds.pointerOverPointIndex > -1){
+            beginStyle("blue","Yellow",2);
+            GG.ui.bounds.points.vecs[GG.ui.bounds.pointerOverPointIndex].mark();
+            ctx.stroke();
         }
     }
-}    */
+
+    // if drag selecting then draw the selection box
+    if(GG.ui.dragSelecting){
+        beginStyle("rgba(255,255,255,0.1)","white",2);
+        GG.ui.selectionBox.moveTo().draw(); // expand by 7
+        ctx.fill();
+        ctx.stroke();
+    }
+ }*/
