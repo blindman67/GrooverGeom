@@ -657,6 +657,119 @@ groover.geom.Geom.prototype.addShapes = function(){
             this.calculate();
             return this;
         },
+        flexyCrescent : function(vecArray,variant){
+            var a1Left,a2Left;
+            const TWO_ARCS = 0;
+            const THREE_ARCS = 1;
+            if(variant === "3arc"){
+                this.variant = THREE_ARCS;
+            }else{
+                this.variant = TWO_ARCS;
+            }
+                
+            this.dirty = true;
+            if(geom.isPrimitive(vecArray)){
+                if(vecArray.type === "VecArray"){
+                    vecArray = vecArray.asVecArray();
+                    this.items.push(vecArray.first());
+                    this.items.push(vecArray.next());
+                    this.items.push(vecArray.next());
+                    this.items.push(vecArray.next());
+                }
+            }else
+            if(Array.isArray(vecArray)){
+                this.items.push(vecArray[0]);
+                this.items.push(vecArray[1]);
+                this.items.push(vecArray[2]);
+                this.items.push(vecArray[3]);
+            }
+                
+            this.items.push(this.arc1 = new geom.Arc(new geom.Circle(new geom.Vec(0,0)),0,0,false));            
+            this.items.push(this.arc2 = new geom.Arc(new geom.Circle(new geom.Vec(0,0)),0,0,false));
+            this.items.push(this.arc3 = new geom.Arc(new geom.Circle(new geom.Vec(0,0)),0,0,false));
+            this.items.push(this.centerLine = new geom.Line(this.items[0],this.items[2]));
+            this.makeDirty = function(){
+                this.dirty = true;
+                return this;
+            };            
+            this.calculate = function(){
+                if(this.dirty){
+                    this.arc1.fromVec3(this.items[0],this.items[1],this.items[2]);
+                    this.arc2.fromVec3(this.items[2],this.items[3],this.items[0]);
+                    if(this.variant === THREE_ARCS){
+                        this.arc1.endFromVec(this.items[1]);
+                        this.arc2.startFromVec(this.items[3]);
+                        this.arc3.fromVec3(this.items[1],this.items[2],this.items[3]);
+                    }
+                    a1Left = this.centerLine.isVecLeft(this.items[1]);
+                    a2Left = this.centerLine.isVecLeft(this.items[3]);
+                    if(a1Left === a2Left){
+                        if(a1Left){
+                            this.arc2.swap().direction = true;
+                        }else{
+                            this.arc1.swap().direction = true;
+                        }
+                    }else{
+                        if(!a1Left){
+                            this.arc2.swap().direction = true;
+                            this.arc1.swap().direction = true;
+                            
+                        }else{
+                            this.arc2.direction = false;
+                            this.arc1.direction = false;
+                        }
+                    }
+                }
+                this.dirty = false;
+            }
+            if(geom.extentions.render){
+                this.mark = function(){
+                    var it,i,len;
+                    this.calculate();
+                    it = this.items;
+                    for(i = 0; i < 6; i ++){
+                        it[i].mark();
+                    }    
+                    return this;
+                    
+                }
+                this.moveTo = function(){
+                    this.calculate();
+                    if(this.items.length > 0){
+                        this.items[0].moveTo();
+                    }                    
+                    return this;
+                }
+                this.lineTo = function(){
+                    this.calculate();                    
+                    if(this.items.length > 0){
+                        this.items[0].lineTo();
+                    }                    
+                    return this;
+                }
+                this.draw = function(){
+                    var it,i,len;
+                    this.calculate();
+                    if(this.variant === THREE_ARCS){
+                        this.arc1.draw();
+                        this.arc3.draw();
+                        this.arc2.draw();
+                    }else{
+                        this.arc1.draw();
+                        this.arc2.draw();
+                    }
+
+                    
+                    return this;
+                }
+                this.lable = function(text){
+                    return this;
+                }
+            }
+            this.calculate();
+            return this;             
+            
+        },
         roundedPath : function(vecArray,radius,closed){
             var lastVecCount;
             this.vecArray = vecArray;
@@ -769,13 +882,8 @@ groover.geom.Geom.prototype.addShapes = function(){
                     return this;
                 }
             }
-
             this.calculate();
-            return this;
-                
-                
-                
-                
+            return this; 
         }        
     }
     

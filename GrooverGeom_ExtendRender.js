@@ -7,7 +7,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     size = 1;
     geom.Geom.prototype.size = size;    
     geom.Geom.prototype.ctx = ctx;    
-    workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
+    workVec = new geom.Vec();  // rather than create a new vec each time just use this one
     
     this.extentions.render = {   // add extentions 
         functions : ["lineTo","moveTo","draw","mark","lable"],
@@ -398,23 +398,17 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     if(geom.Arc){
         geom.Arc.prototype.moveTo = function(end){ // if end (optional) is true then move to the end else move to the start
             if(this.start !== this.end){
-                if(end === undefined){
-                    end = this.direction;
-                }                
-                if(end){
+                if(end === true){
                     this.endAsVec().moveTo();
                 }else{
-                    this.startAsVec().moveTo();
+                   this.startAsVec().moveTo();
                 }
             }
             return this;// returns this
         };
         geom.Arc.prototype.lineTo = function(end){ // if end (optional) is true then line to the end else line to the start
             if(this.start !== this.end){
-                if(end === undefined){
-                    end = this.direction;
-                }
-                if(end){
+                if(end === true){
                     this.endAsVec().lineTo();
                 }else{
                     this.startAsVec().lineTo();
@@ -521,10 +515,8 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
                     text = this.type;
                 }
             }        
-            var len = this.top.setTransformToLine().leng()/2;
-            ctx.fillText(text, len , len * this.aspect);
+            this.center(workVec).lable(text);
             return this;
-
         };    
     }
     if(geom.Box){
