@@ -565,10 +565,12 @@ groover.geom.Geom.prototype.addUI = function(element1){
             if(!allreadyUnique){
                 vec.makeUnique();
             }
-            points.push(vec);
-            this.pointsListChanged();
-            this.selectPoint(vec);
-            this.changed = true;
+            if(!points.isIdInArray(vec.id)){
+                points.push(vec);                
+                this.pointsListChanged();
+                this.selectPoint(vec,true);                
+                this.changed = true;
+            }
             return this;
         },
         addPoints : function(vecArray, allreadyUnique){
@@ -576,10 +578,12 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 if(!allreadyUnique){
                     vec.makeUnique();
                 }
-                points.push(vec);
+                if(!points.isIdInArray(vec.id)){
+                    points.push(vec);
+                }
             });
             this.pointsListChanged();
-            this.selectPoints(vecArray);
+            this.selectPoints(vecArray,true);
             this.changed = true;
             return this;
         },
@@ -749,26 +753,36 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }
             return false;
         },
-        drawPoints : function(what){  // draws UI parts. What is what to draw. "all","selected","unselected"
+        drawPoints : function(what,how){  // draws UI parts. What is what to draw. "all","selected","unselected". How is who to draw. how = "mark" marks vecs, how = "lable" lables the vec
+            if(typeof points.mark !== "function"){
+                throw new Error("UI cant draw as there is no rendering extension 'mark()'");
+            }
             if(what === undefined){
                 what = "all";
             }else{
                 what = what.toLowerCase();
             }
+            if(how === undefined){
+                how = "mark";
+            }else
+            if(how !== "lable" && how !== "mark"){
+                how = "mark";
+            }
+                
             if(what === "all"){
-                points.mark();
+                points[how]();
             }else
             if(what === "selected"){
-                selected.mark();
+                selected[how]();
             }else
             if(what === "unselected"){
-                unselected.mark();
+                unselected[how]();
             }else
             if(what === "inselectionbox"){
-                inSelectionBox.mark();
+                inSelectionBox[how]();
             }else
             if(what === "nearmouse" && this.closestToPointer !== undefined){
-                this.closestToPointer.mark();
+                this.closestToPointer[how]();
             }
         },
         mapMouseButton : function(which, where){
