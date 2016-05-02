@@ -10,6 +10,7 @@ groover.geom = (function (){
     const MR2D = 180 / MPI;
     const EPSILON = 1E-6; // this is still undecided Could use Number.EPSILON but I feel that is a little small for graphics based metrics
     const EPSILON1 = 1-EPSILON;
+    const BEZ3_CIR = 0.55191502449; // Bezier3 circle fit from "Approximate a circle with cubic Bézier curves", lnk http://spencermortensen.com/articles/bezier-circle/
     
     var UID = 1;
     
@@ -1447,20 +1448,12 @@ groover.geom = (function (){
                 v4.y = this.p2.y;
             }
             b = retRect.top.distFromDir(v4); // The code that forlows uses the registers set here u for unit dist, and _leng for length ont the line retrect.top and v1 as the vector of the line
-            if(b < 0){
+            if(b < 0){  // if the dist is negative then triangle is anticlockwise so swap top line and ajust unit and vec
                 retRect.top.swap();
                 b = -b;
-                if(u > 1){
-                    u = 1 - u;
-                }else
-                if(u < 0){
-                    u = 1 - u;
-                }else{
-                    u = 1 - u;
-                }
+                u = 1 - u;
                 v1.x = - v1.x;
                 v1.y = - v1.y;
-                    
             }
             if(u < 0){  // if the closest point is befor the line start move the start of the top back
                 retRect.top.p1.x += v1.x * u;
@@ -1476,7 +1469,6 @@ groover.geom = (function (){
                 a = retRect.top._leng;
             }
             retRect.aspect = b/a;
-            
             return retRect;
         },
         asArc : function(arc){
@@ -2031,7 +2023,7 @@ groover.geom = (function (){
                 return triArray.push(this.copy());
             }
             if(!pe1 && !pe2 && !pe3){
-                triArray;
+                return triArray;
             }
 
 
@@ -2104,9 +2096,9 @@ groover.geom = (function (){
                     triArray.push(new Triangle(v3.copy(), this.p1.copy(), this.p2.copy()));
                 }
             }else {
-                tris = [];
+                //triArray = [];
             }
-            return tris;
+            return triArray;
         },
         sliceLine : function(line){
             var l1 = new Line(this.p1,this.p2);
@@ -2177,6 +2169,7 @@ groover.geom = (function (){
             return tris;
         },
         slice : function(obj){
+            return undefined;
             
             
         },
@@ -2321,6 +2314,17 @@ groover.geom = (function (){
             v2.y = this.p3.y - this.p2.y;
             v3.x = this.p1.x - this.p3.x;
             v3.y = this.p1.y - this.p3.y;
+            c1 = amount
+            if(v1.x * - v3.y - v1.y * - v3.x < 0){
+                v1.x = - v1.x;
+                v1.y = - v1.y;
+                v2.x = - v2.x;
+                v2.y = - v2.y;
+                v3.x = - v3.x;
+                v3.y = - v3.y;
+                c1 = - amount;
+            }
+                
             // find length of each side
             a = Math.hypot(v1.x,v1.y);
             b = Math.hypot(v2.x,v2.y);
@@ -2346,12 +2350,12 @@ groover.geom = (function (){
             this.p3.x -= v3.x * u1;  // move the point
             this.p3.y -= v3.y * u1;  
             // now move the points alone the line norm to offset by amount            
-            this.p1.x += v1.y * amount;
-            this.p1.y -= v1.x * amount;
-            this.p2.x += v2.y * amount;
-            this.p2.y -= v2.x * amount;
-            this.p3.x += v3.y * amount;
-            this.p3.y -= v3.x * amount;
+            this.p1.x += v1.y * c1;
+            this.p1.y -= v1.x * c1;
+            this.p2.x += v2.y * c1;
+            this.p2.y -= v2.x * c1;
+            this.p3.x += v3.y * c1;
+            this.p3.y -= v3.x * c1;
             // all done
             return this;
         },
@@ -4099,9 +4103,9 @@ groover.geom = (function (){
             return "Line: "+l+"( "+this.p1.toString(precision)+", "+this.p2.toString(precision)+" )";
         },
         swap : function(){
-            var t = this.p1;
+            u1 = this.p1;
             this.p1 = this.p2;
-            this.p2 = t;
+            this.p2 = u1;
             return this;  // returns this
         },
         reverse : function(){
@@ -4207,7 +4211,7 @@ groover.geom = (function (){
         extend : function(percentage){  // grows or shrinks the linetowards or away from its center
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            var l = (Math.hypot(v1.x,v1,y) * 2) / percentage;
+            var l = (Math.hypot(v1.x,v1.y) * 2) / percentage;
             v1.x /= l;
             v1.y /= l;
             this.p1.x -= v1.x;
@@ -6159,7 +6163,51 @@ groover.geom = (function (){
             }
              return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), this.cp2.copy());
         },
-        fromCircle : function(circle){ // stub
+        fromCircle : function(circle,quadrant){ // matches the circle's quadant 0,1,2,3 Quadrant 0 is bottom right then clockwise around
+            if(quadrant === undefined){
+                quadrant = 0;
+            }else{
+                quadrant = Math.abs(quadrant % 4);
+            }
+            if(quadrant === 0){
+                this.p1.x = circle.center.x + circle.center.radius;
+                this.p1.y = circle.center.y 
+                this.p2.x = circle.center.x
+                this.p2.y = circle.center.y + circle.center.radius;
+                this.cp1.x = this.p1.x;
+                this.cp1.y = this.p1.y + circle.radius * BEZ3_CIR;
+                this.cp2.x = this.p2.x + circle.radius * BEZ3_CIR;
+                this.cp2.y = this.p2.y;
+            }else
+            if(quadrant === 2){
+                this.p1.x = circle.center.x - circle.center.radius;
+                this.p1.y = circle.center.y 
+                this.p2.x = circle.center.x
+                this.p2.y = circle.center.y - circle.center.radius;
+                this.cp1.x = this.p1.x;
+                this.cp1.y = this.p1.y - circle.radius * BEZ3_CIR;
+                this.cp2.x = this.p2.x - circle.radius * BEZ3_CIR;
+                this.cp2.y = this.p2.y;
+            }else
+            if(quadrant === 1){
+                this.p1.x = circle.center.x 
+                this.p1.y = circle.center.y + circle.center.radius;
+                this.p2.x = circle.center.x - circle.center.radius;
+                this.p2.y = circle.center.y
+                this.cp1.x = this.p1.x - circle.radius * BEZ3_CIR;
+                this.cp1.y = this.p1.y;
+                this.cp2.x = this.p2.x;
+                this.cp2.y = this.p2.y + circle.radius * BEZ3_CIR;
+            }else{   
+                this.p1.x = circle.center.x 
+                this.p1.y = circle.center.y - circle.center.radius;
+                this.p2.x = circle.center.x + circle.center.radius;
+                this.p2.y = circle.center.y
+                this.cp1.x = this.p1.x + circle.radius * BEZ3_CIR;
+                this.cp1.y = this.p1.y;
+                this.cp2.x = this.p2.x;
+                this.cp2.y = this.p2.y - circle.radius * BEZ3_CIR;
+            }                
             return this;
         },
         fromArc : function(arc){ // stub
