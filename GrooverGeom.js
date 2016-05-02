@@ -648,6 +648,12 @@ groover.geom = (function (){
         primitives : [],
         type : "PrimitiveArray",
         length : 0,
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            return this.isIdInArray(id);
+        },        
         push : function(primitive){
             if(primitive.type === "PrimitiveArray"){
                 throw Error("Can not push a PrimitiveArray onto the PrimitiveArray.\nThis is to prvent infinite recursion. Use pushUnsafe if you are feeling lucky.");
@@ -656,7 +662,7 @@ groover.geom = (function (){
             this.length = this.primitives.length; 
             return this;
         },
-        pushUsafe : function(primitive){
+        pushUnsafe : function(primitive){
             if(primitive.type === "PrimitiveArray"){
                 console.log("Warning pushing PrimitiveArray onto the PrimitiveArray may create infinite loops.");
             }
@@ -786,6 +792,12 @@ groover.geom = (function (){
         type :"VecArray",
         current : undefined,
         length : 0,
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            return this.isIdInArray(id);
+        },
         each : function (callback,dir,start){ // Itterates the vecs in this. The itterater can break if the {acallback} returns false. The {odir} if true itterates the vecs in the reverse direction. The {ostart} as Number is the index of the start of itteration.
                                  // if the {odir} is true then {ostart} if passed will be the number of vec from the end to start itteration at
                                  // The {acallback} in the form
@@ -1280,6 +1292,15 @@ groover.geom = (function (){
             box.env ( this.p2.x, this.p2.y);
             box.env ( this.p3.x, this.p3.y);
             return box;            
+        },
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            if(this.p1.id === id || this.p2.id === id || this.p3.id === id){
+                return true;
+            }
+            return false;
         },
         isEmpty : function(){            
             if(this._empty || this.p1 === undefined || this.p2 === undefined || this.p2 === undefined){
@@ -2447,6 +2468,12 @@ groover.geom = (function (){
             }
             return this;  // Returns the existing this
         }, 
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            return false;
+        },
         asVecArray : function(vecArray, instance){
             if(vecArray === undefined){
                 vecArray =  new VecArray();
@@ -2666,6 +2693,15 @@ groover.geom = (function (){
             this.end = arc.end;
             this.direction = arc.direction;
             return this;         // returns this.    
+        },
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            if(this.circle.center.id === id){
+                return true;
+            }
+            return false;
         },
         asBox : function(box){
             if(box === undefined){
@@ -3276,6 +3312,15 @@ groover.geom = (function (){
             vecArray.push(this.center.copy());
             return vecArray;
         },  
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            if(this.center.id === id){
+                return true;
+            }
+            return false;
+        },
         asBox : function(box){     // Returns the bounding box 
                                    // {abox} is option
                                    // Returns `Box`
@@ -4086,6 +4131,15 @@ groover.geom = (function (){
             this.p2.y = vec2.y;
             return this;
         },
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            if(this.p1.id === id || this.p2.id === id){
+                return true;
+            }
+            return false;
+        },
         isEmpty : function(){ // line is empty if either points are undefined or the length is 0 or any point has Infinity or any point has NaN
             var t;
             if(this.p1 === undefined ||  this.p2 === undefined || 
@@ -4845,6 +4899,15 @@ groover.geom = (function (){
             this.top.setAs(rectange.top);
             this.aspect = rectange.aspect;
             return this; // returns this.
+        },
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            if(this.top.p1.id === id || this.top.p2.id === id){
+                return true;
+            }
+            return false;
         },
         isEmpty : function(){
             if(this.aspect <= 0 || this.aspect === Infinity || this.aspect === -Infinity || isNaN(this.aspect) || this.top === undefined || this.top.isEmpty()){
@@ -5897,6 +5960,12 @@ groover.geom = (function (){
             }
             return vecArray;
         },          
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            return false;
+        },
         lerp : function(from, dest, amount){
            this.top = (dest.top - from.top) * amount + from.top;  
            this.right = (dest.right - from.right) * amount + from.right;  
@@ -6097,6 +6166,15 @@ groover.geom = (function (){
             if(this.p1.isEmpty() || this.p2.isEmpty() || this.cp1.isEmpty()){
                 return true;
             }            
+        },
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            if(this.p1.id === id || this.p2.id === id || this.cp1.id === id || (this.cp2 !== undefined && this.cp2.id === id)){
+                return true;
+            }
+            return false;
         },
         lerp : function(from, dest, amount){
             this.p1.x = (dest.p1.x - from.p1.x) * amount + from.p1.x;
@@ -6672,6 +6750,15 @@ groover.geom = (function (){
             this.xAxis.x = this.yAxis.y = 1;
             this.xAxis.y = this.yAxis.x = this.origin.x = this.origin.y = 0;
             return this;
+        },
+        hasId : function(id){ // returns true if this, or any of the points has the id,
+            if(this.id === id){
+                return true;
+            }
+            if(this.xAxis.id === id || this.yAxis.id === id || this.origin.id === id){
+                return true;
+            }
+            return false;
         },
         isEmpty : function(){
             if(this.xAxis === undefined || this.yAxis === undefined || this.origin === undefined){
