@@ -280,6 +280,10 @@ groover.geom = (function (){
     Geom.prototype = {
         extentions : {},
         defaultPrecision : 4,
+        lineFeedDefault : "<br>",
+        setDefaultLineFeed : function(str){
+            lineFeedDefault = str;
+        },
         setDefaultPrecision : function(value){
             this.defaultPrecision = value;
         },
@@ -752,6 +756,42 @@ groover.geom = (function (){
             }
             return this; // returns this
         },  
+        collectIdsAsPrimitiveArray : function(ids,primArray){ // returns a primitive array contains all primitives that have ids
+            if(primArray === undefined){
+                primArray = new PrimitiveArray();
+            }
+            if(Array.isArray(ids)){
+                var me = this;
+                for(c1 = 0; c1 < ids.length; c1 ++){ 
+                    this.each(function(prim){
+                        if(prim.hasId(ids[c1])){
+                            if(!primArray.hasId(ids[c1])){
+                                primArray.push(prim);
+                            }
+                        }
+                    });                
+                }
+            }else{
+                this.each(function(prim){
+                    if(prim.hasId(ids)){
+                        primArray.push(prim);
+                    }
+                });
+            }
+            return primArray;
+        },
+        getAllIdsAsArray : function (array){ // returns an array of ids for the primitives in this. 
+            if(array === undefined){
+                array = [];
+            }
+            this.each(function(prim){
+                c = array.indexOf(prim.id);
+                if(c === -1){
+                    array.push(prim.id);
+                }
+            });
+            return array;
+        },
         isIdInArray : function (id){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
             // uses register c  will be the first id match or this.length if this function return false.
             // if id is an array and all === true then c will be the last index found
@@ -852,7 +892,10 @@ groover.geom = (function (){
                                        // The {olineFeed} can insert a lineFeed after each vec. For example for console output add call with lineFeed = "\n". 
                                        // the {oprecision} can also be changed. The default is 6;
             var str;
-            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            if(lineFeed === undefined){
+                lineFeed = geom.lineFeedDefault;
+            }
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             if(this.isEmpty()){
                 return "VecArray: "+l+"( Empty )";
             }
@@ -990,6 +1033,18 @@ groover.geom = (function (){
             }
             this.current = c;
             return undefined;
+        },
+        getAllIdsAsArray : function (array){ // returns an array of ids for the primitives in this. 
+            if(array === undefined){
+                array = [];
+            }
+            this.each(function(vec){
+                c = array.indexOf(vec.id);
+                if(c === -1){
+                    array.push(vec.id);
+                }
+            });
+            return array;
         },
         copy : function (from, to){  // Creates a new VecArray with a copy of the vecs in this.
                                      // if {ofrom} and {oto} are passed then create a copy of the points from {ofrom} to but not including {oto}.
@@ -1191,7 +1246,7 @@ groover.geom = (function (){
             if(this.length === 0){
                 return undefined;
             }
-            this.current = this.length -1;
+            this.current = 0;
             return this.vecs[this.current]; // returns Vec
         },
         next : function(){
@@ -1317,7 +1372,7 @@ groover.geom = (function (){
         },
         toString : function(precision){
             var str;
-            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             if(this.isEmpty()){
                 return "Triangle: "+l+"( Empty )";
             }
@@ -2447,9 +2502,17 @@ groover.geom = (function (){
         copy : function(){  // Creates a copy of this
             return new Vec(this.x,this.y);  // returns a new `this`
         },
+        asSimple : function(obj){ // returns the vec as a simple object with left,right,bottom,top,width,height
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.x = this.x;
+            obj.y = this.y;
+            return obj;
+        },        
         toString : function(precision){  // returns a string representing this object
                                 // the precision can also be changed. The default is 6;
-            var l = this.label === undefined ? "": "'"+this.label+"' ";                                
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";                                
             if(this.isEmpty()){
                 return "Vec : "+l+"( Empty )";
             }
@@ -2756,7 +2819,7 @@ groover.geom = (function (){
             this.end = Infinity;
         },
         toString : function(precision){
-            var l = this.label === undefined ? "": "'"+this.label+"' ";  
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";  
             if(this.isEmpty()){
                 return "Arc : "+l+"( Empty )";
             }
@@ -3332,7 +3395,7 @@ groover.geom = (function (){
             return box;
         },
         toString : function (precision){
-            var l = this.label === undefined ? "": "'"+this.label+"' ";              
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";              
             if(precision === undefined || precision === null){
                 precision = geom.defaultPrecision;;
             }
@@ -4140,6 +4203,18 @@ groover.geom = (function (){
             }
             return false;
         },
+        asSimple : function(obj){ // returns the vec as a simple object x1,y1,x2,y2 are ends, length and direction
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.x1 = this.p1.x;
+            obj.y1 = this.p1.y;
+            obj.x2 = this.p2.x;
+            obj.y2 = this.p2.y;
+            obj.length = Math.hypot(obj.x2 - obj.x1, obj.y2 - obj.y1);
+            obj.direction = Math.atan2(obj.y2 - obj.y1, obj.x2 - obj.x1);
+            return obj;
+        },         
         isEmpty : function(){ // line is empty if either points are undefined or the length is 0 or any point has Infinity or any point has NaN
             var t;
             if(this.p1 === undefined ||  this.p2 === undefined || 
@@ -4156,7 +4231,7 @@ groover.geom = (function (){
             return this;
         },
         toString : function (precision){
-            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             if(this.isEmpty()){
                 return "Line: "+l+"( Empty )";
             }
@@ -4917,7 +4992,7 @@ groover.geom = (function (){
         },
         toString : function(precision){
             var str;
-            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             if(this.isEmpty()){
                 return "Rectangle : "+l+"( Empty )";
             }
@@ -5954,6 +6029,18 @@ groover.geom = (function (){
             box.env(this.right,this.bottom);
             return box;
         },   
+        asSimple : function(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.width = this.right - this.left;
+            obj.height = this.bottom - this.top;
+            obj.top = this.top;
+            obj.right = this.right;
+            obj.left = this.left;
+            obj.bottom = this.bottom;
+            return obj;
+        },
         asVecArray : function(vecArray){ // nothing to add to the vecArray
             if(vecArray === undefined){
                 vecArray =  new VecArray();
@@ -6033,7 +6120,7 @@ groover.geom = (function (){
         },
         toString : function(precision){
             var str;
-            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             if(this.isEmpty()){
                 return "Box : "+l+"( Empty )";
             }
@@ -6082,7 +6169,7 @@ groover.geom = (function (){
             return vec;
             
         },
-        normalise : function (){
+        normalise : function (){ // ensures that all values are correct
             var t,r,l,b;
             t = Math.min(this.top,this.bottom);
             b = Math.max(this.top,this.bottom);
@@ -6094,12 +6181,18 @@ groover.geom = (function (){
             this.right = r;
             return this; // returns this.
         },
-        max : function () {
+        max : function () { // max the box Inifintly large
             this.top = -Infinity;
             this.bottom = Infinity;
             this.left = -Infinity;
             this.right = Infinity;
             return this; // returns this.
+        },
+        width : function(){  // returns the width of the box
+            return this.right-this.left;
+        },
+        height : function(){ // returns the height of the box
+            return this.bottom - this.top;
         },
         irrate : function () {
             this.top = Infinity;
@@ -6144,7 +6237,7 @@ groover.geom = (function (){
         },
         toString : function(precision){
             var str;
-            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             if(this.isEmpty()){
                 return "Bezier : "+l+"( Empty )";
             }
@@ -6732,7 +6825,7 @@ groover.geom = (function (){
         },
         toString : function(precision){
             var str;
-            var l = this.label === undefined ? "": "'"+this.label+"' ";
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             if(this.isEmpty()){
                 return "Transform : "+l+"( Empty )";
             }

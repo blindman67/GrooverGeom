@@ -2,7 +2,9 @@
 groover.geom.Geom.prototype.addUI = function(element1){
     var geom, element, mouse, points, selected, unselected, boundingBox, selectionBox, buttonMain,buttonRight,buttonMiddle;
     var dragOffsetX, dragOffsetY,dragStartX, dragStartY, pointerLoc, mouseOveBounds,workVec,workVec1,workVec2,workVec3;
-    var inSelectionBox, boundsCorners, boundsLines,shadowPoints, shadowing,mirrorShadow, shadowSelection;
+    var inSelectionBox, boundsCorners, boundsLines,shadowPoints, shadowing,mirrorShadow, shadowSelection,cancel;
+    
+    
     if(this.UI !== undefined){
         if(element1 === undefined){
             console.log("Call to groover.geom.Geom.prototype.addUI() failed. Groover.Geom.Shape extension already exists");        
@@ -16,8 +18,9 @@ groover.geom.Geom.prototype.addUI = function(element1){
     geom.Geom.prototype.UIelement = element;    
     geom.Geom.prototype.UIMouse;    
     geom.Geom.prototype.updatePointer;    
-    points = new geom.VecArray();
-    shadowPoints = new geom.VecArray(); // IF the client app modifies points  when they change (such as snap to) this array can be used to maintain the correct aspects and dragging offsets during dragging operations.
+    points = new geom.VecArray().makeUnique().setLable("Geom.UI.Points");
+    shadowPoints = new geom.VecArray().makeUnique().setLable("Geom.UI.shadowPoints");
+                                        // IF the client app modifies points  when they change (such as snap to) this array can be used to maintain the correct aspects and dragging offsets during dragging operations.
                                         // call shadowPoints to activate shadows
                                         // call unshadowPoints to deactivate
                                         // call isShadowing to get status
@@ -29,17 +32,17 @@ groover.geom.Geom.prototype.addUI = function(element1){
         });
     }
         
-    shadowSelection = new geom.VecArray();    
-    selected = new geom.VecArray();
-    unselected = new geom.VecArray();
-    inSelectionBox = new geom.VecArray();
-    pointerLoc = new geom.Vec();
+    shadowSelection = new geom.VecArray().makeUnique().setLable("Geom.UI.shadowSelected");    
+    selected = new geom.VecArray().makeUnique().setLable("Geom.UI.Selected");
+    unselected = new geom.VecArray().makeUnique().setLable("Geom.UI.unSelected");;
+    inSelectionBox = new geom.VecArray().makeUnique().setLable("Geom.UI.inSelectionBax");
+    pointerLoc = new geom.Vec().makeUnique().setLable("Geom.UI.pointer");;
     workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
     workVec1 = new geom.Vec();  // rather than create a new vec each time just use this onerror
     workVec2 = new geom.Vec();  // rather than create a new vec each time just use this onerror
     workVec3 = new geom.Vec();  // rather than create a new vec each time just use this onerror
-    boundingBox = new geom.Box();
-    selectionBox = new geom.Box();
+    boundingBox = new geom.Box().makeUnique().setLable("Geom.UI.boundingBox");;
+    selectionBox = new geom.Box().makeUnique().setLable("Geom.UI.selectionBox");;
     boundsCorners = [
         new geom.Vec().setLable("TopLeft"),
         new geom.Vec().setLable("TopRight"),
@@ -113,6 +116,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
         select : "pointer",
     }
 
+    
+    cancel = false; // global envent cance;l
+    var eventTypeNames = {
+        onSelectChanged : "selectChanged",
+        onDragStart : "dragStart",
+        onDragMove : "dragMove",
+        onDragEnd : "dragEnd", 
+        onReset : "reset",
+    };
     buttonMain = 1;
     buttonRight = 4;
     buttonMiddle = 2;
@@ -160,9 +172,23 @@ groover.geom.Geom.prototype.addUI = function(element1){
         cursorNames : cursorNames,
         currentPointerFunction : undefined,   
         nextPointerFunctionOnDown : undefined,
-        
+        onSelectChanged : undefined,
+        onDragStart : undefined,
+        onDragMove : undefined,
+        onDragEnd : undefined, 
+        onReset : undefined,
         pointerLoc : pointerLoc,
         pointerDistLimit : 10,
+        doEvent : function(name,info){
+            if(typeof this[name] === "function"){
+                cancel = this[name](this,{type:eventTypeNames[name],info : info});
+                if(cancel !== false && cancel !== true){
+                    cancel = false;
+                }
+            }else{
+                cancel = false;
+            }
+        },
         setDragMode : function(mode){
             if(typeof mode === "string"){
                 mode = mode.toLowerCase();
@@ -176,23 +202,35 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 }
             }
         },      
+        removeEvents : function(){
+            this.onSelectChanged = undefined;
+            this.onDragStart = undefined;
+            this.onDragMove = undefined;
+            this.onDragEnd = undefined;
+            this.onReset = undefined;
+        },
         reset : function(){
-            selected.reset();
-            unselected.reset();
-            points.reset();
-            inSelectionBox.reset();
-            this.draggingItem = undefined;
-            this.closestToPointer = undefined;
-            this.currentPointerFunction = undefined;
-            this.nextPointerFunctionOnDown = undefined;
-            this.dragging = false;
-            mouse.remove();
+            this.doEvent("onReset");
+            if(!cancel){                
+                selected.reset();
+                unselected.reset();
+                points.reset();
+                inSelectionBox.reset();
+                this.draggingItem = undefined;
+                this.closestToPointer = undefined;
+                this.currentPointerFunction = undefined;
+                this.nextPointerFunctionOnDown = undefined;
+                this.dragging = false;
+                mouse.remove();
+                this.removeEvents();
+            }
         },
         buttonDown : function(){
             
         },
         mainButton : false,
         dragComplete : function(updateSelection){
+            this.doEvent("onDragEnd");
             if(updateSelection === true){
                 this.selectionChanged();
             }
@@ -221,10 +259,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
         },
         pointerQuickMove : function(){
             if(!this.dragging){ 
-                this.dragging = true;   
-                this.selectNone()
-                this.selectPoint(this.closestToPointer,true);
-                this.currentPointerFunction = this.pointerDragBounds;
+                this.doEvent("onDragStart",{type: "quickMove",mouseX : mouse.x, mouseY :mouse.y,item : this.closestToPointer});
+                if(!cancel){            
+                    this.dragging = true;   
+                    this.selectNone()
+                    this.selectPoint(this.closestToPointer,true);
+                    this.currentPointerFunction = this.pointerDragBounds;
+                }else{
+                    this.dragComplete();                                       
+                }
             }else{            
                 this.dragComplete();                   
             }
@@ -259,12 +302,18 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 }
             }            
         },
-        pointerDragBounds : function(){           
+        pointerDragBounds : function(){  
+            
             if(!this.dragging){ 
-                this.dragging = true;   
-                if(shadowing){
-                    mirrorShadow(selected,shadowSelection);
-                };
+                this.doEvent("onDragStart",{type: "move",mouseX : mouse.x, mouseY :mouse.y});
+                if(!cancel){
+                    this.dragging = true;   
+                    if(shadowing){
+                        mirrorShadow(selected,shadowSelection);
+                    };
+                }else{
+                    this.dragComplete(true);                                       
+                }
             }else{
                 if(!this.mainButton){
                     this.dragComplete(true);                   
@@ -273,25 +322,37 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     workVec.y = mouse.y- dragStartY;
                     dragStartX = mouse.x;
                     dragStartY = mouse.y; 
-                    if(shadowing){
-                        shadowSelection.add(workVec);
-                        mirrorShadow(shadowSelection,selected);
-                    }else{                    
-                        selected.add(workVec);
+                    if(this.onDragMove !== undefined){
+                        this.doEvent("onDragMove",{type: "move",offset:workVec.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
+                    }else{
+                        cancel = false;
                     }
-                    boundingBox.add(workVec);
-                    this.bounds.points.add(workVec);
-                    this.changed = pointsUpdated = true;                
+                    if(!cancel){
+                        if(shadowing){
+                            shadowSelection.add(workVec);
+                            mirrorShadow(shadowSelection,selected);
+                        }else{                    
+                            selected.add(workVec);
+                        }
+                        boundingBox.add(workVec);
+                        this.bounds.points.add(workVec);
+                        this.changed = pointsUpdated = true;                
+                    }
                 }
             }
         },
         pointerDragBoundsRotate : function(){    
             if(!this.dragging){ 
-                this.dragging = true;   
-                this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;         
-                if(shadowing){
-                    mirrorShadow(selected,shadowSelection);
-                };                
+                this.doEvent("onDragStart",{type: "rotate",mouseX : mouse.x, mouseY :mouse.y});
+                if(!cancel){
+                    this.dragging = true;   
+                    this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;         
+                    if(shadowing){
+                        mirrorShadow(selected,shadowSelection);
+                    };                
+                }else{
+                    this.dragComplete(true);                                                        
+                }
             }else{
                 if(!this.mainButton){
                     this.dragComplete(true);     
@@ -300,34 +361,47 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     workVec.x = mouse.x- dragStartX;
                     workVec.y = mouse.y- dragStartY;
                     dragStartX = mouse.x;
-                    dragStartY = mouse.y;                
-                    boundingBox.center(workVec3);
-                    workVec1.setAs(this.bounds.points.vecs[this.bounds.draggingPointIndex]).sub(workVec3);
-                    workVec2.setAs(workVec1).add(workVec);
-                    var ang = workVec1.angleBetween(workVec2);
-                    this.bounds.transform.reset()
-                        .setOrigin(workVec3) // set center
-                        .negateOrigin()      // invert origin so that all points are move to be relative to center
-                        .rotate(ang)         // rotate all points
-                        .translate(workVec3.x,workVec3.y);  // return points to the original position
-                    if(shadowing){
-                        this.bounds.transform.applyToVecArray(shadowSelection);   
-                        mirrorShadow(shadowSelection,selected);                        
+                    dragStartY = mouse.y;  
+                    if(this.onDragMove !== undefined){
+                        this.doEvent("onDragMove",{type: "rotate",offset:workVec.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
                     }else{
-                        this.bounds.transform.applyToVecArray(selected)
+                        cancel = false;
                     }
-                    this.bounds.transform.applyToVecArray(this.bounds.points);           
-                    this.changed = pointsUpdated = true;                   
+                    if(!cancel){                    
+                        boundingBox.center(workVec3);
+                        workVec1.setAs(this.bounds.points.vecs[this.bounds.draggingPointIndex]).sub(workVec3);
+                        workVec2.setAs(workVec1).add(workVec);
+                        var ang = workVec1.angleBetween(workVec2);
+                        this.bounds.transform.reset()
+                            .setOrigin(workVec3) // set center
+                            .negateOrigin()      // invert origin so that all points are move to be relative to center
+                            .rotate(ang)         // rotate all points
+                            .translate(workVec3.x,workVec3.y);  // return points to the original position
+                        if(shadowing){
+                            this.bounds.transform.applyToVecArray(shadowSelection);   
+                            mirrorShadow(shadowSelection,selected);                        
+                        }else{
+                            this.bounds.transform.applyToVecArray(selected)
+                        }
+                        this.bounds.transform.applyToVecArray(this.bounds.points);           
+                        this.changed = pointsUpdated = true;  
+                    }
+                        
                 }
             }
         },
         pointerDragBoundsScale : function(){           
             if(!this.dragging){ 
-                this.dragging = true;   
-                this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;    
-                if(shadowing){
-                    mirrorShadow(selected,shadowSelection);
-                };                
+                this.doEvent("onDragStart",{type: "scale",mouseX : mouse.x, mouseY :mouse.y});
+                if(!cancel){            
+                    this.dragging = true;   
+                    this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;    
+                    if(shadowing){
+                        mirrorShadow(selected,shadowSelection);
+                    };       
+                }else{   
+                    this.dragComplete(true);   
+                }
             }else{
                 if(!this.mainButton){
                     this.dragComplete(true);     
@@ -336,57 +410,70 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     workVec.x = mouse.x- dragStartX;
                     workVec.y = mouse.y- dragStartY;
                     dragStartX = mouse.x;
-                    dragStartY = mouse.y;                
-                    var oldWidth = boundingBox.right - boundingBox.left;
-                    var oldHeight = boundingBox.bottom - boundingBox.top;
-                    this.bounds.points.vecs[this.bounds.draggingPointIndex].add(workVec);
-                    switch(this.bounds.draggingPointIndex){
-                        case cIndex.topLeft:
-                        case cIndex.topRight:
-                        case cIndex.top:
-                           boundingBox.top += workVec.y;
-                           break;
-                        case cIndex.bottomRight:
-                        case cIndex.bottomLeft:
-                        case cIndex.bottom:
-                           boundingBox.bottom += workVec.y;
-                           break;
-                    }
-                    switch(this.bounds.draggingPointIndex){
-                        case cIndex.topLeft:
-                        case cIndex.bottomLeft:
-                        case cIndex.left:
-                           boundingBox.left += workVec.x;
-                           break;
-                        case cIndex.topRight:
-                        case cIndex.bottomRight:
-                        case cIndex.right:
-                           boundingBox.right += workVec.x;
-                           break;
-                    }
-                    var v1 = this.bounds.points.vecs[this.bounds.controlPointsTransformOriginIndex[this.bounds.draggingPointIndex]];
-                    this.bounds.transform.reset()
-                        .setOrigin(v1)
-                        .negateOrigin()
-                        .scale((boundingBox.right - boundingBox.left) / oldWidth, (boundingBox.bottom - boundingBox.top) / oldHeight)
-                        .translate(v1.x,v1.y)
-                    if(shadowing){
-                        this.bounds.transform.applyToVecArray(shadowSelection);   
-                        mirrorShadow(shadowSelection,selected);                        
+                    dragStartY = mouse.y;   
+                    if(this.onDragMove !== undefined){
+                        this.doEvent("onDragMove",{type: "scale",offset:workVec.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
                     }else{
-                        this.bounds.transform.applyToVecArray(selected);        
+                        cancel = false;
                     }
-                    this.changed = pointsUpdated = true;                   
-                    this.updateBounds();
+                    if(!cancel){                        
+                        var oldWidth = boundingBox.right - boundingBox.left;
+                        var oldHeight = boundingBox.bottom - boundingBox.top;
+                        this.bounds.points.vecs[this.bounds.draggingPointIndex].add(workVec);
+                        switch(this.bounds.draggingPointIndex){
+                            case cIndex.topLeft:
+                            case cIndex.topRight:
+                            case cIndex.top:
+                               boundingBox.top += workVec.y;
+                               break;
+                            case cIndex.bottomRight:
+                            case cIndex.bottomLeft:
+                            case cIndex.bottom:
+                               boundingBox.bottom += workVec.y;
+                               break;
+                        }
+                        switch(this.bounds.draggingPointIndex){
+                            case cIndex.topLeft:
+                            case cIndex.bottomLeft:
+                            case cIndex.left:
+                               boundingBox.left += workVec.x;
+                               break;
+                            case cIndex.topRight:
+                            case cIndex.bottomRight:
+                            case cIndex.right:
+                               boundingBox.right += workVec.x;
+                               break;
+                        }
+                        var v1 = this.bounds.points.vecs[this.bounds.controlPointsTransformOriginIndex[this.bounds.draggingPointIndex]];
+                        this.bounds.transform.reset()
+                            .setOrigin(v1)
+                            .negateOrigin()
+                            .scale((boundingBox.right - boundingBox.left) / oldWidth, (boundingBox.bottom - boundingBox.top) / oldHeight)
+                            .translate(v1.x,v1.y)
+                        if(shadowing){
+                            this.bounds.transform.applyToVecArray(shadowSelection);   
+                            mirrorShadow(shadowSelection,selected);                        
+                        }else{
+                            this.bounds.transform.applyToVecArray(selected);        
+                        }
+                        this.changed = pointsUpdated = true;                   
+                        this.updateBounds();
+                    }
                 }
             }
         },
         pointerDragSelect : function(){
             if(!this.dragging){ 
-                selectionBox.right = selectionBox.left = dragStartX;
-                selectionBox.bottom = selectionBox.top = dragStartY;
-                this.dragging = true;
-                this.dragSelecting = true;                
+                this.doEvent("onDragStart",{type: "select",mouseX : mouse.x, mouseY :mouse.y});
+                if(!cancel){   
+                    selectionBox.right = selectionBox.left = dragStartX;
+                    selectionBox.bottom = selectionBox.top = dragStartY;
+                    this.dragging = true;
+                    this.dragSelecting = true;        
+                }else{
+                    this.dragSelecting = false;                
+                    this.dragComplete(true);                      
+                }   
             }else{
                 if(!this.mainButton){
                     this.dragSelecting = false;                
@@ -397,8 +484,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     selectionBox.right = mouse.x;
                     selectionBox.bottom = mouse.y;
                     selectionBox.normalise();
-                    points.findInsideBox(selectionBox,selected,unselected);
-                    this.dragSelecting = true;                
+                    if(this.onDragMove !== undefined){
+                        this.doEvent("onDragMove",{type: "select",bounds:selectionBox.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
+                    }else{
+                        cancel = false;
+                    }
+                    if(!cancel){                        
+                        points.findInsideBox(selectionBox,selected,unselected);
+                        this.dragSelecting = true;                
+                    }
                 }
             }
         },       
@@ -699,24 +793,34 @@ groover.geom.Geom.prototype.addUI = function(element1){
             return this;
         },
         selectionChanged : function(){
-            if(selected.length === 0){
-                boundingBox.irrate();
-                this.bounds.active = false;
-                this.bounds.controls = false;
-            }else
-            if(selected.length === 1){
-                selected.asBox(boundingBox.irrate()).pad(bounds.padBy);
-                this.bounds.active = true;
-                this.bounds.controls = false;
-            }else{
-                selected.asBox(boundingBox.irrate()).pad(bounds.padBy);
-                boundingBox.center(rotationLine.p1);
-                this.bounds.active = true;
-                this.bounds.controls = true;
-                this.updateBounds()
-            }
-            if(shadowing){
-                this.shadowSelection();
+            this.doEvent("onSelectChanged",{type:"selectChanged"});
+            if(!cancel){
+                if(selected.length === 0){
+                    boundingBox.irrate();
+                    this.bounds.active = false;
+                    this.bounds.controls = false;
+                }else
+                if(selected.length === 1){
+                    selected.asBox(boundingBox.irrate()).pad(bounds.padBy);
+                    this.bounds.active = true;
+                    this.bounds.controls = false;
+                }else{
+                    selected.asBox(boundingBox.irrate())
+                    if(boundingBox.width() < bounds.padBy && boundingBox.height() < bounds.padBy){
+                        boundingBox.pad(bounds.padBy);
+                        this.bounds.active = true;
+                        this.bounds.controls = false;
+                    }else{
+                        boundingBox.pad(bounds.padBy);
+                        boundingBox.center(rotationLine.p1);
+                        this.bounds.active = true;
+                        this.bounds.controls = true;
+                        this.updateBounds()
+                    }
+                }
+                if(shadowing){
+                    this.shadowSelection();
+                }
             }
                 
             return this;
