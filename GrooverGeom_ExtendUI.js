@@ -7,7 +7,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
     
     if(this.UI !== undefined){
         if(element1 === undefined){
-            console.log("Call to groover.geom.Geom.prototype.addUI() failed. Groover.Geom.Shape extension already exists");        
+            console.log("Call to groover.geom.Geom.prototype.addUI() failed. Groover.Geom.UI extension already exists");        
             return;
         }
         throw new Error("Could not add UI for element because UI already exists. Use  groover.Geom.setUIElement(element) istead.");
@@ -18,6 +18,11 @@ groover.geom.Geom.prototype.addUI = function(element1){
     geom.Geom.prototype.UIelement = element;    
     geom.Geom.prototype.UIMouse;    
     geom.Geom.prototype.updatePointer;    
+    
+
+        
+    
+    
     points = new geom.VecArray().makeUnique().setLable("Geom.UI.Points");
     shadowPoints = new geom.VecArray().makeUnique().setLable("Geom.UI.shadowPoints");
                                         // IF the client app modifies points  when they change (such as snap to) this array can be used to maintain the correct aspects and dragging offsets during dragging operations.
@@ -124,6 +129,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         onDragMove : "dragMove",
         onDragEnd : "dragEnd", 
         onReset : "reset",
+        onPointsChanged : "pointsChanged",
     };
     buttonMain = 1;
     buttonRight = 4;
@@ -172,11 +178,12 @@ groover.geom.Geom.prototype.addUI = function(element1){
         cursorNames : cursorNames,
         currentPointerFunction : undefined,   
         nextPointerFunctionOnDown : undefined,
-        onSelectChanged : undefined,
-        onDragStart : undefined,
-        onDragMove : undefined,
-        onDragEnd : undefined, 
-        onReset : undefined,
+        onSelectChanged : undefined,  // fires on selection changed in any way. 
+        onDragStart : undefined,      // fires on drag start. Return true to cancel the drag event. Will fire onDragEnd if set
+        onDragMove : undefined,       // fires for each drag.
+        onDragEnd : undefined,        // fires when draging has ended
+        onReset : undefined,          // fires when UI is reset.. Return true to cancel reset
+        onPointsChanged : undefined, // fires when UI has moved or changed any points.
         pointerLoc : pointerLoc,
         pointerDistLimit : 10,
         doEvent : function(name,info){
@@ -242,7 +249,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             pointerLoc.x = mouse.x;            
             pointerLoc.y = mouse.y;   
             if(this.currentPointerFunction === undefined){
-                this.currentPointerFunction = this.pointerHover;
+                this.currentPointerFunction = this.pointerHover;                    
             }
         },
         pointerHover : function(){
@@ -303,7 +310,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }            
         },
         pointerDragBounds : function(){  
-            
             if(!this.dragging){ 
                 this.doEvent("onDragStart",{type: "move",mouseX : mouse.x, mouseY :mouse.y});
                 if(!cancel){
@@ -587,8 +593,19 @@ groover.geom.Geom.prototype.addUI = function(element1){
             
         },
         updatePointer : function(){
+            var oc;
             this.updatePointerState();
-            this.currentPointerFunction()
+            if(this.onPointsChanged !== undefined){
+                oc = this.changed;
+                this.changed = false;
+                this.currentPointerFunction();
+                if(this.changed){
+                    this.doEvent("onPointsChanged");
+                }
+                this.changed = oc;
+            }else{            
+                this.currentPointerFunction();
+            }
         },
         hasPointMoved : function(id){ // id can be a point or the index or an array returns true of a point with Id is in the selected vecArray and it is being dragged
             if(pointsUpdated){
@@ -877,7 +894,11 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 points[how]();
             }else
             if(what === "selected"){
-                selected[how]();
+                if(how === "lable"){
+                    selected[how]("#");
+                }else{
+                    selected[how]();
+                }
             }else
             if(what === "unselected"){
                 unselected[how]();

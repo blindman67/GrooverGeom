@@ -109,6 +109,21 @@ groover.geom = (function (){
  
     }
       
+    var utilityFunctions = {
+        hasIdConstruction : function(id){
+            var i;
+            if(!this.constructedWith.hasId(id)){
+                for(i = 0; i < this.constructedWith.primitives.length; i ++){
+                    if(this.constructedWith.primitives[i].hasId(id)){
+                        return true;
+                    }
+                }
+                return false;
+            }
+            return true;
+        },
+    }
+      
     var sharedFunctions = {
         setLable : function(lable){
             this.lableStr = lable;
@@ -126,8 +141,37 @@ groover.geom = (function (){
             var newMe = this.copy(arg1,arg2);
             newMe.id = this.id;
             newMe.lableStr = this.lableStr;
+            if(this.constructedWith !== undefined){
+                
+                
+            }
             return newMe;
         },
+        hasConstructor : function(){
+            if(this.constructedWith !== undefined){
+                return true;
+            }
+            return false;
+        },
+        addConstructor : function(construction){
+            this.constructedWith = construction;
+            construction.hasId = this.hasId.bind(this);
+            construction.create = construction.create.bind(this);
+            this.hasId = utilityFunctions.hasIdConstruction.bind(this);
+            return this;
+        },
+        recreate : function(){
+            if(this.constructedWith !== undefined && typeof this.constructedWith.create === "function"){
+                this.constructedWith.create();
+            }
+            return this;
+        },
+        removeConstructor : function(){
+            var cw = this.constructedWith;
+            this.hasId = cw.hasId.bind(this);
+            this.constructedWith = undefined;
+            return this;
+        }
         
     }
     var sharedProperties = {
@@ -283,6 +327,13 @@ groover.geom = (function (){
         lineFeedDefault : "<br>",
         setDefaultLineFeed : function(str){
             lineFeedDefault = str;
+        },
+        createConstructor : function(primitives,constructingFunction){
+            var obj = {
+                primitives : primitives,
+                create : constructingFunction,
+            }
+            return obj;
         },
         setDefaultPrecision : function(value){
             this.defaultPrecision = value;

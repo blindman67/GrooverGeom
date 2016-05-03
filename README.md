@@ -17,6 +17,7 @@ Box (this is a bounding box and not the same as rectangle)
 Circle.
 Arc.
 Transform.
+Bezier. (new supports cubic and quadratic. Eperimental and will undergo the some refactoring and procedual change)
 
 Extras
 VecArray. an array of vectors.
