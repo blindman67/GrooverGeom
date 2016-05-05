@@ -3,7 +3,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var geom, element, mouse, points, selected, unselected, boundingBox, selectionBox, buttonMain,buttonRight,buttonMiddle;
     var dragOffsetX, dragOffsetY,dragStartX, dragStartY, pointerLoc, mouseOveBounds,workVec,workVec1,workVec2,workVec3;
     var inSelectionBox, boundsCorners, boundsLines,shadowPoints, shadowing,mirrorShadow, shadowSelection,cancel;
-    
+    var rightClickSelect;
     
     if(this.UI !== undefined){
         if(element1 === undefined){
@@ -130,6 +130,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         onDragEnd : "dragEnd", 
         onReset : "reset",
         onPointsChanged : "pointsChanged",
+        onUnusedRightButton : "unusedRightButton",
     };
     buttonMain = 1;
     buttonRight = 4;
@@ -158,6 +159,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
     var pointsUpdated = false; // true if there are point that have been changed. 
     var currentMouseFunction;
+    var rightClickMouseFunction;
+    var rightClickSelect = true;
 
     this.UI.prototype = {
         pointOfInterestIndex : undefined,  // this holds a index to a point in one of the exposed vecArrays and is set depending on the function and argument. use it to access the point of interest
@@ -178,12 +181,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
         cursorNames : cursorNames,
         currentPointerFunction : undefined,   
         nextPointerFunctionOnDown : undefined,
+        currentRightPointerFunction : undefined,
+        nextRightPointerFunctionOnDown : undefined,
         onSelectChanged : undefined,  // fires on selection changed in any way. 
         onDragStart : undefined,      // fires on drag start. Return true to cancel the drag event. Will fire onDragEnd if set
         onDragMove : undefined,       // fires for each drag.
         onDragEnd : undefined,        // fires when draging has ended
         onReset : undefined,          // fires when UI is reset.. Return true to cancel reset
         onPointsChanged : undefined, // fires when UI has moved or changed any points.
+        onUnusedRightButton : undefined, // fires when right button is clicked and dragged without a handler
         pointerLoc : pointerLoc,
         pointerDistLimit : 10,
         doEvent : function(name,info){
@@ -203,18 +209,23 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     case "quickdrag":
                         quickDrag = true;
                         return;
+                    default:
                     case "clickselect":
                         quickDrag = false;
                         return;
                 }
             }
-        },      
+        },   
+        setRightClickSelect : function (state){
+            rightClickSelect = state ? true : false;
+        },
         removeEvents : function(){
             this.onSelectChanged = undefined;
             this.onDragStart = undefined;
             this.onDragMove = undefined;
             this.onDragEnd = undefined;
             this.onReset = undefined;
+            this.onUnusedRightButton = undefined;
         },
         reset : function(){
             this.doEvent("onReset");
@@ -236,33 +247,82 @@ groover.geom.Geom.prototype.addUI = function(element1){
             
         },
         mainButton : false,
+        rightButton : false,
+        actionButton : false,
+        activeButton : 0,
         dragComplete : function(updateSelection){
             this.doEvent("onDragEnd");
             if(updateSelection === true){
                 this.selectionChanged();
             }
             this.dragging = false;
+            this.activeButton = 0;
             this.currentPointerFunction = this.pointerHover;                    
         },
         updatePointerState : function(){
             this.mainButton = (mouse.buttonRaw & buttonMain) === buttonMain;
+            this.rightButton = (mouse.buttonRaw & buttonRight) === buttonRight;
+            if(this.activeButton === 0){
+                this.actionButton = this.mainButton;
+            }else
+            if(this.activeButton === 2){
+                this.actionButton = this.rightButton;
+            }                
             pointerLoc.x = mouse.x;            
             pointerLoc.y = mouse.y;   
             if(this.currentPointerFunction === undefined){
                 this.currentPointerFunction = this.pointerHover;                    
             }
+            if(this.currentRightPointerFunction === undefined){
+                this.currentRightPointerFunction = this.pointerHover;                    
+            }
         },
         pointerHover : function(){
             this.locateControlsAndPoints();
-            if(this.mainButton){
+            if(this.mainButton  && !this.dragging){
                 if(this.nextPointerFunctionOnDown !== undefined){
+                    this.activeButton = 0;
                     this.currentPointerFunction = this.nextPointerFunctionOnDown;
                     this.nextPointerFunctionOnDown = undefined;
                     dragStartX = mouse.x;
-                    dragStartY = mouse.y;                    
-                    return this.currentPointerFunction();
+                    dragStartY = mouse.y;    
+                    this.actionButton = this.mainButton;
+                    this.currentPointerFunction();
+                    this.actionButton = false;
                 }
-            }            
+            }        
+            if(this.rightButton && !this.dragging){
+                if(this.nextRightPointerFunctionOnDown !== undefined){
+                    this.activeButton = 2;
+                    this.currentPointerFunction = this.nextRightPointerFunctionOnDown;
+                    this.nextRightPointerFunctionOnDown = undefined;
+                    dragStartX = mouse.x;
+                    dragStartY = mouse.y;                    
+                    this.actionButton = this.rightButton;
+                    this.currentPointerFunction();
+                    this.actionButton = false;
+                }
+            }              
+        },
+        pointerDoNothing : function(){          
+            if(!this.dragging){ 
+                this.dragging = true;   
+                this.doEvent("onUnusedRightButton",{type: "down",button:this.activeButton,mouseX : mouse.x, mouseY :mouse.y});    
+                if(cancel){            
+                    this.dragComplete();                                       
+                }                
+            }else{            
+                if(!this.actionButton){
+                    this.doEvent("onUnusedRightButton",{type: "up",button:this.activeButton,mouseX : mouse.x, mouseY :mouse.y});                        
+                    this.dragComplete();                   
+                }else{
+                    this.doEvent("onUnusedRightButton",{type: "drag",button:this.activeButton,mouseX : mouse.x, mouseY :mouse.y});                        
+                    if(cancel){            
+                        this.dragComplete();                                       
+                    }                      
+                }
+            }
+        
         },
         pointerQuickMove : function(){
             if(!this.dragging){ 
@@ -284,7 +344,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 this.dragging = true;   
                 buttonDownOn = this.closestToPointer;
             }else{            
-                if(!this.mainButton){
+                if(!this.actionButton){
                     this.getPointAtPointer();
                     if(buttonDownOn.id === this.closestToPointer.id){
                         this.selectPoint(buttonDownOn,true);  
@@ -299,7 +359,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 this.dragging = true;   
                 buttonDownOn = this.closestToPointer;
             }else{            
-                if(!this.mainButton){
+                if(!this.actionButton){
                     this.getPointAtPointer();
                     if(buttonDownOn.id === this.closestToPointer.id){
                         this.unselectPoint(buttonDownOn,true);  
@@ -321,7 +381,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.dragComplete(true);                                       
                 }
             }else{
-                if(!this.mainButton){
+                if(!this.actionButton){
                     this.dragComplete(true);                   
                 }else{
                     workVec.x = mouse.x- dragStartX;
@@ -360,7 +420,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.dragComplete(true);                                                        
                 }
             }else{
-                if(!this.mainButton){
+                if(!this.actionButton){
                     this.dragComplete(true);     
                     this.bounds.draggingPointIndex = -1;                    
                 }else{
@@ -409,7 +469,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.dragComplete(true);   
                 }
             }else{
-                if(!this.mainButton){
+                if(!this.actionButton){
                     this.dragComplete(true);     
                     this.bounds.draggingPointIndex = -1;                    
                 }else{
@@ -481,7 +541,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.dragComplete(true);                      
                 }   
             }else{
-                if(!this.mainButton){
+                if(!this.actionButton){
                     this.dragSelecting = false;                
                     this.dragComplete(true);  
                 }else{
@@ -535,6 +595,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             if(!this.dragging){
                 vecSelected = this.getPointAtPointer();
                 if(this.bounds.pointerOverControlIndex > -1){
+                    this.nextRightPointerFunctionOnDown = this.pointerDoNothing;
                     mouse.requestCursor(this.bounds.controlPointCursors[this.bounds.pointerOverControlIndex]);
                     if(this.bounds.pointerOverControlIndex !== cIndex.rotate){
                         this.nextPointerFunctionOnDown = this.pointerDragBoundsScale;
@@ -543,6 +604,16 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     }
                 }else
                 if(this.pointerOverBounds){
+                    if(this.closestToPointer !== undefined && rightClickSelect){
+                        if(vecSelected){
+                            this.nextRightPointerFunctionOnDown = this.pointerSelectRemove;
+                        }else{
+                            this.nextRightPointerFunctionOnDown = this.pointerSelectAdd;
+                        }
+                    }else{
+                        this.nextRightPointerFunctionOnDown = this.pointerDoNothing;
+                    }
+                        
                     if(mouse.ctrl && this.closestToPointer !== undefined){
                         if(vecSelected){
                             mouse.requestCursor(cursorNames.selectRemove);
@@ -557,6 +628,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     }
                 }else
                 if(this.closestToPointer !== undefined){
+                    if(this.closestToPointer !== undefined && rightClickSelect){
+                        if(vecSelected){
+                            this.nextRightPointerFunctionOnDown = this.pointerSelectRemove;
+                        }else{
+                            this.nextRightPointerFunctionOnDown = this.pointerSelectAdd;
+                        }
+                    }else{
+                        this.nextRightPointerFunctionOnDown = this.pointerDoNothing;
+                    }                    
                     if(quickDrag){
                         if(mouse.ctrl){
                             if(vecSelected){
@@ -583,6 +663,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
 
                 }else{
                     this.nextPointerFunctionOnDown = this.pointerDragSelect;
+                    this.nextRightPointerFunctionOnDown = this.pointerDoNothing;
                     mouse.releaseCursor();
                 }
             }else{
@@ -685,14 +766,48 @@ groover.geom.Geom.prototype.addUI = function(element1){
             return this;
         },
         addPoints : function(vecArray, allreadyUnique){
-            vecArray.each(function(vec){
-                if(!allreadyUnique){
-                    vec.makeUnique();
+            var i,len,vec;
+            if(geom.isPrimitive(vecArray)){
+                if(vecArray.type === "VecArray"){
+                    vecArray.each(function(vec){
+                        if(!allreadyUnique){
+                            vec.makeUnique();
+                        }
+                        if(!points.isIdInArray(vec.id)){
+                            points.push(vec);
+                        }
+                    });
+                }else
+                if(vecArray.type === "Vec"){
+                     if(!allreadyUnique){
+                        vecArray.makeUnique();
+                    }
+                    if(!points.isIdInArray(vecArray.id)){
+                        points.push(vecArray);
+                    }                   
+                }else{
+                    return this;
                 }
-                if(!points.isIdInArray(vec.id)){
-                    points.push(vec);
+            }else
+            if(Array.isArray(vecArray)){
+                len = vecArray.length;
+                for(i = 0; i < len; i ++){
+                    vec = vecArray[i];
+                    if(geom.isPrimitive(vec) && vec.type === "Vec"){
+                        if(!allreadyUnique){
+                            vec.makeUnique();
+                        }
+                        if(!points.isIdInArray(vec.id)){
+                            points.push(vec);
+                        }    
+                    }
                 }
-            });
+                        
+                        
+                
+            }else{
+                return this;
+            }
             this.pointsListChanged();
             this.selectPoints(vecArray,true);
             this.changed = true;
@@ -1028,9 +1143,10 @@ groover.geom.Geom.prototype.addUI = function(element1){
     if(element !== undefined || element !== null){
         mouse.start(element);
     }
+    console.log("Groover.Geom.ui installed.");
     
 }
-console.log("Groover.Geom.UI extension parsed.");
+console.log("Groover.Geom UI extension parsed.");
 
 /* example code for displaying ui gisom        
 // GG is groover.geom

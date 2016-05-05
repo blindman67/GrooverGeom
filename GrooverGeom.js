@@ -109,21 +109,7 @@ groover.geom = (function (){
  
     }
       
-    var utilityFunctions = {
-        hasIdConstruction : function(id){
-            var i;
-            if(!this.constructedWith.hasId(id)){
-                for(i = 0; i < this.constructedWith.primitives.length; i ++){
-                    if(this.constructedWith.primitives[i].hasId(id)){
-                        return true;
-                    }
-                }
-                return false;
-            }
-            return true;
-        },
-    }
-      
+
     var sharedFunctions = {
         setLable : function(lable){
             this.lableStr = lable;
@@ -147,7 +133,24 @@ groover.geom = (function (){
             }
             return newMe;
         },
-        hasConstructor : function(){
+        getAllIdsAsArray : function(array){
+            if(array === undefined){
+                array = [];
+            }
+            if(array.indexOf(this.id) === -1){
+                array.push(this.id);
+            }
+            var pt = geom.primitiveProperties[this.type];
+
+            if(pt !== undefined){
+                var i;
+                for(i = 0; i < pt.length; i ++){
+                    this[pt[i]].getAllIdsAsArray(array);
+                }
+            }
+            return array;
+        },
+        /*hasConstructor : function(){
             if(this.constructedWith !== undefined){
                 return true;
             }
@@ -171,12 +174,12 @@ groover.geom = (function (){
             this.hasId = cw.hasId.bind(this);
             this.constructedWith = undefined;
             return this;
-        }
+        }*/
         
     }
     var sharedProperties = {
-        lableStr : null,
-        id : null,
+        lableStr : undefined,
+        id : undefined,
     }
     
     // Closure Vars for internal optimistion and now public under the term registers
@@ -306,6 +309,20 @@ groover.geom = (function (){
             Bezier : ["p1","p2","cp1","cp2","type"],         
             Empty : ["type"],
         };
+        this.primitiveProperties = {
+            Vec : [],
+            Box : [],
+            Line: ["p1","p2"],
+            Arc: ["circle"],
+            Circle: ["center"],
+            Rectangle: ["top"],
+            VecArray: [],
+            PrimitiveArray: [],
+            Transform: ["xAxis","yAxis","origin"],
+            Triangle : ["p1","p2","p3"],
+            Bezier : ["p1","p2","cp1","cp2"],         
+            Empty : [],
+        };
         this.Vec = Vec;
         this.Line = Line;
         this.Circle = Circle;
@@ -328,13 +345,6 @@ groover.geom = (function (){
         setDefaultLineFeed : function(str){
             lineFeedDefault = str;
         },
-        createConstructor : function(primitives,constructingFunction){
-            var obj = {
-                primitives : primitives,
-                create : constructingFunction,
-            }
-            return obj;
-        },
         setDefaultPrecision : function(value){
             this.defaultPrecision = value;
         },
@@ -344,13 +354,15 @@ groover.geom = (function (){
                 var i;
                 var prim = me[primitive];
                 for(i in sharedFunctions){
-                     Object.defineProperty(prim.prototype, i, {
-                        writable : false,
-                        enumerable : true,
-                        configurable : false,
-                        value : sharedFunctions[i]
-                     });
-                    console.log("adding to "+primitive+".prototype."+i+"()");
+                    if(typeof prim.prototype[i] !== "function"){
+                         Object.defineProperty(prim.prototype, i, {
+                            writable : true,
+                            enumerable : true,
+                            configurable : false,
+                            value : sharedFunctions[i]
+                         });
+                    }
+                    //console.log("adding to "+primitive+".prototype."+i+"()");
                 }
                 for(i in sharedProperties){
                      Object.defineProperty(prim.prototype, i, {
@@ -373,7 +385,7 @@ groover.geom = (function (){
         validatePrimitive : function(obj){
             if(typeof obj === "object"){
                 if(typeof obj.type === "string"){
-                    if(primitiveTypes.indexOf(obj.type) > -1){
+                    if(this.primitiveTypes.indexOf(obj.type) > -1){
                         var temp = new Geom[obj.type];
                         for(var i in temp){
                             if(typeof temp[i] !== typeof obj[i]){
@@ -398,7 +410,7 @@ groover.geom = (function (){
         },
         isPrimitive : function (obj){
             if(obj !== undefined && typeof obj.type === "string"){
-                if(this.types.indexOf(obj.type) > -1){
+                if(this.primitiveTypes.indexOf(obj.type) > -1){
                     return true;
                 }
             }        
@@ -703,6 +715,28 @@ groover.geom = (function (){
         primitives : [],
         type : "PrimitiveArray",
         length : 0,
+        current : undefined,
+        toString : function(precision,lineFeed){  // returns a string representing this object
+                                // the precision can also be changed. The default is 6;
+            var str;                    
+            if(lineFeed === undefined){
+                lineFeed = geom.lineFeedDefault;
+            }                                
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";                                
+            var id = this.id === undefined ? "": "'"+this.id+"' ";                                
+            if(this.isEmpty()){
+                return "PrimitiveArray : '"+l+"' id : "+id+" ( Empty )";
+            }
+            if(precision === undefined || precision === null){
+                precision = geom.defaultPrecision;
+            }
+            str = "PrimitiveArray : '"+l+"' id : "+id+" ("+ this.primitives.length+" primitives" + lineFeed
+            this.each(function(prim,i){
+                str += "index "+i+" : "+prim.toString(precision)+lineFeed;
+            });
+            str += ")";            
+            return str;
+        }, 
         hasId : function(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
@@ -807,18 +841,66 @@ groover.geom = (function (){
             }
             return this; // returns this
         },  
+        last : function(){
+            if(this.length === 0){
+                return undefined;
+            }
+            this.current = this.length -1;
+            return this.primitives[this.length-1]; // returns Vec
+        },
+        first : function(){
+            if(this.length === 0){
+                return undefined;
+            }
+            this.current = 0;
+            return this.primitives[this.current]; // returns Vec
+        },
+        next : function(){
+            if(this.length === 0){
+                return undefined;
+            }
+            if(this.current === undefined){
+                this.current = 0;                
+            }else{
+                this.current += 1;
+            }
+            if(this.current >= this.length){
+                this.current = 0; 
+                return undefined;
+            }
+            return this.primitives[this.current];
+        },
+        previouse : function(){
+            if(this.length === 0){
+                return undefined;
+            }
+            if(this.current === undefined){
+                this.current = this.length - 1;                
+            }else{
+                this.current -= 1;
+            }
+            if(this.current < 0){
+                this.current = 0; 
+                return undefined;
+            }
+            if(this.current >= this.length){
+                this.current = this.length - 1;
+            }
+            return this.primitives[this.current];
+        },        
         collectIdsAsPrimitiveArray : function(ids,primArray){ // returns a primitive array contains all primitives that have ids
+            var i;
             if(primArray === undefined){
                 primArray = new PrimitiveArray();
             }
             if(Array.isArray(ids)){
                 var me = this;
-                for(c1 = 0; c1 < ids.length; c1 ++){ 
+                for(i = 0; i < ids.length; i ++){ 
                     this.each(function(prim){
-                        if(prim.hasId(ids[c1])){
-                            if(!primArray.hasId(ids[c1])){
+                        if(prim.hasId(ids[i])){
+                            if(!primArray.isIdInArray(prim.id,false,true)){
                                 primArray.push(prim);
-                            }
+                           }   
                         }
                     });                
                 }
@@ -835,17 +917,16 @@ groover.geom = (function (){
             if(array === undefined){
                 array = [];
             }
-            this.each(function(prim){
-                c = array.indexOf(prim.id);
-                if(c === -1){
-                    array.push(prim.id);
-                }
+            this.each(function(prim,i){
+                prim.getAllIdsAsArray(array);
             });
             return array;
         },
-        isIdInArray : function (id){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
+        isIdInArray : function (id,all,shallow){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
             // uses register c  will be the first id match or this.length if this function return false.
             // if id is an array and all === true then c will be the last index found
+            // if shallow is true then only check each primitive's ID dont check it for other ids
+            var i;
             if(Array.isArray(id)){
                 if(all){
                     var idc = [].concat(id);
@@ -860,17 +941,27 @@ groover.geom = (function (){
                        }
                     }
                 }else{
-                    for(c = 0; c < this.length; c ++){ 
-                       if(id.indexOf(this.primitives[c].id) > -1){
-                           return true;
-                       }
+                    for(c = 0; c < this.length; c += 1){ 
+                        for(c1 = 0; c1 < id.length; c1 += 1){
+                            if(this.primitives[c].hasId(id[c1])){
+                                return true;
+                            }
+                        }
                     }
                 }
                 
             }else{
-                for(c = 0; c < this.length; c ++){ 
-                    if(this.primitives[c].id == id){  // truthy compare == intended
-                        return true;
+                if(shallow === true){
+                    for(i = 0; i < this.length; i ++){ 
+                        if(this.primitives[i].id == id){  // truthy compare == intended
+                            return true;
+                        }
+                    }                    
+                }else{
+                    for(i = 0; i < this.length; i ++){ 
+                        if(this.primitives[i].hasId(id)){  // truthy compare == intended
+                            return true;
+                        }
                     }
                 }
             }
@@ -1037,9 +1128,10 @@ groover.geom = (function (){
             }
             return this;
         },        
-        isIdInArray : function (id){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
+        isIdInArray : function (id,all){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
             // uses register c  will be the first id match or this.length if this function return false.
             // if id is an array and all === true then c will be the last index found
+            var i,j;
             if(Array.isArray(id)){
                 if(all){
                     var idc = [].concat(id);
@@ -1054,15 +1146,17 @@ groover.geom = (function (){
                        }
                     }
                 }else{
-                    for(c = 0; c < this.length; c ++){ 
-                       if(id.indexOf(this.vecs[c].id) > -1){
-                           return true;
-                       }
+                    for(i = 0; i < this.length; i ++){ 
+                        for(j = 0; j < id.length; j ++){ 
+                            if(this.vecs[i].hasId(id[j])){
+                                return true;
+                            }
+                        }
                     }
                 }
             }else{
-                for(c = 0; c < this.length; c ++){ 
-                    if(this.vecs[c].id == id){  // truthy compare == intended
+                for(i = 0; i < this.length; i ++){ 
+                    if(this.vecs[i].hasId(id)){  // truthy compare == intended
                         return true;
                     }
                 }
@@ -1090,10 +1184,7 @@ groover.geom = (function (){
                 array = [];
             }
             this.each(function(vec){
-                c = array.indexOf(vec.id);
-                if(c === -1){
-                    array.push(vec.id);
-                }
+                vec.getAllIdsAsArray(array);
             });
             return array;
         },
@@ -2036,7 +2127,6 @@ groover.geom = (function (){
         isDegenerate : function(){
             this.lengthAllQuick2();
             if(Math.abs(a) < EPSILON || Math.abs(b) < EPSILON || Math.abs(c) < EPSILON){ // degenerate right triangle
-                    log("D L" + a + " : " + b + " : " + c);
                  return true;
             }else
             if(c > a && c > b){
@@ -2564,13 +2654,14 @@ groover.geom = (function (){
         toString : function(precision){  // returns a string representing this object
                                 // the precision can also be changed. The default is 6;
             var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";                                
+            var id = this.id === undefined ? "": "'"+this.id+"' ";                                
             if(this.isEmpty()){
-                return "Vec : "+l+"( Empty )";
+                return "Vec : '"+l+"' id : "+id+" ( Empty )";
             }
             if(precision === undefined || precision === null){
                 precision = geom.defaultPrecision;
             }
-            return "Vec: "+l+"("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
+            return "Vec: '"+l+"' id : "+id+" ("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
         },        
         setAs : function(vec,num){  // Sets this vec to the values in the {avec} or if two args then assumed to be numbers x and y
             if(num === undefined){
@@ -2588,6 +2679,15 @@ groover.geom = (function (){
             }
             return false;
         },
+        getAllIdsAsArray : function(array){
+            if(array === undefined){
+                array = [];
+            }
+            if(array.indexOf(this.id)=== -1){
+                array.push(this.id);
+            }
+            return array;
+        },  
         asVecArray : function(vecArray, instance){
             if(vecArray === undefined){
                 vecArray =  new VecArray();
@@ -2817,6 +2917,18 @@ groover.geom = (function (){
             }
             return false;
         },
+        /*getAllIdsAsArray : function(array){
+            if(array === undefined){
+                array = [];
+            }
+            if(array.indexOf(this.id)=== -1){
+                array.push(this.id);
+            }
+            if(array.indexOf(this.circle.center.id)=== -1){
+                array.push(this.circle.center.id);
+            }
+            return array;
+        },  */
         asBox : function(box){
             if(box === undefined){
                 var box = new Box();
@@ -2871,13 +2983,14 @@ groover.geom = (function (){
         },
         toString : function(precision){
             var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";  
+            var id = this.id === undefined ? "": "'"+this.id+"' ";
             if(this.isEmpty()){
-                return "Arc : "+l+"( Empty )";
+                return "Arc : '"+l+"' id : "+id+" ( Empty )";
             }
             if(precision === undefined || precision === null){
                 precision = geom.defaultPrecision;
             }
-            var str =  "Arc : "+l+"( "+this.circle.toString(precision)+", ";
+            var str =  "Arc : '"+l+"' id : "+id+" ( "+this.circle.toString(precision)+", ";
             str += "Start : " + this.start.toFixed(precision) + ", "
             str += "End : " + this.end.toFixed(precision) + ", "
             str += this.direction ? "Clockwise" : "Anticlockwise";
@@ -3002,8 +3115,6 @@ groover.geom = (function (){
             if(v1.x * v2.y - v1.y * v2.x > 0){
                 this.direction = true;
             }
-            
-            logP({d:"e criss= "+(v1.x * v2.y - v1.y * v2.x)})
             return this;
         },
         fromVec3 : function (vec1, vec2, vec3){ // creates an arc that fits the three vectors if posible If points are on a line then an empty arc is returned
@@ -3200,14 +3311,12 @@ groover.geom = (function (){
         },
         unitPosAsVec : function(unit,vec){
             this.normalise();
-            logP(this);
+
             if(this.direction){
                 if(this.end < this.start){
                     c = this.start - (this.start-this.end) * unit;
-                    logP({d:"e bel s========= "+(this.start-this.end)})
                 }else{
                     c = this.start - (this.start + MPI2-this.end) * unit;
-                    logP({d:"---------"+(this.start + MPI2-this.end)} )
                 }
             }else{
                 if(this.end < this.start){
@@ -3380,9 +3489,7 @@ groover.geom = (function (){
                     this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
                     this.direction = false; // make this clockwise
                 }
-                    
             }
-
             return this; // returns this.
         },
         scale : function(scale){
@@ -3435,6 +3542,18 @@ groover.geom = (function (){
             }
             return false;
         },
+       /* getAllIdsAsArray : function(array){
+            if(array === undefined){
+                array = [];
+            }
+            if(array.indexOf(this.id)=== -1){
+                array.push(this.id);
+            }
+            if(array.indexOf(this.center.id)=== -1){
+                array.push(this.center.id);
+            }
+            return array;
+        },     */  
         asBox : function(box){     // Returns the bounding box 
                                    // {abox} is option
                                    // Returns `Box`
@@ -3446,11 +3565,15 @@ groover.geom = (function (){
             return box;
         },
         toString : function (precision){
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";              
+            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";   
+            var id = this.id === undefined ? "": "'"+this.id+"' ";
+            if(this.isEmpty()){
+                return "Circle: '"+l+"' id : "+id+" ( Empty )";
+            }                        
             if(precision === undefined || precision === null){
                 precision = geom.defaultPrecision;;
             }
-            return "Circle: "+l+"Center ("+this.center.toString(precision)+") Radius "+this.radius.toFixed(precision);
+            return "Circle: '"+l+"' id : "+id+" Center ("+this.center.toString(precision)+") Radius "+this.radius.toFixed(precision);
         },
         asTriangles : function(sides,array){
             sides = sides === undefined || sides === null ? 8 : Math.max(4,Math.floor(sides));
@@ -4254,6 +4377,21 @@ groover.geom = (function (){
             }
             return false;
         },
+        /*getAllIdsAsArray : function(array){
+            if(array === undefined){
+                array = [];
+            }
+            if(array.indexOf(this.id)=== -1){
+                array.push(this.id);
+            }
+            if(array.indexOf(this.p1.id)=== -1){
+                array.push(this.p1.id);
+            }
+            if(array.indexOf(this.p2.id)=== -1){
+                array.push(this.p1.id);
+            }
+            return array;
+        },*/
         asSimple : function(obj){ // returns the vec as a simple object x1,y1,x2,y2 are ends, length and direction
             if(obj === undefined){
                 obj = {};
@@ -4283,13 +4421,14 @@ groover.geom = (function (){
         },
         toString : function (precision){
             var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+            var id = this.id === undefined ? "": "'"+this.id+"' ";
             if(this.isEmpty()){
-                return "Line: "+l+"( Empty )";
+                return "Line: '"+l+"' id : "+id+" ( Empty )";
             }
             if(precision === undefined || precision === null){
                 precision = geom.defaultPrecision;;
             }
-            return "Line: "+l+"( "+this.p1.toString(precision)+", "+this.p2.toString(precision)+" )";
+            return "Line: '"+l+"' id : "+id+" ( "+this.p1.toString(precision)+", "+this.p2.toString(precision)+" )";
         },
         swap : function(){
             u1 = this.p1;

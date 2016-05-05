@@ -889,5 +889,8 @@ groover.geom.Geom.prototype.addShapes = function(){
     
     
     
+    console.log("Groover.Geom.Shapes installed.");
+    
 }
+console.log("Groover.Geom shapes extension parsed.");
 

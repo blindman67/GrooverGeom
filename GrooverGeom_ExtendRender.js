@@ -118,6 +118,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             return this;// returns this
         };
         geom.Vec.prototype.draw = function (dir){ // The dir is a boolean that if true reveres the direction to the draw. Not applicable in this case
+            mark(this);
             return this;// returns this
         };
         geom.Vec.prototype.lable = function (text){
@@ -577,4 +578,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             return this;// returns this
         };
     }
+    console.log("Groover.Geom render extension installed.");
+    
 }
+console.log("Groover.Geom Render extension parsed.");
