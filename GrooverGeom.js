@@ -168,7 +168,12 @@ groover.geom = (function (){
         b = 6 * (A - 2 * B + C);
         c = -3 * (A - B);
         a1 = 2 * a;
-        b1 = Math.sqrt(b * b - 4 * a * c);
+        c = b * b - 4 * a * c;
+        if(c < 0){ // not sure what this means but works when I fix it????
+            b1 = Math.sqrt(-c);            
+        }else{
+            b1 = Math.sqrt(c);
+        }
         u = (-b + b1) / a1;
         u1 = (-b - b1) / a1;
         return u;
@@ -181,6 +186,7 @@ groover.geom = (function (){
         u = a / (a- (C - B));   
         return u;        
     }
+
 
     var sharedFunctions = {
         setLable : function(lable){
@@ -264,6 +270,7 @@ groover.geom = (function (){
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
     var vx,vy,v1x,v1y,u,u1,c,c1,a,a1,b,b1,d,d1,e,e1;  
     var l1,l2; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these usefull as yet may return them but want to keep the number of closure variable as low as possible
+    var bez; // a bezier that is used to a temp for some bezier functions.
     var rArray; // an internal register array
     // NOTE dropping this....
     /*const REGS_LEN = 5; // used in Vec._asVec  Internal uses only and experiment 
@@ -289,6 +296,7 @@ groover.geom = (function (){
         vr2 = new Vec();
         l1 = new Line();
         l2 = new Line();
+        bez = new Bezier("cubic");
         rArray = [0,0,0,0,0,0,0,0,0,0];
         /*l2 = new Line();
         l3 = new Line();
@@ -5074,6 +5082,15 @@ groover.geom = (function (){
             p2.y -=  (line.p2.y - p2.y);
             return new Line(p1,p2);
         },
+        setStartEndUnit : function(start,end){ // this function moves the end points to start and end keeping the direction. start and end are in unit lengths where 0 is the start and 1 is the end call this function with 0,1 makes not change 1,0 reverses the line
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;        
+            this.p2.x = this.p1.x + v1.x * end; 
+            this.p2.y = this.p1.y + v1.y * end; 
+            this.p1.x += v1.x * start; 
+            this.p1.y += v1.y * start; 
+            return this;
+        },
         centerOnStart : function(){ // moves the line back so that it is centered on its start
             // this function uses Geom registers v1
             // v1 is the vector of this line          
@@ -5153,10 +5170,11 @@ groover.geom = (function (){
             return this;
         },
         offset : function( distance ){ // moves the line along its normal (to the lines right) by distance
-            // this function uses Geom registers v1
+            // this function uses Geom registers v1, v2
             // v1 is the vector of the distance moved;
+            // v2.x is scaled normal distance to move
             if(distance === 0){ // to avoid infinite move
-                v1.x = v1.y = 0; // to give the register use consistance;
+                v1.x = v1.y = 0; // to give the register use consistence;
                 return this;  
             }
             v1.y = this.p2.x - this.p1.x;
@@ -6500,9 +6518,30 @@ groover.geom = (function (){
         // for cubic F(t) = p1*(1-t)^3 + cp1*3*t(1-t)^2 + cp2*3 *t^2*(1-t) + p2*t^3
         // The derivative  = -p1*3*(1 - t)^2 + cp1*(3*(1 - t)^2 - 6*(1 - t)*t) + cp2*(6*(1 - t)*t - 3*t^2) +3*p2*t^2
         // The 2nd derivative = 6*(1-t)*(cp2 - 2*cp1 + p1) + 6*t*(p2 - 2*cp2 + cp1)
+        //======================================================================================
+        // Note: The behaviour of the second control point is as yet not determined. It may change as test presents the functionality requiered 
 
         copy : function(){
-            return new Bezier(this.p1, this.p2, this.cp1, this.cp2);
+            return new Bezier(this.p1, this.p2, this.cp1, this.cp2 === undefined ? null : this.cp2);
+        },
+        setAs : function(bezier){
+            this.p1.x = bezier.p1.x;
+            this.p1.y = bezier.p1.y;
+            this.p2.x = bezier.p2.x;
+            this.p2.y = bezier.p2.y;
+            this.cp1.x = bezier.cp1.x;
+            this.cp1.y = bezier.cp1.y;
+            if(bezier.cp2 === undefined){
+                this.cp2 = undefined;
+            }else{
+                if(this.cp2 === undefined){
+                    this.cp2 = new Vec(bezier.cp2);
+                }else{
+                    this.cp2.x = bezier.cp2.x;
+                    this.cp2.y = bezier.cp2.y;
+                }
+            }
+            return this;   
         },
         toString : function(precision){
             var str;
@@ -6588,7 +6627,7 @@ groover.geom = (function (){
             }
             return vecArray;
         },          
-        asBox : function(box){  // Warning I have stuffed up and it is not working with cubic. Close but some out by about 10%
+        asBox : function(box){  // returns the bounding box. If box is defined then will add to the bounds of box
             if(box === undefined){
                 var box = new Box();
             }
@@ -6616,13 +6655,13 @@ groover.geom = (function (){
             }else{
                 solveBezier2(this.p1.x, this.cp1.x, this.p2.x);
                 if(u >= 0 && u <= 1){
-                    this.vecAt(u,false,v1)
-                    box.env(v1.x,v1.y);
+                    this.vecAt(u,false,v3);
+                    box.env(v3.x,v3.y);
                 }
                 solveBezier2(this.p1.y, this.cp1.y, this.p2.y);
                 if(u >= 0 && u <= 1){
-                    this.vecAt(u,false,v2)
-                    box.env(v2.x,v2.y);
+                    this.vecAt(u,false,v4);
+                    box.env(v4.x,v4.y);
                 }                
             }
             return box;
@@ -6659,7 +6698,45 @@ groover.geom = (function (){
             }
             return this;
         },
-        fromCircle : function(circle,quadrant){ // matches the circle's quadant 0,1,2,3 Quadrant 0 is bottom right then clockwise around
+        scale : function(scale){
+            this.p1.x  *= scale;
+            this.p1.y  *= scale;
+            this.p2.x  *= scale;
+            this.p2.y  *= scale;
+            this.cp1.x *= scale;
+            this.cp1.y *= scale;
+            if(this.cp2 !== undefined){
+                this.cp2.x *= scale;
+                this.cp2.y *= scale;
+            }
+            return this;
+            
+        },
+        rotate : function(rotation){ // rotates the bezier
+            a = Math.cos(rotation);
+            b = Math.sin(rotation);
+            c = this.p1.x;
+            d = this.p1.y;
+            this.p1.x = c * a + d * -b;
+            this.p1.y = c * b + d * a;
+            c = this.p2.x;
+            d = this.p2.y;
+            this.p2.x = c * a + d * -b;
+            this.p2.y = c * b + d * a;         
+            c = this.cp1.x;
+            d = this.cp1.y;
+            this.cp1.x = c * a + d * -b;
+            this.cp1.y = c * b + d * a;         
+            if(this.cp2 !== undefined){
+                c = this.cp2.x;
+                d = this.cp2.y;
+                this.cp2.x = c * a + d * -b;
+                this.cp2.y = c * b + d * a;         
+                
+            }
+            return this; // returns this
+        },        
+        fromCircle : function(circle,quadrant){ // matches the circle's quadrant 0,1,2,3 Quadrant 0 is bottom right then clockwise around
             if(quadrant === undefined){
                 quadrant = 0;
             }else{
@@ -6743,8 +6820,56 @@ groover.geom = (function (){
         fromTriangle : function(triangle){ // stub
             return this;
         },
-        fromRectangle : function(rectangle){ // stub
-            return this;
+        asRectangle : function(rectangle){ // returns a rectangle that is aligned to the line between the end points and contains the whole bezier
+            if(rectangle === undefined){
+                rectangle = new Rectangle();
+            }
+            rectangle.top.p1.x = this.p1.x;
+            rectangle.top.p1.y = this.p1.y;
+            rectangle.top.p2.x = this.p2.x;
+            rectangle.top.p2.y = this.p2.y;
+            // rotate and translate a copy of the bezier to line up with the line between p1,p2 and move to the origin
+            // so that correct extrema can be found
+            var dir = rectangle.top.dir();
+            bez.setAs(this);
+            v1.setAs(bez.p1).mult(-1);
+            bez.rotate(-dir).translate(v1);
+            
+            if(this.cp2 !== undefined){
+                solveBezier3(bez.p1.x, bez.cp1.x, bez.cp2.x, bez.p2.x);
+                this.vecAt(u,true,v4);
+                this.vecAt(u1,true,va);
+                solveBezier3(bez.p1.y, bez.cp1.y, bez.cp2.y,bez.p2.y);
+                this.vecAt(u,true,v5);
+                this.vecAt(u1,true,vb);
+                var dist1 = rectangle.top.distFromDir(v4);
+                e = u; // dist from function sets u register to hold unit distance
+                var dist2 = rectangle.top.distFromDir(va);
+                e1 = u; // dist from function sets u register to hold unit distance
+                var dist3 = rectangle.top.distFromDir(v5);
+                u1 = u;                
+                var dist4 = rectangle.top.distFromDir(vb);
+                rectangle.top.setStartEndUnit(Math.min(0, u, u1, e, e1), Math.max(1, u, u1, e, e1));
+                e = rectangle.top.leng();
+                a = Math.min(0, dist1, dist2, dist3, dist4);
+                rectangle.top.offset(a);
+                rectangle.aspect = (Math.max(0, dist1, dist2, dist3, dist4) - a) / e;
+            }else{
+                solveBezier2(bez.p1.x, bez.cp1.x, bez.p2.x);
+                this.vecAt(u,true,v4);
+                solveBezier2(bez.p1.y, bez.cp1.y, bez.p2.y);
+                this.vecAt(u,true,v5);
+                var dist1 = rectangle.top.distFromDir(v4);
+                u1 = u; // dist from function sets u register to hold unit distance
+                var dist2 = rectangle.top.distFromDir(v5);
+                rectangle.top.setStartEndUnit(Math.min(0, u, u1), Math.max(1, u, u1));
+                log(Math.min(0, u, u1)); log(Math.max(1, u, u1));
+                e = rectangle.top.leng();
+                a = Math.min(0, dist1, dist2);
+                rectangle.top.offset(a);
+                rectangle.aspect = (Math.max(0, dist1, dist2) - a) / e;
+            }
+            return rectangle;
         },
         fromBox : function(box){ // stub
             return this;
@@ -7747,6 +7872,7 @@ groover.geom = (function (){
     geom.Geom = Geom;  // add geom to geom object for use by extentions or anything that needs to 
                        // extend the prototype of Geom.    
     geom.init();
+    //geom.debugArray = [];  // for debug stuff. ONLY use for debug, this var can be removed at any time.
     return geom
 })();
 
