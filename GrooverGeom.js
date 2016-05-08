@@ -97,8 +97,60 @@ groover.geom = (function (){
     Math.sphere.radiusFromVolume = function(volume){
         return Math.pow(volume / ((4/3) * Math.PI), 1 / 3);
     }
+    // this function was derived from http://pomax.github.io/bezierinfo/#intersections cube root solver
+    Math.cubicRoots = function(pa, pb, pc, pd) { // There can be 3 roots, Only roots between 0 and 1 inclusive are returned
+        function crt(v) {
+          if(v<0) return -Math.pow(-v,1/3);
+          return Math.pow(v,1/3);
+        }                
+        function sqrt(v) {
+          if(v<0) return -Math.sqrt(-v);
+          return Math.sqrt(v);
+        }        
+        var a, b, c, d, p, p3, q, q2, discriminant, u1, v1, root1, r, t, mp3, mp33, cosphi, crtr, t1, sd;
+        var ret = [];
+        d = (-pa + 3 * pb - 3 * pc + pd);
+        a = (3 * pa - 6 * pb + 3 * pc) / d;
+        b = (-3 * pa + 3 * pb) / d;
+        c = pa / d;
+        p = (3 * b - a * a) / 3;
+        p3 = p / 3;
+        q = (2 * a * a * a - 9 * a * b + 27 * c) / 27;
+        q2 = q / 2;
+        discriminant = q2 * q2 + p3 * p3 * p3;
+        if (discriminant < 0) {
+            mp3 = -p / 3;
+            mp33 = mp3 * mp3 * mp3;
+            r = sqrt(mp33);
+            t = -q / (2 * r);
+            cosphi = t < -1 ? -1 : t > 1 ? 1 : t;
+            phi = acos(cosphi);
+            crtr = crt(r);
+            t1 = 2 * crtr;
+            root = t1 * cos(phi / 3) - a / 3;
+            if(root >= 0 && root <= 1){ ret[ret.length] = root;}
+            root = t1 * cos((phi + 2 * pi) / 3) - a / 3;
+            if(root >= 0 && root1 <= 1){ ret[ret.length] = root;}
+            root = t1 * cos((phi + 4 * pi) / 3) - a / 3;
+            if(root >= 0 && root <= 1){ ret[ret.length] = root;}
+            return ret;
+        }
+        if(discriminant === 0) {
+            u1 = q2 < 0 ? crt(-q2) : -crt(q2);
+            root = 2 * u1 - a / 3;
+            if(root >= 0 && root <= 1){ ret[ret.length] = root;}            
+            root = -u1 - a / 3;
+            if(root >= 0 && root <= 1){ ret[ret.length] = root;}            
+            return ret;
+        }                
 
-    
+        sd = sqrt(discriminant);
+        u1 = crt(sd - q2);
+        v1 = crt(sd + q2);
+        root1 = u1 - v1 - a / 3;
+        if(root >= 0 && root <= 1){ ret[ret.length] = root;}  
+        return ret;
+    }
     // polyfill for math hypot function.
     if(typeof Math.hypot !== "function"){
         Math.hypot = function(x, y){ return Math.sqrt(x * x + y * y);};
@@ -190,7 +242,7 @@ groover.geom = (function (){
     // the following are to aid in optimisation. Rather than create new primitives when needed these should be used instead
     // Do not return them.
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
-    var vx,vy,v1x,v1y,u,u1,c,c1,a,b,b1,d,e;  
+    var vx,vy,v1x,v1y,u,u1,c,c1,a,a1,b,b1,d,d1,e,e1;  
     var l1,l2; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these usefull as yet may return them but want to keep the number of closure variable as low as possible
     var rArray; // an internal register array
     // NOTE dropping this....
@@ -1423,6 +1475,12 @@ groover.geom = (function (){
                 this.current = this.length - 1;
             }
             return this.vecs[this.current];
+        },
+        remaining : function(){ // for use with next, previous start methods
+            if(this.current === undefined){
+                return this.length;
+            }
+            return this.length-this.current;
         },
         getCount : function(){ 
             return this.vecs.length; // Returns the number of vecs in the list
@@ -3479,16 +3537,9 @@ groover.geom = (function (){
                 v4.y = v3.y + v1.y * c1;
                 v5.x = v3.x + v2.x * c1; // contact point on line2
                 v5.y = v3.y + v2.y * c1;
-                if(b < 0){  // swap start and end depending corner is left inside or right inside
-                    this.start = Math.atan2(v4.y-this.circle.center.y,v4.x-this.circle.center.x);
-                    this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
-                    this.direction = true; // make this anti-clockwise
-                    //this.swap(true).swap();
-                }else{
-                    this.start = Math.atan2(v4.y-this.circle.center.y,v4.x-this.circle.center.x);
-                    this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
-                    this.direction = false; // make this clockwise
-                }
+                this.start = Math.atan2(v4.y-this.circle.center.y,v4.x-this.circle.center.x);
+                this.end = Math.atan2(v5.y-this.circle.center.y,v5.x-this.circle.center.x);
+                this.direction = b < 0 ? true : false;
             }
             return this; // returns this.
         },
@@ -6050,7 +6101,7 @@ groover.geom = (function (){
                 }
             };
             
-            // dont text any more if two points found
+            // dont test any more if two points found
             if (!done) {
                 // get left line
                 v2.x = this.top.p1.x;
@@ -6079,7 +6130,7 @@ groover.geom = (function (){
                     }
                 }
                 
-                // dont text any more if two points found
+                // dont test any more if two points found
                 if (!done) {
                 
                     // get right line
@@ -6422,6 +6473,14 @@ groover.geom = (function (){
         cp1 : undefined,
         cp2 : undefined,
         type : "Bezier",
+        //======================================================================================
+        // for quadratic F(t) = p1 * (1-t)^2 + cp1 * 2*(1-t) * t  + cp2 * t^2
+        // The derivative  ==  2 *(1 - t) * (cp1 - p1) + 2* t * (p2 - cp1)
+        //======================================================================================
+        // for cubic F(t) = p1*(1-t)^3 + cp1*3*t(1-t)^2 + cp2*3 *t^2*(1-t) + p2*t^3
+        // The derivative  = -p1*3*(1 - t)^2 + cp1*(3*(1 - t)^2 - 6*(1 - t)*t) + cp2*(6*(1 - t)*t - 3*t^2) +3*p2*t^2
+        // The 2nd derivative = 6*(1-t)*(cp2 - 2*cp1 + p1) + 6*t*(p2 - 2*cp2 + cp1)
+
         copy : function(){
             return new Bezier(this.p1, this.p2, this.cp1, this.cp2);
         },
@@ -6509,15 +6568,78 @@ groover.geom = (function (){
             }
             return vecArray;
         },          
-        asBox : function(box){
+        asBox : function(box){  // Warning I have stuffed up and it is not working with cubic. Close but some out by about 10%
             if(box === undefined){
                 var box = new Box();
             }
             box.env ( this.p1.x, this.p1.y);
             box.env ( this.p2.x, this.p2.y);
-            box.env ( this.cp1.x, this.cp1.y);
+            //box.env ( this.cp1.x, this.cp1.y);
             if(this.cp2 !== undefined){
-                box.env ( this.cp2.x, this.cp2.y);
+                // find the local minima and maxima for cubics for x and y  
+               // the cubic derivative rearranged in terms of t
+
+               // 3a+3b+(-6a-12b+6c)t+(-9c+9b+3d+3a)*t^2
+               // using -b+-sqrt(b*b-4*a*c))/(2*a)
+               // with a = (3a+9b-9c+3d)
+               //      b = (-6a-12b+6c) = 
+               //      c = (3a+3b)
+                a = 3* (this.p1.x + 3 * this.cp1.x - 3 * this.cp2.x + this.p2.x)
+                b = 6*(-this.p1.x - 2* this.cp1.x + this.cp2.x);
+                c = 3 * (this.p1.x + this.cp1.x);
+                a1 = 2 * a;
+                b1 = Math.sqrt(b * b - 4 * a * c);
+                u = (-b + b1) / a1;
+                u1 = (-b - b1) / a1;
+                this.vecAt(u,false,v5);
+                v5.mark();
+                if(u >= 0 && u <= 1){
+                    box.env(v5.x,v5.y);
+                }
+                this.vecAt(u1,false,v5);
+                              
+                v5.mark();
+                if(u1 >= 0 && u1 <= 1){
+                    this.vecAt(u1,false,v5);
+                    box.env(v5.x,v5.y);
+                }
+
+                a = 3* (this.p1.y + 3 * this.cp1.y - 3 * this.cp2.y + this.p2.y)
+                b = 6*(-this.p1.y - 2* this.cp1.y + this.cp2.y);
+                c = 3 * (this.p1.y + this.cp1.y);
+                a1 = 2 * a;
+                b1 = Math.sqrt(b * b - 4 * a * c);
+                u = (-b + b1) / a1;
+                u1 = (-b - b1) / a1;
+                
+                this.vecAt(u,false,v5);
+                v5.mark();
+                if(u >= 0 && u <= 1){
+                    box.env(v5.x,v5.y);
+                }
+                this.vecAt(u1,false,v5);
+                                
+                v5.mark();
+                if(u1 >= 0 && u1 <= 1){
+                    this.vecAt(u1,false,v5);
+                    box.env(v5.x,v5.y);
+                }         
+            
+            }else{
+                c = this.cp1.x - this.p1.x;
+                d = this.p2.x - this.cp1.x;
+                u = c / (c- d);
+                if(u >= 0 && u <= 1){
+                    this.vecAt(u,false,v1)
+                    box.env(v1.x,v1.y);
+                }
+                c = this.cp1.y - this.p1.y;
+                d = this.p2.y - this.cp1.y;
+                u = c / (c- d);
+                if(u >= 0 && u <= 1){
+                    this.vecAt(u,false,v2)
+                    box.env(v2.x,v2.y);
+                }                
             }
             return box;
         },
@@ -6539,6 +6661,19 @@ groover.geom = (function (){
                 return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), extraVec);
             }
              return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), this.cp2.copy());
+        },
+        translate : function(vec){ // moves the bezier
+            this.p1.x += vec.x;
+            this.p1.y += vec.y;
+            this.p2.x += vec.x;
+            this.p2.y += vec.y;
+            this.cp1.x += vec.x;
+            this.cp1.y += vec.y;
+            if(this.cp2 !== undefined){
+                this.cp2.x += vec.x;
+                this.cp2.y += vec.y;
+            }
+            return this;
         },
         fromCircle : function(circle,quadrant){ // matches the circle's quadant 0,1,2,3 Quadrant 0 is bottom right then clockwise around
             if(quadrant === undefined){
@@ -6590,7 +6725,35 @@ groover.geom = (function (){
         fromArc : function(arc){ // stub
             return this;
         },
-        fromVecArray : function(vecArray){ // stub
+        fromVecArray : function(type,vecArray,instance){ // type = "cubic" or "quadratic". Point order is start control points then end. Creates from current position in vecArray and only if there are enough vecs. Instance if true uses the reference to vecs, if false makes a copy of vecs
+            if(type === "quadratic"){
+                if(vecArray.remaining() >= 3){
+                    if(instance){
+                        this.p1 = vecArray.next();
+                        this.cp1 = vecArray.next();
+                        this.p2 = vecArray.next();
+                    }else{
+                        this.p1 = vecArray.next().copy();
+                        this.cp1 = vecArray.next().copy();
+                        this.p2 = vecArray.next().copy();
+                    }
+                    this.cp2 = undefined;
+                }
+            }else{
+                if(vecArray.remaining() >= 4){
+                    if(instance){
+                        this.p1 = vecArray.next();
+                        this.cp1 = vecArray.next();
+                        this.cp2 = vecArray.next();
+                        this.p2 = vecArray.next();
+                    }else{
+                        this.p1 = vecArray.next().copy();
+                        this.cp1 = vecArray.next().copy();
+                        this.cp2 = vecArray.next().copy();
+                        this.p2 = vecArray.next().copy();
+                    }
+                }
+            }
             return this;
         },
         fromTriangle : function(triangle){ // stub
@@ -6602,6 +6765,11 @@ groover.geom = (function (){
         fromBox : function(box){ // stub
             return this;
         },
+        segment : function(fromPos,toPos,retBezier){
+            retBezier = this.splitAt(fromPos,false,retBezier);
+            return retBezier.splitAt((toPos-fromPos) / (1 - fromPos),true,retBezier);
+             
+        },
         splitAt : function(position,start,retBezier){ // splits the bezier returning a new bezier starting or ending at position. If start is true then return the first section from p1 to position else returns the end section from position to p2
             if(retBezier === undefined){
                 if(this.cp2 !== undefined){ retBezier = new Bezier("cubic"); }
@@ -6609,6 +6777,8 @@ groover.geom = (function (){
             }
             v1.x = this.p1.x;
             v1.y = this.p1.y;
+            v4.x = this.p2.x;
+            v4.y = this.p2.y;
             c = position;
             if(start === true){
                 retBezier.p1.x = this.p1.x;
@@ -6618,22 +6788,21 @@ groover.geom = (function (){
                 retBezier.p2.y = this.p2.y;            
             }
             if(this.cp2 === undefined){
-
                 v2.x = this.cp1.x;
                 v2.y = this.cp1.y;
                 if(start){
                     retBezier.cp1.x = (v1.x += (v2.x - v1.x) * c);
                     retBezier.cp1.y = (v1.y += (v2.y - v1.y) * c);
-                    v2.x += (this.p2.x - v2.x) * c;
-                    v2.y += (this.p2.y - v2.y) * c;
+                    v2.x += (v4.x - v2.x) * c;
+                    v2.y += (v4.y - v2.y) * c;
                     retBezier.p2.x = v1.x + (v2.x - v1.x) * c;
                     retBezier.p2.y = v1.y + (v2.y - v1.y) * c;
                     retBezier.cp2 = undefined;
                 }else{
                     v1.x += (v2.x - v1.x) * c;
                     v1.y += (v2.y - v1.y) * c;
-                    retBezier.cp1.x = (v2.x += (this.p2.x - v2.x) * c);
-                    retBezier.cp1.y = (v2.y += (this.p2.y - v2.y) * c);
+                    retBezier.cp1.x = (v2.x += (v4.x - v2.x) * c);
+                    retBezier.cp1.y = (v2.y += (v4.y - v2.y) * c);
                     retBezier.p1.x = v1.x + (v2.x - v1.x) * c;
                     retBezier.p1.y = v1.y + (v2.y - v1.y) * c;
                     retBezier.cp2 = undefined;
@@ -6641,50 +6810,59 @@ groover.geom = (function (){
                 return retBezier;
             }
             v2.x = this.cp1.x;
-            v3.x = this.cp2.x;
             v2.y = this.cp1.y;
+            v3.x = this.cp2.x;
             v3.y = this.cp2.y;
             if(start){
-                retBezier.cp1.x = (v1.x += (v2.x - v1.x) * c);
-                v2.x += (v3.x - v2.x) * c;
-                v3.x += (this.p2.x - v3.x) * c;
-                retBezier.cp2.x = (v1.x += (v2.x - v1.x) * c);
-                v2.x += (v3.x - v2.x) * c;
-                retBezier.p2.x = v1.x + (v2.x - v1.x) * c;
-                
+                retBezier.cp1.x = (v1.x += (v2.x - v1.x) * c);                
                 retBezier.cp1.y = (v1.y += (v2.y - v1.y) * c);
+                v2.x += (v3.x - v2.x) * c;
                 v2.y += (v3.y - v2.y) * c;
-                v3.y += (this.p2.y - v3.y) * c;
+                v3.x += (v4.x - v3.x) * c;
+                v3.y += (v4.y - v3.y) * c;
+                retBezier.cp2.x = (v1.x += (v2.x - v1.x) * c);
                 retBezier.cp2.y = (v1.y += (v2.y - v1.y) * c);
+                v2.x += (v3.x - v2.x) * c;
                 v2.y += (v3.y - v2.y) * c;
+                retBezier.p2.x = v1.x + (v2.x - v1.x) * c;
                 retBezier.p2.y = v1.y + (v2.y - v1.y) * c;
             }else{
                 v1.x += (v2.x - v1.x) * c;                
                 v1.y += (v2.y - v1.y) * c;
-                
                 v2.x += (v3.x - v2.x) * c;
                 v2.y += (v3.y - v2.y) * c;
-                
-                retBezier.cp2.x = (v3.x += (this.p2.x - v3.x) * c);
-                retBezier.cp2.y = (v3.y += (this.p2.y - v3.y) * c);
-                
+                retBezier.cp2.x = (v3.x += (v4.x - v3.x) * c);
+                retBezier.cp2.y = (v3.y += (v4.y - v3.y) * c);
                 v1.x += (v2.x - v1.x) * c;
                 v1.y += (v2.y - v1.y) * c;
-                
                 retBezier.cp1.x = (v2.x += (v3.x - v2.x) * c);
                 retBezier.cp1.y = (v2.y += (v3.y - v2.y) * c);
-
                 retBezier.p1.x = v1.x + (v2.x - v1.x) * c;
                 retBezier.p1.y = v1.y + (v2.y - v1.y) * c;
             }
             return retBezier;              
         },
-        findPositionOfVecc : function(vec,resolution,pos){  // temp stub untill I decied on the best way to do this. Finds position on curve in terms of uint dist, if pos is given then that point is used to search around at (resolution/4) ^ 2
-            //======================================================================================
-            // for quadratic C(t) = p1 * (1-t)^2 + cp1 * 2*(1-t) * t  + cp2 * t^2
-            //======================================================================================
-            // for cubic C(t) = p1*(1-t)^3 + cp1*3*t(1-t)^2 + cp2*3 *t^2*(1-t) + p2*t^3
- 
+        getLength : function(){    // returns a calculated length rather than approx length, only for 2nd order bezier
+              if(this.cp2 !== undefined){ // currently does not support 3rd order cubic
+                  return undefined;
+              }
+              v1x = this.cp1.x * 2;
+              v1y = this.cp1.y * 2;
+              d = this.p1.x - v1x + this.p2.x;
+              d1 = this.p1.y - v1y + this.p2.y;
+              e = v1x - 2 * this.p1.x;
+              e1 = v1y - 2 * this.p1.y;
+              c1= (a = 4 * (d * d + d1 * d1));
+              c1 += (b = 4 * (d * e + d1 * e1));
+              c1 += (c = e * e + e1 * e1);
+              c1 = 2 * Math.sqrt(c1);
+              a1 = 2 * a * (u = Math.sqrt(a));
+              u1 = b / u;
+              a = 4 * c * a - b * b;
+              c = 2 * Math.sqrt(c);
+              return (a1 * c1 + u * b * (c1 - c) + a * Math.log((2 * u + u1 + c1) / (u1 + c))) / (4 * a1);
+        },          
+        findPositionOfVec : function(vec,resolution,pos){  // temp stub until I decide on the best way to do this. Finds position on curve in terms of uint dist, if pos is given then that point is used to search around at (resolution/4) ^ 2
             // translate curve to make vec the origin 
             v1.x = this.p1.x - vec.x;
             v1.y = this.p1.y - vec.y;
@@ -6703,24 +6881,24 @@ groover.geom = (function (){
             u1 = 1 + c1/2;
             var s = 0;
             if(pos !== undefined){
-                s = pos-c1 * 2;
+                s = pos - c1 * 2;
                 u1 = pos + c1 * 2;
-                c1 = (c1 * 4)/resolution;
+                c1 = (c1 * 4) / resolution;
             }
             d = Infinity;
             for(var i = s; i <= u1; i += c1){
-                a = (1-i);  // (1-t)
-                c = i * i;  // t ^ 2
+                a = (1 - i); 
+                c = i * i; 
                 if(this.cp2 === undefined){
-                    b = a*2*i; // 2*(1-t)*t
-                    a *= a;    // (1-t)^2
+                    b = a*2*i;
+                    a *= a;  
                     vx = v1.x * a + v3.x * b + v2.x * c;
                     vy = v1.y * a + v3.y * b + v2.y * c;
                 }else{
-                    b = 3 * a * a * i; // 3*t(1-t)^2
-                    b1 = 3 * c * a; // 3 * t^2*(1-t)
-                    a *= a*a; // (1-t)^3
-                    c *= c; // t^3;
+                    b = 3 * a * a * i; 
+                    b1 = 3 * c * a; 
+                    a *= a*a;
+                    c *= c; 
                     vx = v1.x * a + v3.x * b + v4.x * b1 + v2.x * c;
                     vy = v1.y * a + v3.y * b + v4.y * b1 + v2.y * c;
                 }
@@ -6748,7 +6926,6 @@ groover.geom = (function (){
                     return vec;
                 }
             }
-                
             v1.x = this.p1.x;
             v1.y = this.p1.y;
             c = position;
@@ -6764,39 +6941,26 @@ groover.geom = (function (){
                 return vec;
             }
             v2.x = this.cp1.x;
-            v3.x = this.cp2.x;
-            v1.x += (v2.x - v1.x) * c;
-            v2.x += (v3.x - v2.x) * c;
-            v3.x += (this.p2.x - v3.x) * c;
-            v1.x += (v2.x - v1.x) * c;
-            v2.x += (v3.x - v2.x) * c;
-            vec.x = v1.x + (v2.x - v1.x) * c;
-            
             v2.y = this.cp1.y;
+            v3.x = this.cp2.x;
             v3.y = this.cp2.y;
+            v1.x += (v2.x - v1.x) * c;
             v1.y += (v2.y - v1.y) * c;
+            v2.x += (v3.x - v2.x) * c;
             v2.y += (v3.y - v2.y) * c;
+            v3.x += (this.p2.x - v3.x) * c;
             v3.y += (this.p2.y - v3.y) * c;
+            v1.x += (v2.x - v1.x) * c;
             v1.y += (v2.y - v1.y) * c;
+            v2.x += (v3.x - v2.x) * c;
             v2.y += (v3.y - v2.y) * c;
+            vec.x = v1.x + (v2.x - v1.x) * c;
             vec.y = v1.y + (v2.y - v1.y) * c;
             return vec;     
-
-        },
+        }, 
         tangentAsVec : function( position,limit, retVec ) {  // returns the normalised tangent at position
             if(retVec === undefined){ retVec = new Vec(); }
             if(limit){ position = Math.min(1, Math.max(0, position)); }
-            //======================================================================================
-            // for quadratic C(t) = p1 * (1-t)^2    + cp1 * 2*(1-t) * t  + cp2 * t^2
-            //The derivative is:
-            // dC(t)/dt = T(t) =  2 *(1 - t) * (cp1 - p1) + 2* t * (p2 - cp1)
-            //======================================================================================
-            // for cubic C(t) = p1*(1-t)^3 + cp1*3*t(1-t)^2 + 3*cp2*t^2*(1-t) + p2*t^3
-            //The derivative is:
-            // dC(t)/dt = T(t) = -p1*3*(1 - t)^2 + cp1*(3*(1 - t)^2 - 6*(1 - t)*t) + cp2*(6*(1 - t)*t - 3*t^2) +3*p2*t^2
-            // Subsitute common parts a,b,c
-            //                    -p1 * c        + cp1 * (a                - b )   + cp2 * (  b        - c) + p2 * c;
-            //                    -p1 * c + cp1 * (a - b) + cp2 * (b - c) + p2 * c;
             if(this.cp2 === undefined){
                 a = (1-position) * 2;
                 b = position * 2;
@@ -6818,7 +6982,7 @@ groover.geom = (function (){
         normalAsVec : function(position, limit, retVec) { // returns the normalise norm at position
              retVec = this.tangentAsVec(position, retVec);
              a = retVec.x;
-             retVec.x = - retVec.y;
+             retVec.x = -retVec.y;
              retVec.y = a;
              return retVec;
         },
@@ -6901,8 +7065,7 @@ groover.geom = (function (){
       
             return this;
         },
-        snapToBezierPos : function(bez, pos , tangentAmount) { // snaps the at pos to bez if tangent !== 0 then that is multipled to get the control point
-            
+        snapToBezierPos : function(bez, pos , tangentAmount) { // snaps the at pos to bez if tangent !== 0 then that is multipled to get the control point   
             bez.vecAt(pos,true,v1);
             this.p1.x = v1.x;
             this.p1.y = v1.y;
@@ -6967,7 +7130,6 @@ groover.geom = (function (){
                 vecArray = new VecArray();
                 create = true;
             }
-
             if(resolution === undefined || resolution === Infinity){
                 resolution = 100;
             }
@@ -7068,6 +7230,31 @@ groover.geom = (function (){
             }
             va.push(this.origin.copy());
             return va;
+        },
+        asArray : function(array){ // returns an array containing the matrix. array is optional if not included the array will be created
+            if(array === undefined){
+                array = [];
+            }
+            array[0] = this.xAxis.x;
+            array[1] = this.xAxis.y; 
+            array[2] = this.yAxis.x;
+            array[3] = this.yAxis.y;
+            array[4] = this.origin.x;
+            array[5] = this.origin.y;
+            return array;
+        },
+        asSimple : function(obj){ // returns an object using the alphabet naming convention a,b,c,d,e,f. Obj is optional if supplied will be used else a new one is created.
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.a = this.xAxis.x;
+            obj.b = this.xAxis.y; 
+            obj.c = this.yAxis.x;
+            obj.d = this.yAxis.y;
+            obj.e = this.origin.x;
+            obj.f = this.origin.y;
+            return obj;
+        
         },
         applyToCoordinate : function(x, y, point){
             if(point !== undefined){

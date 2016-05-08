@@ -3,7 +3,15 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var geom, element, mouse, points, selected, unselected, boundingBox, selectionBox, buttonMain,buttonRight,buttonMiddle;
     var dragOffsetX, dragOffsetY,dragStartX, dragStartY, pointerLoc, mouseOveBounds,workVec,workVec1,workVec2,workVec3;
     var inSelectionBox, boundsCorners, boundsLines,shadowPoints, shadowing,mirrorShadow, shadowSelection,cancel;
-    var rightClickSelect;
+    var rightClickSelect, buttonDown, buttonDownOnSelected, buttonDownOn, dragged, dragSelection, quickDrag, draggingFinnalFlag, pointsUpdated, currentMouseFunction, rightClickMouseFunction;
+    // ##Var
+    var rotationLine, boundsTransform, workTransform, cIndex, bounds, cursorNames, eventTypeNames;
+    
+    geom = this;
+    element = element1;
+    geom.Geom.prototype.UIelement = element;    
+    geom.Geom.prototype.UIMouse;    
+    geom.Geom.prototype.updatePointer;    
     
     if(this.UI !== undefined){
         if(element1 === undefined){
@@ -12,17 +20,25 @@ groover.geom.Geom.prototype.addUI = function(element1){
         }
         throw new Error("Could not add UI for element because UI already exists. Use  groover.Geom.setUIElement(element) istead.");
     }    
-    this.UI = function(){};    
-    geom = this;
-    element = element1;
-    geom.Geom.prototype.UIelement = element;    
-    geom.Geom.prototype.UIMouse;    
-    geom.Geom.prototype.updatePointer;    
-    
+    this.UI = function(){};  
+    this.extentions.UI = {   // add extentions 
+        functions : [],
+        info : "Provides a User interface for basic interaction."
+    };
+    this.objectNames.push("UI");
+    geom.Geom.prototype.setUIElement = function(element1){
+        if(element1 === undefined || element1 === null){
+            if(mouse.active){
+                mouse.remove();
+            }
+            throw new TypeError("Groover.Geom.setUIElement invalid element can not start.");
+        }
+        element = geom.Geom.prototype.UIelement = element1;    
+        mouse.start(element)
+    }
 
-        
     
-    
+  
     points = new geom.VecArray().makeUnique().setLable("Geom.UI.Points");
     shadowPoints = new geom.VecArray().makeUnique().setLable("Geom.UI.shadowPoints");
                                         // IF the client app modifies points  when they change (such as snap to) this array can be used to maintain the correct aspects and dragging offsets during dragging operations.
@@ -35,8 +51,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             a2.vecs[i].x = p.x;
             a2.vecs[i].y = p.y;
         });
-    }
-        
+    }      
     shadowSelection = new geom.VecArray().makeUnique().setLable("Geom.UI.shadowSelected");    
     selected = new geom.VecArray().makeUnique().setLable("Geom.UI.Selected");
     unselected = new geom.VecArray().makeUnique().setLable("Geom.UI.unSelected");;
@@ -59,16 +74,16 @@ groover.geom.Geom.prototype.addUI = function(element1){
         new geom.Vec().setLable("Left"),
         new geom.Vec().setLable("Rotate"),
     ]; // from top left around clockwise
-    var rotationLine = new geom.Line(boundsCorners[4],boundsCorners[8]);
+    rotationLine = new geom.Line(boundsCorners[4],boundsCorners[8]);
     boundsLines = [ 
         new geom.Line(boundsCorners[0],boundsCorners[1]),
         new geom.Line(boundsCorners[1],boundsCorners[2]),
         new geom.Line(boundsCorners[2],boundsCorners[3]),
         new geom.Line(boundsCorners[3],boundsCorners[0])
     ];
-    var boundsTransform = new geom.Transform();
-    var workTransform = new geom.Transform();
-    var cIndex = {
+    boundsTransform = new geom.Transform();
+    workTransform = new geom.Transform();
+    cIndex = {
             topLeft : 0,
             topRight : 1,
             bottomRight : 2,
@@ -79,7 +94,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             left : 7,
             rotate : 8,
     };   
-    var bounds = {
+    bounds = {
         box : boundingBox,
         rotationLine : rotationLine,
         padBy : 7,
@@ -114,16 +129,14 @@ groover.geom.Geom.prototype.addUI = function(element1){
            cIndex.right,
          ],  
     }
-    var cursorNames = {
+    cursorNames = {
         selectAdd : "add",
         selectRemove : "remove",
         move : "move",
         select : "pointer",
-    }
-
-    
-    cancel = false; // global envent cance;l
-    var eventTypeNames = {
+    }   
+    cancel = false; // global event cance;l
+    eventTypeNames = {
         onSelectChanged : "selectChanged",
         onDragStart : "dragStart",
         onDragMove : "dragMove",
@@ -135,32 +148,17 @@ groover.geom.Geom.prototype.addUI = function(element1){
     buttonMain = 1;
     buttonRight = 4;
     buttonMiddle = 2;
-    this.extentions.UI = {   // add extentions 
-        functions : [],
-        info : "Provides a User interface for basic interaction."
-    };
-    this.objectNames.push("UI");
-    geom.Geom.prototype.setUIElement = function(element1){
-        if(element1 === undefined || element1 === null){
-            if(mouse.active){
-                mouse.remove();
-            }
-            throw new TypeError("Groover.Geom.setUIElement invalid element can not start.");
-        }
-        element = geom.Geom.prototype.UIelement = element1;    
-        mouse.start(element)
-    }
-    var buttonDown = false;
-    var buttonDownOnSelected = false;
-    var buttonDownOn = undefined;
-    var dragged = false;
-    var dragSelection = false;
-    var quickDrag = false;
-    var draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
-    var pointsUpdated = false; // true if there are point that have been changed. 
-    var currentMouseFunction;
-    var rightClickMouseFunction;
-    var rightClickSelect = true;
+    buttonDown = false;
+    buttonDownOnSelected = false;
+    buttonDownOn = undefined;
+    dragged = false;
+    dragSelection = false;
+    quickDrag = false;
+    draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
+    pointsUpdated = false; // true if there are point that have been changed. 
+    currentMouseFunction;
+    rightClickMouseFunction;
+    rightClickSelect = true;
 
     this.UI.prototype = {
         pointOfInterestIndex : undefined,  // this holds a index to a point in one of the exposed vecArrays and is set depending on the function and argument. use it to access the point of interest
@@ -346,7 +344,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }else{            
                 if(!this.actionButton){
                     this.getPointAtPointer();
-                    if(buttonDownOn.id === this.closestToPointer.id){
+                    if(this.closestToPointer && buttonDownOn.id === this.closestToPointer.id){
                         this.selectPoint(buttonDownOn,true);  
                         buttonDownOn = undefined;
                     }
@@ -361,7 +359,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }else{            
                 if(!this.actionButton){
                     this.getPointAtPointer();
-                    if(buttonDownOn.id === this.closestToPointer.id){
+                    if(this.closestToPointer !== undefined && buttonDownOn.id === this.closestToPointer.id){
                         this.unselectPoint(buttonDownOn,true);  
                         buttonDownOn = undefined;
                     }
