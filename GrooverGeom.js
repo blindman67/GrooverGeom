@@ -156,11 +156,31 @@ groover.geom = (function (){
         Math.hypot = function(x, y){ return Math.sqrt(x * x + y * y);};
     }
       
-    Math.dir = function(x,y){
+    Math.dir = function(x,y){ // math function returns normalised direction
         return ((Math.atan2(y,x) % MPI2) + MPI2) % MPI2;
  
     }
-      
+    var solveBezier3 = function(A,B,C,D){ // solves the 3rd order (cubic) bezier first derivative. See Bezier functions for the derivative
+        // Warning this function uses the geom registers via closure
+        // geom registers used a,b,c,a1,b1,u,u1
+        // results in u and u1. Returns first result
+        a = 3 * (-A + 3 * B - 3 * C + D);
+        b = 6 * (A - 2 * B + C);
+        c = -3 * (A - B);
+        a1 = 2 * a;
+        b1 = Math.sqrt(b * b - 4 * a * c);
+        u = (-b + b1) / a1;
+        u1 = (-b - b1) / a1;
+        return u;
+    }        
+    var solveBezier2 = function(A, B, C){// solves the 2nd order bezier first derivative. See Bezier functions for the derivative
+        // Warning this function uses the geom registers via closure
+        // geom registers used a,u
+        // results in u 
+        a = B - A;
+        u = a / (a- (C - B));   
+        return u;        
+    }
 
     var sharedFunctions = {
         setLable : function(lable){
@@ -6574,68 +6594,32 @@ groover.geom = (function (){
             }
             box.env ( this.p1.x, this.p1.y);
             box.env ( this.p2.x, this.p2.y);
-            //box.env ( this.cp1.x, this.cp1.y);
             if(this.cp2 !== undefined){
-                // find the local minima and maxima for cubics for x and y  
-               // the cubic derivative rearranged in terms of t
-
-               // 3a+3b+(-6a-12b+6c)t+(-9c+9b+3d+3a)*t^2
-               // using -b+-sqrt(b*b-4*a*c))/(2*a)
-               // with a = (3a+9b-9c+3d)
-               //      b = (-6a-12b+6c) = 
-               //      c = (3a+3b)
-                a = 3* (this.p1.x + 3 * this.cp1.x - 3 * this.cp2.x + this.p2.x)
-                b = 6*(-this.p1.x - 2* this.cp1.x + this.cp2.x);
-                c = 3 * (this.p1.x + this.cp1.x);
-                a1 = 2 * a;
-                b1 = Math.sqrt(b * b - 4 * a * c);
-                u = (-b + b1) / a1;
-                u1 = (-b - b1) / a1;
-                this.vecAt(u,false,v5);
-                v5.mark();
+                solveBezier3(this.p1.x, this.cp1.x, this.cp2.x, this.p2.x); // results in u,u1 geom registers
                 if(u >= 0 && u <= 1){
+                    this.vecAt(u,false,v5);
                     box.env(v5.x,v5.y);
                 }
-                this.vecAt(u1,false,v5);
-                              
-                v5.mark();
                 if(u1 >= 0 && u1 <= 1){
                     this.vecAt(u1,false,v5);
                     box.env(v5.x,v5.y);
                 }
-
-                a = 3* (this.p1.y + 3 * this.cp1.y - 3 * this.cp2.y + this.p2.y)
-                b = 6*(-this.p1.y - 2* this.cp1.y + this.cp2.y);
-                c = 3 * (this.p1.y + this.cp1.y);
-                a1 = 2 * a;
-                b1 = Math.sqrt(b * b - 4 * a * c);
-                u = (-b + b1) / a1;
-                u1 = (-b - b1) / a1;
-                
-                this.vecAt(u,false,v5);
-                v5.mark();
+                solveBezier3(this.p1.y, this.cp1.y, this.cp2.y, this.p2.y); // results in u,u1 geom registers
                 if(u >= 0 && u <= 1){
+                    this.vecAt(u,false,v5);
                     box.env(v5.x,v5.y);
                 }
-                this.vecAt(u1,false,v5);
-                                
-                v5.mark();
                 if(u1 >= 0 && u1 <= 1){
                     this.vecAt(u1,false,v5);
                     box.env(v5.x,v5.y);
-                }         
-            
+                }
             }else{
-                c = this.cp1.x - this.p1.x;
-                d = this.p2.x - this.cp1.x;
-                u = c / (c- d);
+                solveBezier2(this.p1.x, this.cp1.x, this.p2.x);
                 if(u >= 0 && u <= 1){
                     this.vecAt(u,false,v1)
                     box.env(v1.x,v1.y);
                 }
-                c = this.cp1.y - this.p1.y;
-                d = this.p2.y - this.cp1.y;
-                u = c / (c- d);
+                solveBezier2(this.p1.y, this.cp1.y, this.p2.y);
                 if(u >= 0 && u <= 1){
                     this.vecAt(u,false,v2)
                     box.env(v2.x,v2.y);
@@ -6841,6 +6825,30 @@ groover.geom = (function (){
                 retBezier.p1.y = v1.y + (v2.y - v1.y) * c;
             }
             return retBezier;              
+        },
+        getLocalExtrema : function(axisX, solution){ // gets the local extrema (max and min for axis) if they exist within the domain 0 <= p <= 1
+                                                     // axisX is true return the xAxis results else the Y axis
+                                                     // solution if true returns the 2nd solution There can be 2 solutions for 3rd order. Does not apply to 2nd order and will return the same result
+                                                     // the first and second results can also be found in geom  registers u,u1
+            if(this.cp2 !== undefined){                                         
+                if(axisX === true){
+                    solveBezier3(this.p1.x, this.cp1.x, this.cp2.x, this.p2.x); // results in u,u1 geom registers
+                }else{
+                    solveBezier3(this.p1.y, this.cp1.y, this.cp2.y, this.p2.y); // results in u,u1 geom registers
+                }
+                if(solution === true){
+                    return u;
+                }
+                return u1;
+            }
+            if(axisX === true){
+                solveBezier2(this.p1.x, this.cp1.x, this.p2.x);
+                u1 = u;
+            }else{
+                solveBezier2(this.p1.y, this.cp1.y, this.p2.y);
+                u1 = u;
+            }
+            return u;
         },
         getLength : function(){    // returns a calculated length rather than approx length, only for 2nd order bezier
               if(this.cp2 !== undefined){ // currently does not support 3rd order cubic
