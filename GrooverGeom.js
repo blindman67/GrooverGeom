@@ -420,8 +420,8 @@ groover.geom = (function (){
     }
     Geom.prototype = {
         extentions : {},
-        defaultPrecision : 4,
-        lineFeedDefault : "<br>",
+        defaultPrecision : 4, // precision of toString numbers
+        lineFeedDefault : "<br>", // toString linefeed default
         setDefaultLineFeed : function(str){
             lineFeedDefault = str;
         },
@@ -494,6 +494,18 @@ groover.geom = (function (){
                     return true;
                 }
             }        
+            return false;
+        },
+        isType : function(prim,type){
+            if(Array.isArray(type)){
+                if(type.indexOf(prim.type) >-1){
+                    return true;
+                }
+                return false;
+            }
+            if(prim.type === type){
+                return true;
+            }
             return false;
         },
         getDetails : function(){
@@ -773,7 +785,7 @@ groover.geom = (function (){
         this.origin = origin === undefined?new Vec(0,0) : origin;
     };
     
-    Empty.prototype = {
+    Empty.prototype = { // this look more and more like it is not needed. I will be removing all instances of this as I go. When and if possible I have removed all referances then I will remove empty as a primitive type.
         type : "Empty",
         copy : function(){  //Makes a copy of this
             return new Empty();  // returns a new Empty 
@@ -898,6 +910,33 @@ groover.geom = (function (){
             });
             return vecArray;
         },       
+        eachAs : function (type,callback,dir,start){  // iterates each primitive calling callback only if it of type type
+            var i;
+            var l = this.primitives.length;      
+            if(start === undefined || start === null){
+                start = 0;
+            }
+            if(dir){
+                l -= 1;
+                l -= start;
+                for(i = l; i >= 0; i --){
+                    if(this.primitives[i].type === type){
+                        if(callback(this.primitives[i],i) === false){
+                            break;
+                        }
+                    }
+                }
+            }else{
+                for(i = start; i < l; i ++){
+                    if(this.primitives[i].type === type){
+                        if(callback(this.primitives[i],i) === false){
+                            break;
+                        }
+                    }
+                }                
+            }
+            return this; // returns this
+        },  
         each : function (callback,dir,start){ 
             var i;
             var l = this.primitives.length;      
@@ -921,13 +960,6 @@ groover.geom = (function (){
             }
             return this; // returns this
         },  
-        last : function(){
-            if(this.length === 0){
-                return undefined;
-            }
-            this.current = this.length -1;
-            return this.primitives[this.length-1]; // returns Vec
-        },
         first : function(){
             if(this.length === 0){
                 return undefined;
@@ -967,6 +999,84 @@ groover.geom = (function (){
                 this.current = this.length - 1;
             }
             return this.primitives[this.current];
+        },        
+        last : function(){
+            if(this.length === 0){
+                return undefined;
+            }
+            this.current = this.length -1;
+            return this.primitives[this.length-1]; // returns Vec
+        },
+        firstAs : function(type){
+            if(this.length === 0){
+                return undefined;
+            }
+            this.current = 0;
+            while(this.current < this.length && this.primitives[this.current].type !== type){
+                this.current += 1;
+            }
+            if(this.current === this.length){
+                this.current = undefined
+                return undefined;
+            }
+            return this.primitives[this.current]; // returns Vec
+        },
+        nextAs : function(type){
+            if(this.length === 0){
+                return undefined;
+            }
+            if(this.current === undefined){
+                this.current = 0;                
+            }else{
+                this.current += 1;
+            }
+            while(this.current < this.length && this.primitives[this.current].type !== type){
+                this.current += 1;
+            }
+            if(this.current === this.length){
+                this.current = undefined
+                return undefined;
+            }
+            return this.primitives[this.current];
+        },
+        previouseAs : function(type){
+            if(this.length === 0){
+                return undefined;
+            }
+            if(this.current === undefined){
+                this.current = this.length - 1;                
+            }else{
+                this.current -= 1;
+            }
+            if(this.current < 0){
+                this.current = undefined; 
+                return undefined;
+            }
+            if(this.current >= this.length){
+                this.current = this.length - 1;
+            }
+            while(this.current >= 0 && this.primitives[this.current].type !== type){
+                this.current -= 1;
+            }
+            if(this.current < 0){
+                this.current = undefined
+                return undefined;
+            }
+            return this.primitives[this.current];
+        },        
+        lastAs : function(type){
+            if(this.length === 0){
+                return undefined;
+            }
+            this.current = this.length -1;
+            while(this.current >= 0 && this.primitives[this.current].type !== type){
+                this.current -= 1;
+            }
+            if(this.current < 0){
+                this.current = undefined
+                return undefined;
+            }
+            return this.primitives[this.current];            
         },        
         collectIdsAsPrimitiveArray : function(ids,primArray){ // returns a primitive array contains all primitives that have ids
             var i;
@@ -6378,6 +6488,38 @@ groover.geom = (function (){
             }
             return false;           
         },
+        isBoxTouching : function(box){ // returns true if this box is touching the given box. Warning both boxs are normalised
+            this.normalise();
+            box.normalise();
+            if(this.top > box.bottom || this.bottom < box.top || this.left > box.right || this.right < box.left){
+                return false;
+            }
+            return true;            
+        },
+        isBoxOverlapping : function(box){ // returns true if boxes overlap. This is different from touching as boxes can touch yet not over lap
+            this.normalise();
+            box.normalise();
+            if(this.top >= box.bottom || this.bottom <= box.top || this.left >= box.right || this.right <= box.left){
+                return false;
+            }
+            return true;            
+        
+        },
+        isLineTouching : function(Line){ // stub
+            return undefined;
+        },
+        isArcTouching : function(arc){ // stub
+            return undefined;
+        },
+        isRectangleTouching : function(Rectange){ // stub
+            return undefined;
+        },
+        isTriangleTouching : function(Triangle){ // stub
+            return undefined;
+        },
+        isBezierTouching : function(bezier){ // stub
+            return undefined;
+        },
         isInside : function(primitive){
             var call = this["is"+primitive.type+"Inside"];
             if(call !== undefined){
@@ -6460,7 +6602,7 @@ groover.geom = (function (){
             this.right = r;
             return this; // returns this.
         },
-        max : function () { // max the box Inifintly large
+        max : function () { // max the box Infinitely large
             this.top = -Infinity;
             this.bottom = Infinity;
             this.left = -Infinity;
@@ -6511,6 +6653,8 @@ groover.geom = (function (){
         cp1 : undefined,
         cp2 : undefined,
         type : "Bezier",
+        _subStart : undefined, // these are the start and end positions if the bezier is derived from a another bezier using functions such as splitAt
+        _subEnd : undefined,
         //======================================================================================
         // for quadratic F(t) = p1 * (1-t)^2 + cp1 * 2*(1-t) * t  + cp2 * t^2
         // The derivative  ==  2 *(1 - t) * (cp1 - p1) + 2* t * (p2 - cp1)
@@ -6590,13 +6734,13 @@ groover.geom = (function (){
             }
             return this;
         },          
-        isQuadratic : function(){
+        isQuadratic : function(){  // returns true if this is a quadratic
             if(this.cp2 === undefined && !this.isEmpty()){
                 return true;
             }
             return false;
         },
-        isCubic : function(){
+        isCubic : function(){ // returns true if this is a cubic 
             if(!this.cp2.isEmpty() && !this.isEmpty()){
                 return true;
             }            
@@ -6666,6 +6810,80 @@ groover.geom = (function (){
             }
             return box;
         },
+        findBezierInterceptsAsVecArray : function(bezier,threshold,vecArray){ // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
+                                                         // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
+                                                         // [vecArray] the VecArray to hold the results. Creates a new VecArray if not supplied
+                                                         // calling this function on two bezier that are the same or have larger areas of points within a pixel will return many interception points
+            var results = this.findBezierInterceptsAsPositions(bezier,threshold);
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }
+            for(a = 0; a < results.length; a ++){
+                vecArray.push(this.vecAt(results[a]));
+            }
+            return vecArray;
+        },
+        findBezierInterceptsAsPositions : function(bezier,threshold,array,array1){ // Finds the intercept points between this bezier and the given bezier. this is an approximate solution only
+                                                         // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
+                                                         // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
+                                                         // [array] the array to hold the results. Creates a new array if not supplied
+                                                         // [array1] optional holds the positions on the given bezier. if not supplied then the geom register array is used. (rArray) if array1 is null then it is ignored (this give a slight performance boost (very slight)); 
+                                                         // calling this function on two bezier that are the same or have larger areas of points within a pixel will return many interception points
+            var b1,b2,b3,b4,bx1,bx2;
+            if(array === undefined){
+                array = [];
+            }
+            if(array1 === undefined){
+                array1 = rArray;
+                rArray.length = 0;
+            }
+            if(threshold === undefined || threshold === null){
+                threshold = 0.5;
+            }
+                
+            if(!(bx1 = this.asBox()).isBoxOverlapping(bx2 = bezier.asBox())){
+                return array;
+            }
+            if(bx1.width() < threshold && bx2.width() < threshold && bx1.height() < threshold && bx2.height() < threshold){
+                c = (this._subStart + this._subEnd)/2;
+                d = threshold / 10;
+                e = 0; // avoiding type change (performance hit) so rather than a boolean 0 and 1
+                for(a = 0; a < array.length; a ++){
+                    if(Math.abs(array[a] - c) <= d){
+                        array[a] = (array[a] + c)/2;
+                        e = 1;
+                        break;
+                    }
+                }
+                if(e === 0){
+                    array.push(c);
+                }
+                if(array1 !== null){
+                    c = (bezier._subStart + bezier._subEnd)/2;
+                    e = 0; // avoiding type change (performance hit) so rather than a boolean 0 and 1
+                    for(a = 0; a < array1.length; a ++){
+                        if(Math.abs(array1[a] - c) <= d){
+                            array1[a] = (array1[a] + c)/2;
+                            e = 1;
+                            break;
+                        }
+                    }
+                    if(e === 0){
+                        array1.push(c);
+                    }
+                }
+                return array;
+            }
+            b1 = this.splitAt(0.5,true);
+            b2 = this.splitAt(0.5,false);
+            b3 = bezier.splitAt(0.5,true);
+            b4 = bezier.splitAt(0.5,false);
+            b1.findBezierInterceptsAsPositions(b3, threshold, array);
+            b1.findBezierInterceptsAsPositions(b4, threshold, array);
+            b2.findBezierInterceptsAsPositions(b3, threshold, array);
+            b2.findBezierInterceptsAsPositions(b4, threshold, array);
+            return array;
+        },        
         asQuadratic : function(){
             if(this.cp2 === undefined){
                 return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy());
@@ -6674,7 +6892,7 @@ groover.geom = (function (){
             v1.y = (this.cp1.y + this.cp2.y)/2;
             return new Bezier(this.p1.copy(), this.p2.copy(), v1.copy());
         },
-        asCubic : function(extraVec){ // this is just a stub for now untill I workout the best solution for the missing point
+        asCubic : function(extraVec){ // this is just a stub for now until I workout the best solution for the missing point
             if(this.cp2 === undefined){
                 if(extraVec === undefined){
                     var v = this.p2.copy().sub(this.p1).mult(1/3);
@@ -6889,12 +7107,20 @@ groover.geom = (function (){
             v4.x = this.p2.x;
             v4.y = this.p2.y;
             c = position;
+            if(this._subStart === undefined){
+                this._subStart = 0;
+                this._subEnd = 1;
+            }
             if(start === true){
                 retBezier.p1.x = this.p1.x;
                 retBezier.p1.y = this.p1.y;            
+                retBezier._subStart = this._subStart;
+                retBezier._subEnd = (this._subEnd - this._subStart) * position + this._subStart;
             }else{
                 retBezier.p2.x = this.p2.x;
                 retBezier.p2.y = this.p2.y;            
+                retBezier._subEnd = this._subEnd;
+                retBezier._subStart = (this._subEnd - this._subStart) * position + this._subStart;
             }
             if(this.cp2 === undefined){
                 v2.x = this.cp1.x;
@@ -6950,6 +7176,28 @@ groover.geom = (function (){
                 retBezier.p1.y = v1.y + (v2.y - v1.y) * c;
             }
             return retBezier;              
+        },
+        normalise : function(){ // normalises the bezier. 
+            this._subStart = 0;
+            this._subEnd = 1;
+            return this;        
+        },
+        reverse : function() { // reverses the direction of the bezier (Untested and not sure if this has the correct logic)
+            var temp;
+            if(this.cp2 === undefined){
+                temp = this.p1;
+                this.p1 = this.p2;
+                this.p2 = temp;
+                return this;
+            }
+            temp = this.p1;
+            this.p1 = this.p2;
+            this.p2 = temp;
+            temp = this.cp1;
+            this.cp1 = this.cp2;
+            this.cp2 = temp;
+            return this;
+            
         },
         getLocalExtrema : function(axisX, solution){ // gets the local extrema (max and min for axis) if they exist within the domain 0 <= p <= 1
                                                      // axisX is true return the xAxis results else the Y axis
@@ -7058,6 +7306,17 @@ groover.geom = (function (){
                     vec.y = this.p2.y;
                     return vec;
                 }
+            }else{
+                if(position === 0){
+                    vec.x = this.p1.x;
+                    vec.y = this.p1.y;
+                    return vec;
+                }else
+                if(position === 1){
+                    vec.x = this.p2.x;
+                    vec.y = this.p2.y;
+                    return vec;
+                }                
             }
             v1.x = this.p1.x;
             v1.y = this.p1.y;
@@ -7211,34 +7470,39 @@ groover.geom = (function (){
             }
             return this;
         },        
-        getInterpolationArray : function(resolution){
-            var length  = this.approxLength(resolution * 2);
-            var lenArrayLength = Math.ceil(length);
-            var linearPosArray = [];
-            var i;
-            var step = 1/ (resolution * 8);
-            var len = 1 + step/2;
-            var dist = 0;
-            var dist1 = 0;
-            var nextDist = 1;
+        getInterpolationArray : function(resolution,array){ // get Interpolation Array. This returns an array of curve positions separated by a distance of one pixel
+                                                      // this is an approximation and dependent on the value of resolution
+                                                      // solution is optional and if omitted will default of 100. It represents one 8th of the sampling size to find the pixel distance values
+                                                      // array is optional and is the array that will hold the result
+                                                      // the last item in the array is the approx length of the curve
+            if(array === undefined){
+                array = [];
+            }
+            if(resolution === undefined || resolution === null || resolution === Infinity){
+                resolution  = 100;
+            }
+            a = 1/ (resolution * 8);
+            c1 = 1 + a/2;
+            u1 = 0; // calculated approx distance
+            u = 1; // next distance that is being looked for
             v4.x = this.p1.x;
             v4.y = this.p1.y;
-            linearPosArray.push(0);
-            for(i = 0; i <= len; i += step){
-                this.vecAt(i,v5);
-                dist += Math.hypot(v5.x - v4.x, v5.y - v4.y);
-                if(dist >= nextDist){
-                    linearPosArray.push(i);
-                    nextDist += 1;
+            e = 0;
+            array[e++] = 0;
+            for(b = 0; b <= c1; b += a){
+                this.vecAt(b,false,v5);
+                u1 += Math.hypot(v5.x - v4.x, v5.y - v4.y);
+                if(u1 >= u){
+                    array[e++] = b;
+                    u += 1;
                 }
                 v4.x = v5.x;
                 v4.y = v5.y;
             }
-            linearPosArray.push(1);
-            return {
-                length : dist,
-                linearArray : linearPosArray,
-            }
+            array[e++] = 1;
+            array[e++] = u1;
+            array.length = e;
+            return array;
         },
         approxLength : function(resolution){
             if(resolution === undefined || resolution === Infinity){
@@ -7869,7 +8133,7 @@ groover.geom = (function (){
     }
   
     var geom = new Geom();
-    geom.Geom = Geom;  // add geom to geom object for use by extentions or anything that needs to 
+    geom.Geom = Geom;  // add geom to geom object for use by extensions or anything that needs to 
                        // extend the prototype of Geom.    
     geom.init();
     //geom.debugArray = [];  // for debug stuff. ONLY use for debug, this var can be removed at any time.
