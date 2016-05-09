@@ -98,6 +98,8 @@ groover.geom = (function (){
         return Math.pow(volume / ((4/3) * Math.PI), 1 / 3);
     }
     // this function was derived from http://pomax.github.io/bezierinfo/#intersections cube root solver
+    // Also see https://en.wikipedia.org/wiki/Cubic_function#Cardano.27s_method
+    // Considering Vieta's substitution instead of this one.. I need to learn a little more
     Math.cubicRoots = function(pa, pb, pc, pd) { // There can be 3 roots, Only roots between 0 and 1 inclusive are returned
         function crt(v) {
           if(v<0) return -Math.pow(-v,1/3);
@@ -107,7 +109,7 @@ groover.geom = (function (){
           if(v<0) return -Math.sqrt(-v);
           return Math.sqrt(v);
         }        
-        var a, b, c, d, p, p3, q, q2, discriminant, u1, v1, root1, r, t, mp3, mp33, cosphi, crtr, t1, sd;
+        var a, b, c, d, p, p3, q, q2, discriminant, u1, v1, r, t, mp3, mp33, cosphi,phi, t1, sd;
         var ret = [];
         d = (-pa + 3 * pb - 3 * pc + pd);
         a = (3 * pa - 6 * pb + 3 * pc) / d;
@@ -124,31 +126,22 @@ groover.geom = (function (){
             r = sqrt(mp33);
             t = -q / (2 * r);
             cosphi = t < -1 ? -1 : t > 1 ? 1 : t;
-            phi = acos(cosphi);
-            crtr = crt(r);
-            t1 = 2 * crtr;
-            root = t1 * cos(phi / 3) - a / 3;
-            if(root >= 0 && root <= 1){ ret[ret.length] = root;}
-            root = t1 * cos((phi + 2 * pi) / 3) - a / 3;
-            if(root >= 0 && root1 <= 1){ ret[ret.length] = root;}
-            root = t1 * cos((phi + 4 * pi) / 3) - a / 3;
-            if(root >= 0 && root <= 1){ ret[ret.length] = root;}
+            phi = Math.acos(cosphi);
+            t1 = 2 * crt(r);
+            ret[ret.length] = t1 * Math.cos(phi / 3) - a / 3;;
+            ret[ret.length] = t1 * Math.cos((phi + 2 * Math.PI) / 3) - a / 3;;
+            ret[ret.length] = t1 * Math.cos((phi + 4 * Math.PI) / 3) - a / 3;;
             return ret;
         }
         if(discriminant === 0) {
             u1 = q2 < 0 ? crt(-q2) : -crt(q2);
-            root = 2 * u1 - a / 3;
-            if(root >= 0 && root <= 1){ ret[ret.length] = root;}            
-            root = -u1 - a / 3;
-            if(root >= 0 && root <= 1){ ret[ret.length] = root;}            
+            ret[ret.length] = 2 * u1 - a / 3;           
+            ret[ret.length] = -u1 - a / 3;            
             return ret;
         }                
 
         sd = sqrt(discriminant);
-        u1 = crt(sd - q2);
-        v1 = crt(sd + q2);
-        root1 = u1 - v1 - a / 3;
-        if(root >= 0 && root <= 1){ ret[ret.length] = root;}  
+        ret[ret.length] = crt(sd - q2) - crt(sd + q2) - a / 3; 
         return ret;
     }
     // polyfill for math hypot function.
@@ -186,8 +179,33 @@ groover.geom = (function (){
         u = a / (a- (C - B));   
         return u;        
     }
-
-
+    var solveBezierA2 = function(A, B, C){ // solve the 2nd order bezier equation. Need to rename the above two functions
+        // 2nd order function a+2(-a+b)x+(a-2b+c)x^2
+        a = (A - 2 * B + C);
+        b = 2 * ( - A + B);
+        c = A;
+        a1 = 2 * a;
+        c = b * b - 4 * a * c;
+        if(c < 0){ // not sure what this means but works when I fix it????
+            u = Infinity;       
+            u1 = Infinity;       
+            return u;
+        }else{
+            b1 = Math.sqrt(c);
+        }
+        u = (-b + b1) / a1;
+        u1 = (-b - b1) / a1;
+        return u;
+    
+    }
+    var solveBezierA3 = function(A, B, C, D){ // solve the 3nd order bezier equation.
+        // 3rd order a+(-2a+3b)t+(2a-6b+3c)t^2+(-a+3b-3c+d)t^3
+        a = -A + 3 * B - 3 * C + D;
+        b = 2 * A - 6 * B + 3 * C;
+        c = -2 * A + 3 * B;
+        d = A;
+        return Math.cubicRoots(a, b, c, d);        
+    }
     var sharedFunctions = {
         setLable : function(lable){
             this.lableStr = lable;
@@ -260,16 +278,16 @@ groover.geom = (function (){
         id : undefined,
     }
     
-    // Closure Vars for internal optimistion and now public under the term registers
+    // Closure Vars for internal optimisation and now public under the term registers
     // Geom.registers has V1 to V5 and the function get(name) to get a,b,c,u,c1,u1
-    // The meaning of register values is dependent on the last call to any of Geom withing this scope
-    // DO NOT rely on these registers after you have reliquished your current JavasSript context execution 
+    // The meaning of register values is dependent on the last call to any of Geom within this scope
+    // DO NOT rely on these registers after you have relinquished your current JavasSript context execution 
 
     // the following are to aid in optimisation. Rather than create new primitives when needed these should be used instead
     // Do not return them.
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
     var vx,vy,v1x,v1y,u,u1,c,c1,a,a1,b,b1,d,d1,e,e1;  
-    var l1,l2; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these usefull as yet may return them but want to keep the number of closure variable as low as possible
+    var l1,l2; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these useful as yet may return them but want to keep the number of closure variable as low as possible
     var bez; // a bezier that is used to a temp for some bezier functions.
     var rArray; // an internal register array
     // NOTE dropping this....
@@ -622,7 +640,7 @@ groover.geom = (function (){
 
     function Helpers(){}; // for stuff that does not fit any catagory
     function Empty(){};
-    function PrimitiveArray(array){ // array can be an array of primitives. No vetting is done so you must ensure that the array only contains geom primitives compatable objects
+    function PrimitiveArray(array){ // array can be an array of primitives. No vetting is done so you must ensure that the array only contains geom primitives compatible objects
         if(array === undefined){
             this.primitives = [];
         }else
@@ -664,7 +682,7 @@ groover.geom = (function (){
             this.y = y;
         }
     };
-    function VecArray(array){ // array can be an array of vectors. No vetting is done so you must ensure that the array only contains vec compatable objects
+    function VecArray(array){ // array can be an array of vectors. No vetting is done so you must ensure that the array only contains vec compatible objects
         if(array === undefined){
             this.vecs = [];
         }else
@@ -785,7 +803,7 @@ groover.geom = (function (){
         this.origin = origin === undefined?new Vec(0,0) : origin;
     };
     
-    Empty.prototype = { // this look more and more like it is not needed. I will be removing all instances of this as I go. When and if possible I have removed all referances then I will remove empty as a primitive type.
+    Empty.prototype = { // this look more and more like it is not needed. I will be removing all instances of this as I go. When and if possible I have removed all references then I will remove empty as a primitive type.
         type : "Empty",
         copy : function(){  //Makes a copy of this
             return new Empty();  // returns a new Empty 
@@ -882,7 +900,7 @@ groover.geom = (function (){
         isEmpty : function(){ // returns true if no objects in the array
             return this.primitives.length === 0;
         },
-        normalise : function(){  // set everything correctly. use after manualy manipulating this object
+        normalise : function(){  // set everything correctly. use after manually manipulating this object
           this.length = this.primitives.length;  
           return this;
         },
@@ -6656,12 +6674,14 @@ groover.geom = (function (){
         _subStart : undefined, // these are the start and end positions if the bezier is derived from a another bezier using functions such as splitAt
         _subEnd : undefined,
         //======================================================================================
-        // for quadratic F(t) = p1 * (1-t)^2 + cp1 * 2*(1-t) * t  + cp2 * t^2
-        // The derivative  ==  2 *(1 - t) * (cp1 - p1) + 2* t * (p2 - cp1)
+        // single dimension polys for 2nd (a,b,c) and 3rd (a,b,c,d) order bezier 
         //======================================================================================
-        // for cubic F(t) = p1*(1-t)^3 + cp1*3*t(1-t)^2 + cp2*3 *t^2*(1-t) + p2*t^3
-        // The derivative  = -p1*3*(1 - t)^2 + cp1*(3*(1 - t)^2 - 6*(1 - t)*t) + cp2*(6*(1 - t)*t - 3*t^2) +3*p2*t^2
-        // The 2nd derivative = 6*(1-t)*(cp2 - 2*cp1 + p1) + 6*t*(p2 - 2*cp2 + cp1)
+        // for quadratic F(t) = a(1-t)^2+2b(1-t)t+ct^2 = a+2(-a+b)t+(a-2b+c)t^2
+        // The derivative  =  2(1-t)(b-a)+2(c-b)t
+        //======================================================================================
+        // for cubic F(t) = a(1-t)^3 + 3bt(1-t)^2 + 3c(1-t)t^2 + dt^3 = a+(-2a+3b)t+(2a-6b+3c)t^2+(-a+3b-3c+d)t^3
+        // The derivative  = -3a(1-t)^2+b(3(1-t)^2-6(1-t)t)+c(6(1-t)t-3t^2) +3dt^2
+        // The 2nd derivative = 6*(1-t)*(c - 2*b + a) + 6*t*(d - 2*c + b)
         //======================================================================================
         // Note: The behaviour of the second control point is as yet not determined. It may change as test presents the functionality requiered 
 
@@ -6810,11 +6830,11 @@ groover.geom = (function (){
             }
             return box;
         },
-        findBezierInterceptsAsVecArray : function(bezier,threshold,vecArray){ // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
+        interceptsAsVecArray : function(bezier,threshold,vecArray){ // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
                                                          // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
                                                          // [vecArray] the VecArray to hold the results. Creates a new VecArray if not supplied
                                                          // calling this function on two bezier that are the same or have larger areas of points within a pixel will return many interception points
-            var results = this.findBezierInterceptsAsPositions(bezier,threshold);
+            var results = this.interceptsAsPositions(bezier,threshold);
             if(vecArray === undefined){
                 vecArray = new VecArray();
             }
@@ -6823,7 +6843,7 @@ groover.geom = (function (){
             }
             return vecArray;
         },
-        findBezierInterceptsAsPositions : function(bezier,threshold,array,array1){ // Finds the intercept points between this bezier and the given bezier. this is an approximate solution only
+        interceptsAsPositions : function(bezier,threshold,array,array1){ // Finds the intercept points between this bezier and the given bezier. this is an approximate solution only
                                                          // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
                                                          // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
                                                          // [array] the array to hold the results. Creates a new array if not supplied
@@ -6878,12 +6898,33 @@ groover.geom = (function (){
             b2 = this.splitAt(0.5,false);
             b3 = bezier.splitAt(0.5,true);
             b4 = bezier.splitAt(0.5,false);
-            b1.findBezierInterceptsAsPositions(b3, threshold, array);
-            b1.findBezierInterceptsAsPositions(b4, threshold, array);
-            b2.findBezierInterceptsAsPositions(b3, threshold, array);
-            b2.findBezierInterceptsAsPositions(b4, threshold, array);
+            b1.interceptsAsPositions(b3, threshold, array);
+            b1.interceptsAsPositions(b4, threshold, array);
+            b2.interceptsAsPositions(b3, threshold, array);
+            b2.interceptsAsPositions(b4, threshold, array);
             return array;
         },        
+        interceptLine : function(line,vecArray){
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }
+            var dir = line.dir();
+            bez.setAs(this);
+            v1.setAs(line.p1).mult(-1);
+            bez.translate(v1).rotate(-dir);            
+            if(this.cp2 !== undefined){
+                
+                var vals = Math.cubicRoots(bez.p1.y, bez.cp1.y, bez.cp2.y,bez.p2.y);
+                if(vals[0] !== undefined && vals[0] >= 0 && vals[0] <= 1){ vecArray.push(this.vecAt(vals[0]));}
+                if(vals[1] !== undefined && vals[1] >= 0 && vals[1] <= 1){ vecArray.push(this.vecAt(vals[1]));}
+                if(vals[2] !== undefined && vals[2] >= 0 && vals[2] <= 1){ vecArray.push(this.vecAt(vals[2]));}
+                return vecArray
+            }
+            solveBezierA2(bez.p1.y, bez.cp1.y, bez.p2.y);
+            if(u >= 0 && u <= 1){ vecArray.push(this.vecAt(u));}
+            if(u1 >= 0 && u1 <= 1){ vecArray.push(this.vecAt(u1));}
+            return vecArray;
+        },
         asQuadratic : function(){
             if(this.cp2 === undefined){
                 return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy());
@@ -8136,7 +8177,7 @@ groover.geom = (function (){
     geom.Geom = Geom;  // add geom to geom object for use by extensions or anything that needs to 
                        // extend the prototype of Geom.    
     geom.init();
-    //geom.debugArray = [];  // for debug stuff. ONLY use for debug, this var can be removed at any time.
+    geom.debugArray = [];  // for debug stuff. ONLY use for debug, this var can be removed at any time.
     return geom
 })();
 
