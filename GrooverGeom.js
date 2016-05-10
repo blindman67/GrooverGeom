@@ -11,10 +11,9 @@ groover.geom = (function (){
     const EPSILON = 1E-6; // this is still undecided Could use Number.EPSILON but I feel that is a little small for graphics based metrics
     const EPSILON1 = 1-EPSILON;
     const BEZ3_CIR = 0.55191502449; // Bezier3 circle fit from "Approximate a circle with cubic Bézier curves", lnk http://spencermortensen.com/articles/bezier-circle/
-    
     var UID = 1;
     
-    // some math extentions 
+    // some math extensions 
     Math.triPh = function(a,b,c){    // return the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
         return Math.acos((c * c - (a * a + b * b)) / (-2 * a * b));
     }
@@ -97,55 +96,7 @@ groover.geom = (function (){
     Math.sphere.radiusFromVolume = function(volume){
         return Math.pow(volume / ((4/3) * Math.PI), 1 / 3);
     }
-    // this function was derived from http://pomax.github.io/bezierinfo/#intersections cube root solver
-    // Also see https://en.wikipedia.org/wiki/Cubic_function#Cardano.27s_method
-    // Considering Vieta's substitution instead of this one.. I need to learn a little more
-    Math.cubicRoots = function(pa, pb, pc, pd) { // There can be 3 roots, Only roots between 0 and 1 inclusive are returned
-        function crt(v) {
-          if(v<0) return -Math.pow(-v,1/3);
-          return Math.pow(v,1/3);
-        }                
-        function sqrt(v) {
-          if(v<0) return -Math.sqrt(-v);
-          return Math.sqrt(v);
-        }        
-        var a, b, c, d, p, p3, q, q2, discriminant, u1, v1, r, t, mp3, mp33, cosphi,phi, t1, sd;
-        var ret = [];
-        d = (-pa + 3 * pb - 3 * pc + pd);
-        a = (3 * pa - 6 * pb + 3 * pc) / d;
-        b = (-3 * pa + 3 * pb) / d;
-        c = pa / d;
-        p = (3 * b - a * a) / 3;
-        p3 = p / 3;
-        q = (2 * a * a * a - 9 * a * b + 27 * c) / 27;
-        q2 = q / 2;
-        discriminant = q2 * q2 + p3 * p3 * p3;
-        if (discriminant < 0) {
-            mp3 = -p / 3;
-            mp33 = mp3 * mp3 * mp3;
-            r = sqrt(mp33);
-            t = -q / (2 * r);
-            cosphi = t < -1 ? -1 : t > 1 ? 1 : t;
-            phi = Math.acos(cosphi);
-            t1 = 2 * crt(r);
-            ret[ret.length] = t1 * Math.cos(phi / 3) - a / 3;;
-            ret[ret.length] = t1 * Math.cos((phi + 2 * Math.PI) / 3) - a / 3;;
-            ret[ret.length] = t1 * Math.cos((phi + 4 * Math.PI) / 3) - a / 3;;
-            return ret;
-        }
-        if(discriminant === 0) {
-            u1 = q2 < 0 ? crt(-q2) : -crt(q2);
-            ret[ret.length] = 2 * u1 - a / 3;           
-            ret[ret.length] = -u1 - a / 3;            
-            return ret;
-        }                
-
-        sd = sqrt(discriminant);
-        ret[ret.length] = crt(sd - q2) - crt(sd + q2) - a / 3; 
-        return ret;
-    }
-    // polyfill for math hypot function.
-    if(typeof Math.hypot !== "function"){
+    if(typeof Math.hypot !== "function"){ // polyfill for math hypot function.
         Math.hypot = function(x, y){ return Math.sqrt(x * x + y * y);};
     }
       
@@ -198,14 +149,54 @@ groover.geom = (function (){
         return u;
     
     }
-    var solveBezierA3 = function(A, B, C, D){ // solve the 3nd order bezier equation.
-        // 3rd order a+(-2a+3b)t+(2a-6b+3c)t^2+(-a+3b-3c+d)t^3
-        a = -A + 3 * B - 3 * C + D;
-        b = 2 * A - 6 * B + 3 * C;
-        c = -2 * A + 3 * B;
-        d = A;
-        return Math.cubicRoots(a, b, c, d);        
+    var solveBezierA3 = function(A, B, C, D){  // There can be 3 roots, u,u1,u2 geom registers return the results;
+        // Solves 3rd order a+(-2a+3b)t+(2a-6b+3c)t^2+(-a+3b-3c+d)t^3 Cardano method for finding roots
+        // this function was derived from http://pomax.github.io/bezierinfo/#intersections cube root solver
+        // Also see https://en.wikipedia.org/wiki/Cubic_function#Cardano.27s_method
+        // Considering Vieta's substitution instead of this one.. I need to learn a little more
+        function crt(v) {
+          if(v<0) return -Math.pow(-v,1/3);
+          return Math.pow(v,1/3);
+        }                
+        function sqrt(v) {
+          if(v<0) return -Math.sqrt(-v);
+          return Math.sqrt(v);
+        }        
+        var a, b, c, d, p, p3, q, q2, discriminant, U, v1, r, t, mp3, cosphi,phi, t1, sd;
+        u2 = u1 = u = -Infinity;
+        d = (-A + 3 * B - 3 * C + D);
+        a = (3 * A - 6 * B + 3 * C) / d;
+        b = (-3 * A + 3 * B) / d;
+        c = A / d;
+        p = (3 * b - a * a) / 3;
+        p3 = p / 3;
+        q = (2 * a * a * a - 9 * a * b + 27 * c) / 27;
+        q2 = q / 2;
+        a /= 3;
+        discriminant = q2 * q2 + p3 * p3 * p3;
+        if (discriminant < 0) {
+            mp3 = -p / 3;
+            r = sqrt(mp3 * mp3 * mp3);
+            t = -q / (2 * r);
+            cosphi = t < -1 ? -1 : t > 1 ? 1 : t;
+            phi = Math.acos(cosphi);
+            t1 = 2 * crt(r);
+            u = t1 * Math.cos(phi / 3) - a;
+            u1 = t1 * Math.cos((phi + 2 * Math.PI) / 3) - a;
+            u2 = t1 * Math.cos((phi + 4 * Math.PI) / 3) - a;
+            return u;
+        }
+        if(discriminant === 0) {
+            U = q2 < 0 ? crt(-q2) : -crt(q2);
+            u = 2 * U - a;           
+            u1 = -U - a;            
+            return u;
+        }                
+        sd = sqrt(discriminant);
+        u = crt(sd - q2) - crt(sd + q2) - a; 
+        return u;      
     }
+
     var sharedFunctions = {
         setLable : function(lable){
             this.lableStr = lable;
@@ -279,25 +270,17 @@ groover.geom = (function (){
     }
     
     // Closure Vars for internal optimisation and now public under the term registers
-    // Geom.registers has V1 to V5 and the function get(name) to get a,b,c,u,c1,u1
+    // Geom.registers has v1 to v5 and the function get(name) to get a,b,c,u,c1,u1
     // The meaning of register values is dependent on the last call to any of Geom within this scope
     // DO NOT rely on these registers after you have relinquished your current JavasSript context execution 
-
     // the following are to aid in optimisation. Rather than create new primitives when needed these should be used instead
     // Do not return them.
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
-    var vx,vy,v1x,v1y,u,u1,c,c1,a,a1,b,b1,d,d1,e,e1;  
+    var vx,vy,v1x,v1y,u,u1,u2,c,c1,a,a1,b,b1,d,d1,e,e1;  
     var l1,l2; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these useful as yet may return them but want to keep the number of closure variable as low as possible
     var bez; // a bezier that is used to a temp for some bezier functions.
     var rArray; // an internal register array
-    // NOTE dropping this....
-    /*const REGS_LEN = 5; // used in Vec._asVec  Internal uses only and experiment 
-    // reg for regerstry
-    var regl,regv; // line and vec stack for quick access to optimisition var
-                   // these arrays can act like a stack, quew, random access, or cyclic access
- 
-    var reglSP, regvSP; // stack pos*/
-    // NOTE dropping this.... END
+
     
     function Geom(){
         v1 = new Vec();
@@ -791,10 +774,17 @@ groover.geom = (function (){
                 this.cp2 = undefined;
             }
         }else{
-            this.p1 = p1 === undefined ? new Vec() : p1;
-            this.p2 = p2 === undefined ? new Vec() : p2;
-            this.cp1 = cp1 === undefined ? new Vec() : cp1;
-            this.cp2 = cp2 === undefined ? new Vec() : cp2 === null ? undefined : cp2;
+            if(p1 !== undefined && p1.type === "Bezier"){
+                this.p1 = p1.p1;
+                this.p2 = p1.p2;
+                this.cp1 = p1.cp1;
+                this.cp2 = p1.cp2;                
+            }else{
+                this.p1 = p1 === undefined ? new Vec() : p1;
+                this.p2 = p2 === undefined ? new Vec() : p2;
+                this.cp1 = cp1 === undefined ? new Vec() : cp1;
+                this.cp2 = cp2 === undefined ? new Vec() : cp2 === null ? undefined : cp2;
+            }
         }
     }
     function Transform(xAxis,yAxis,origin){
@@ -4706,13 +4696,13 @@ groover.geom = (function (){
             return rect;           
 
         },
-        isVecLeft : function(vec){ // Is the {avec} to the left of this line. Left is left of screen when looking at it and the line moves down.
+        isVecLeft : function(vec){ // Is the {avec} to the left of this line.Left is left of screen when looking at it and the line moves down.
             if((this.p2.x - this.p1.x) * (vec.y - this.p1.y) - (this.p2.y - this.p1.y) * (vec.x - this.p1.x) < 0){
                 return true;
             }
             return false;
         },
-        isLineLeft : function(line){ // Is the {aline} to the left of this line. Left is left of screen when looking at it and the line moves down.
+        isLineLeft : function(line){ // Is the {aline} to the left of this line.  Left is left of screen when looking at it and the line moves down.
             v1.x = this.p2.x - (vx = this.p1.x);
             v1.y = this.p2.y - (vy = this.p1.y);
             v2.x = line.p1.x - vx;
@@ -4734,8 +4724,29 @@ groover.geom = (function (){
             }
             return false; // returns boolean 
         },
+        isVecWithinSeg : function(vec){ // returns true if the vec is within the line segment.
+            a = Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
+            b = Math.hypot(vec.y - this.p1.y, vec.x - this.p1.x);
+            c = Math.hypot(vec.y - this.p2.y, vec.x - this.p2.x);
+            if(b <= a && c <= a){
+                return true;
+            }
+            return false;
+        },
+        isVecOnSeg : function(vec, threshold){ // returns true if the vec is within the line segment. [threshold] is optional if not given then geom EPSILON is used
+            if(threshold === undefined){
+                threshold = EPSILON;
+            }
+            a = Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
+            b = Math.hypot(vec.y - this.p1.y, vec.x - this.p1.x);
+            c = Math.hypot(vec.y - this.p2.y, vec.x - this.p2.x);
+            if(b + c <= a + threshold){
+                return true;
+            }
+            return false;
+        },        
         leng : function(){
-            return Math.hypot(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
+            return Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
         },
         leng2 : function(){ // length squared
             return Math.pow(this.p2.x-this.p1.x,2) + Math.pow(this.p2.y-this.p1.y,2);
@@ -5116,7 +5127,7 @@ groover.geom = (function (){
             }
             return -la;
         },
-        getUnitDistOfPoint : function(vec){ // returns the unit distance of a point on the line from the start. If the point is not on the line then the distance is the distance with the line roated to align to the point.
+        getUnitDistOfPoint : function(vec){ // returns the unit distance of a point on the line from the start. If the point is not on the line then the distance is the distance with the line rotated to align to the point.
                                         // Use getDistOfPointSafe if the distance needs to be without the rotation. Ie the cosine(angle between point and line) * distance to point
             var l = Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
             var la = Math.hypot(vec.y - this.p1.y, vec.x - this.p1.x) / l;
@@ -6686,7 +6697,7 @@ groover.geom = (function (){
         // Note: The behaviour of the second control point is as yet not determined. It may change as test presents the functionality requiered 
 
         copy : function(){
-            return new Bezier(this.p1, this.p2, this.cp1, this.cp2 === undefined ? null : this.cp2);
+            return (new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), this.cp2 === undefined ? null : this.cp2.copy()))._setSpan(this._subStart,this._subEnd);
         },
         setAs : function(bezier){
             this.p1.x = bezier.p1.x;
@@ -6695,6 +6706,8 @@ groover.geom = (function (){
             this.p2.y = bezier.p2.y;
             this.cp1.x = bezier.cp1.x;
             this.cp1.y = bezier.cp1.y;
+            this._subStart = bezier._subStart;
+            this._subEnd = bezier._subEnd;
             if(bezier.cp2 === undefined){
                 this.cp2 = undefined;
             }else{
@@ -6707,6 +6720,11 @@ groover.geom = (function (){
             }
             return this;   
         },
+        _setSpan : function(f,t){
+            this._subStart = f;
+            this._subEnd = t;
+            return this;
+        },            
         toString : function(precision){
             var str;
             var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
@@ -6904,26 +6922,82 @@ groover.geom = (function (){
             b2.interceptsAsPositions(b4, threshold, array);
             return array;
         },        
-        interceptLine : function(line,vecArray){
-            if(vecArray === undefined){
-                vecArray = new VecArray();
-            }
+        __lineInterceptPos : function(line){ // find position of intercept point and puts them in u,u1,u2 geom registers
             var dir = line.dir();
             bez.setAs(this);
             v1.setAs(line.p1).mult(-1);
             bez.translate(v1).rotate(-dir);            
-            if(this.cp2 !== undefined){
-                
-                var vals = Math.cubicRoots(bez.p1.y, bez.cp1.y, bez.cp2.y,bez.p2.y);
-                if(vals[0] !== undefined && vals[0] >= 0 && vals[0] <= 1){ vecArray.push(this.vecAt(vals[0]));}
-                if(vals[1] !== undefined && vals[1] >= 0 && vals[1] <= 1){ vecArray.push(this.vecAt(vals[1]));}
-                if(vals[2] !== undefined && vals[2] >= 0 && vals[2] <= 1){ vecArray.push(this.vecAt(vals[2]));}
-                return vecArray
+            if(this.cp2 !== undefined){                
+                solveBezierA3(bez.p1.y, bez.cp1.y, bez.cp2.y,bez.p2.y);
+                return this;
             }
             solveBezierA2(bez.p1.y, bez.cp1.y, bez.p2.y);
-            if(u >= 0 && u <= 1){ vecArray.push(this.vecAt(u));}
+            u2 = -Infinity;
+            return this;
+        },
+        interceptLine : function(line,vecArray){  // finds the interception points of the line and the bezier. vecArray is optional and will contain the points
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }
+            this.__lineInterceptPos(line);
+            if(u  >= 0 && u  <= 1){ vecArray.push(this.vecAt(u));}
             if(u1 >= 0 && u1 <= 1){ vecArray.push(this.vecAt(u1));}
+            if(u2 >= 0 && u2 <= 1){ vecArray.push(this.vecAt(u2));}
+            return vecArray
+        },
+        interceptLineSeg : function(line,vecArray){ // finds the interception points of the line segment and the bezier. vecAttay is optional. If given then the points are added to it. if not then a new vec array is created. Returns VecArray
+            var p;
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }            
+            this.__lineInterceptPos(line);
+            if(u  >= 0 && u  <= 1){
+                p = this.vecAt(u);
+                if(line.isVecWithinSeg(p)){
+                    vecArray.push(p);
+                }
+            }
+            if(u1  >= 0 && u1  <= 1){
+                p = this.vecAt(u1);
+                if(line.isVecWithinSeg(p)){
+                    vecArray.push(p);
+                }
+            }
+            if(u2  >= 0 && u2  <= 1){
+                p = this.vecAt(u2);
+                if(line.isVecWithinSeg(p)){
+                    vecArray.push(p);
+                }
+            }
             return vecArray;
+        },
+        sliceWithLine : function(line,right,primArray){ // returns the primitive array containing segments left or right of the line. if right is true then returns segments right of the line. if false then segments left of the line. [primArray] optional if given the segments are push onto it. else a new primitive array is created. Returns PrimitiveArray
+            var me,p;
+            function getLeft(start,end){
+                if(start === 0){ return a; }
+                if(end === 1){ return b; }
+                return line.isVecLeft(me.vecAt((start+end)/2));
+            }
+            this.__lineInterceptPos(line);            
+            if(primArray === undefined){
+                primArray = new PrimitiveArray();
+            }
+            me = this;
+            p = [0];
+            if(u >= 0 && u <= 1){ p[p.length] = u; }
+            if(u1 >= 0 && u1 <= 1){ p[p.length] = u1; }
+            if(u2 >= 0 && u2 <= 1){ p[p.length] = u2; }
+            p[p.length] = 1;
+            p.sort();
+            a = line.isVecLeft(this.p1);
+            b = line.isVecLeft(this.p2);
+            e = 0;
+            e1 = p.length;
+            while( e < e1-1){
+                if(getLeft(p[e],p[e+1])!== right){ primArray.push(this.segment(p[e],p[e+1]))}
+                e += 1;
+            }
+            return primArray;
         },
         asQuadratic : function(){
             if(this.cp2 === undefined){
@@ -7134,6 +7208,12 @@ groover.geom = (function (){
             return this;
         },
         segment : function(fromPos,toPos,retBezier){
+            if(fromPos === 0 && toPos === 1){
+                if(retBezier === undefined){
+                    return this.copy();
+                }
+                return reBezier.setAs(this);
+            }
             retBezier = this.splitAt(fromPos,false,retBezier);
             return retBezier.splitAt((toPos-fromPos) / (1 - fromPos),true,retBezier);
              
