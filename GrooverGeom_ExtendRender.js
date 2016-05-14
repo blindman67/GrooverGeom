@@ -252,6 +252,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             return this;// returns this
         };
         geom.PrimitiveArray.prototype.draw = function(join){  // The {odir} is a boolean that if true reveres the direction to the draw
+            
             if(join){
                 this.each(paDrawJoined);
             }else{

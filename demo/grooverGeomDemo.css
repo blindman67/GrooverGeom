@@ -1,0 +1,97 @@
+/*Page general style*/
+
+body {
+    font : 20px arial;
+    margin: 0px;
+    background : #555;
+    color : white;
+}
+
+h1 {
+    text-align : center;
+}
+h2 {
+    
+}
+input {
+    padding: 0px;
+    margin: 0px;
+    border: 0px;    
+    display: inline;    
+    color : white;
+}
+.unknown { /* should not be used. This is a fallback in case a bad class name is found */
+    padding: 0px;
+    margin: 0px;
+    border: 0px;    
+    display: inline;    
+    color : white;
+}
+.lable {
+    color : white;
+}
+td {
+    padding : 0px;
+}
+.snug {
+    padding: 0px;
+    margin: 0px;
+    border: 0px;    
+    display: block;
+}
+.content {
+}
+.canvas {
+    background: #013;
+}
+table {
+    width: 100%;
+    background: #444;
+    border-spacing: 0px;
+}
+.title {
+}
+.foot {
+    
+}
+
+
+/* Menu and DOM ui */
+
+.menu {
+    max-width : 300px;
+    width : 300px;
+    background: #231;
+}
+.uiGroup {
+    font-size : small;
+    border : white 1px solid;
+    margin-top: 2px;
+    overflow-y: hidden;
+}
+
+.uiGroupName {
+     display: block;   
+}
+.uiButton {
+    color: #fff;
+    border: 1px #fff solid;
+    background: #7ca580;
+    cursor: pointer;    
+    margin: 1px;
+    padding-left: 4px;
+    padding-right: 4px;    
+}
+.uiPrimitivePropertyName {
+    display: inline;
+    padding-right: 5px;
+}
+.uiPrimitiveProperty {
+   display: inline;
+}
+.uiPrimitiveRange {
+   display: inline;
+}
+.uiPrimitive {
+}
+

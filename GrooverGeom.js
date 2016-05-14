@@ -227,7 +227,7 @@ groover.geom = (function (){
             if(array.indexOf(this.id) === -1){
                 array.push(this.id);
             }
-            var pt = geom.primitiveProperties[this.type];
+            var pt = geom.primitiveSubPrimitives[this.type];
 
             if(pt !== undefined){
                 var i;
@@ -315,7 +315,7 @@ groover.geom = (function (){
         regv = [v1,v2,v3,v4,v5];
         reglSP = 0;
         regvSP = 0;*/
-        this.registers = {
+        this.registers = { // for access to geom registers.
             v1 : v1,
             v2 : v2,
             v3 : v3,
@@ -344,7 +344,7 @@ groover.geom = (function (){
                 return undefined;
             }
         };
-        this.primitiveTypes = [
+        this.primitiveTypes = [ // list of primitives
             "PrimitiveArray",
             "Vec",
             "VecArray",
@@ -358,7 +358,7 @@ groover.geom = (function (){
             "Bezier",
             "Transform",
         ];
-        this.objectNames = [
+        this.objectNames = [ // a list of object names. This will include additional extension objects if they are added 
             "PrimitiveArray",
             "Vec",
             "VecArray",
@@ -372,11 +372,8 @@ groover.geom = (function (){
             "Bezier",
             "Transform",
         ];
-        this.extentions = {
-
-            
-        },
-        this.properties = {
+        this.extentions = {}; // extensions registered by adding to this object
+        this.properties = { // this will be removed soon
             Vec : ["x","y","type"],
             Box : ["t","l","b","r","type"],
             Line: ["p1","p1","type"],
@@ -390,7 +387,7 @@ groover.geom = (function (){
             Bezier : ["p1","p2","cp1","cp2","type"],         
             Empty : ["type"],
         };
-        this.primitiveProperties = {
+        this.primitiveSubPrimitives = { // was called primitiveProperties
             Vec : [],
             Box : [],
             Line: ["p1","p2"],
@@ -417,10 +414,12 @@ groover.geom = (function (){
         this.PrimitiveArray = PrimitiveArray;
         this.Geom = Geom;
         this.Empty = Empty;
+        
 
     }
     Geom.prototype = {
         extentions : {},
+        safePrimitiveArray : true, // if true pushing a primitiveArray onto a primitiveArray will throw an error. If false then there is no restriction. This is to stop infinite recursion that can happen when you push a primitive array onto its self or create a cyclic reference 
         defaultPrecision : 4, // precision of toString numbers
         lineFeedDefault : "<br>", // toString linefeed default
         setDefaultLineFeed : function(str){
@@ -509,7 +508,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        getDetails : function(){
+        getDetails : function(){ // helper function for documentation. Will not remain when done
             var newLine = "\r\n";
             function getComments(lines,currentObj){
                 var cLines = [];
@@ -621,7 +620,6 @@ groover.geom = (function (){
 
     }
 
-    function Helpers(){}; // for stuff that does not fit any catagory
     function Empty(){};
     function PrimitiveArray(array){ // array can be an array of primitives. No vetting is done so you must ensure that the array only contains geom primitives compatible objects
         if(array === undefined){
@@ -844,8 +842,8 @@ groover.geom = (function (){
             return this.isIdInArray(id);
         },        
         push : function(primitive){
-            if(primitive.type === "PrimitiveArray"){
-                throw Error("Can not push a PrimitiveArray onto the PrimitiveArray.\nThis is to prvent infinite recursion. Use pushUnsafe if you are feeling lucky.");
+            if(primitive.type === "PrimitiveArray" && geom.safePrimitiveArray){
+                throw Error("Can not push a PrimitiveArray onto the PrimitiveArray.\nThis is to prevent infinite recursion. Use pushUnsafe if you are feeling lucky.");
             }
             this.primitives.push(primitive);
             this.length = this.primitives.length; 
@@ -860,8 +858,8 @@ groover.geom = (function (){
             return this;
         },
         pushI : function(primitive){
-            if(primitive.type === "PrimitiveArray"){
-                throw Error("Can not pushI a PrimitiveArray onto the PrimitiveArray.\nThis is to prvent infinite recursion. Use pushIUnsafe if you are feeling lucky.");
+            if(primitive.type === "PrimitiveArray" && geom.safePrimitiveArray){
+                throw Error("Can not pushI a PrimitiveArray onto the PrimitiveArray.\nThis is to prevent infinite recursion. Use pushIUnsafe if you are feeling lucky.");
             }
             this.primitives.push(primitive);
             this.length = this.primitives.length; 
@@ -1085,6 +1083,41 @@ groover.geom = (function (){
                 return undefined;
             }
             return this.primitives[this.current];            
+        },        
+        getClosestIndexToVec : function(vec){
+            var dist = Infinity;
+            var ind = -1;
+            this.each(function(prim,i){
+                if(prim.distFrom !== undefined){
+                    c = prim.distFrom(vec);
+                    if(c < dist){
+                        ind = i;
+                        dist = c;
+                    }
+                }
+            });
+            u = dist;
+            return ind;
+            
+        },
+        getClosestPrimitiveToVec : function(vec){
+            var dist = Infinity;
+            var ind = -1;
+            this.each(function(prim,i){
+                if(prim.distFrom !== undefined){
+                    c = prim.distFrom(vec);
+                    if(c < dist){
+                        ind = i;
+                        dist = c;
+                    }
+                }
+            });
+            u = dist;
+            if(ind !== -1){
+                return this.primitives[ind];
+            }
+            return undefined;
+            
         },        
         collectIdsAsPrimitiveArray : function(ids,primArray){ // returns a primitive array contains all primitives that have ids
             var i;
@@ -1385,6 +1418,16 @@ groover.geom = (function (){
                 vec.getAllIdsAsArray(array);
             });
             return array;
+        },
+        getHash : function(){ // creates a 32bit hashID of the current state. Use this to determine if there has been a change
+            var i,len;
+            var hash = len = this.length;
+            for(i = 0; i < len; i ++){
+                hash += this.vecs[i].id;
+                hash += this.vecs[i].x + this.vecs[i].y;
+            }
+            hash = Math.floor(hash % 0xFFFFFFFF);
+            return hash;
         },
         copy : function (from, to){  // Creates a new VecArray with a copy of the vecs in this.
                                      // if {ofrom} and {oto} are passed then create a copy of the points from {ofrom} to but not including {oto}.
@@ -1741,6 +1784,18 @@ groover.geom = (function (){
         },
         semiperimiter : function(){
             return this.perimiter / 2;
+        },
+        distFrom : function(vec){  // distance from lines of the triangle
+            l1.p1.setAs(this.p1);
+            l1.p2.setAs(this.p2);
+            c1 = l1.distFrom(vec);
+            l1.p1.setAs(this.p2);
+            l1.p2.setAs(this.p3);
+            c1 = Math.min(c1,l1.distFrom(vec));
+            l1.p1.setAs(this.p3);
+            l1.p2.setAs(this.p1);
+            return Math.min(c1,l1.distFrom(vec));
+            
         },
         snapTo : function(xGrid, yGrid, rule){
              if(xGrid === undefined){
@@ -2867,6 +2922,12 @@ groover.geom = (function (){
             }
             return "Vec: '"+l+"' id : "+id+" ("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
         },        
+        getHash : function(){ // creates a 32bit hashID of the current state. Use this to determine if there has been a change
+            if(!isNaN(this.id)){
+                return Math.floor((this.id+this.x*this.x + this.y * this.y + Math.atan2(this.y,this.x)) % 0xFFFFFFFF);
+            }
+            return Math.floor((this.x*this.x + this.y * this.y + Math.atan2(this.y,this.x)) % 0xFFFFFFFF);
+        },
         setAs : function(vec,num){  // Sets this vec to the values in the {avec} or if two args then assumed to be numbers x and y
             if(num === undefined){
                 this.x = vec.x;
@@ -2995,6 +3056,16 @@ groover.geom = (function (){
             this.x = - this.x;
             this.y = - this.y;
             return this; // returns this
+        },
+        fromPolar : function(dir, distance){ // set the vec from polar coordinates
+            this.x = Math.cos(dir) * distance;
+            this.y = Math.sin(dir) * distance;
+            return this;
+        },
+        addPolar : function(dir, distance){ // adds polar coords to the vec
+            this.x += Math.cos(dir) * distance;
+            this.y += Math.sin(dir) * distance;
+            return this;
         },
         half : function(){
             this.x /= 2;
@@ -3133,6 +3204,18 @@ groover.geom = (function (){
             }
             return array;
         },  */
+        distFrom : function(vec){ // returns the distance from the vec of the arc
+            a1 = this.circle.center.angleTo(vec);
+            a1 = ((a1 % MPI2) + MPI2) % MPI2;
+            if( a1 >=  ((this.start % MPI2) + MPI2) % MPI2){
+                if( a1 <= ((this.end % MPI2) + MPI2) % MPI2){
+                    return this.circle.distFrom(vec);
+                }
+            }
+            c1 = this.startAsVec(v1).distFrom(vec);
+            return Math.min(c1, this.endAsVec(v1).distFrom(vec));
+            
+        },
         asBox : function(box){
             if(box === undefined){
                 var box = new Box();
@@ -3558,6 +3641,10 @@ groover.geom = (function (){
             this.end = Math.atan2(vec.y - this.circle.center.y,vec.x - this.circle.center.x);
             return this;
         },
+        endsFromVecs : function(vec1, vec2){ // sets the start and end angle to be one the line from the center to the two vecs vec1,vec2
+            this.startFromVec(vec1).endFromVec(vec2);
+            return this;
+        },
         sweapLeng : function(){
             var s = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;
@@ -3842,11 +3929,11 @@ groover.geom = (function (){
             return this.radius * this.radius * Math.PI * 2;
         },
         fromLine : function (line){
-            this.fromPoints2(line.midPoint(),line.p2);
+            this.fromVec2(line.p1,line.p2);
             return this
         },
         fromVec2 : function (vec1, vec2, method){
-            if(method === undefined || method === "radius"){
+            if(method === "radius"){
                 this.center.x = vec1.x;
                 this.center.y = vec1.y;
                 this.radius = Math.hypot(vec1.x - vec2.x,vec1.y - vec2.y);
@@ -5070,7 +5157,29 @@ groover.geom = (function (){
             v4.x = undefined;
             return false;  
         },
-        distFrom : function(point){   // returns the distance from the line a point is
+        distFrom : function(point){   // returns the distance from the line segment a point is
+            // this function uses v1, v2, v3, u is the closest point and sets this._leng
+            // v1 is the vector of this line
+            // v2 is the vector from this line start to point
+            // v3 is the vector from the line start to the closes point. To get the coordinates add the start of the line to this vec;
+            // this._leng is the length of this line;
+            // u is unit dist along this line for close point. That means v4.x <0 or v4.y > 0 and the point is not on this line segment
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = point.x - this.p1.x;
+            v2.y = point.y - this.p1.y;
+            u = (v2.x * v1.x + v2.y * v1.y)/(v1.y * v1.y + v1.x * v1.x);
+            if(u >= 0 && u <= 1){
+                v3.x = v1.x * u;
+                v3.y = v1.y * u;
+                return Math.hypot(v3.y - v2.y, v3.x - v2.x);
+            }
+            return Math.min(
+                Math.hypot(this.p2.x - point.x, this.p2.y - point.y),
+                Math.hypot(this.p1.x - point.x, this.p1.y - point.y)
+            )
+        },        
+        distFromLine : function(point){   // returns the distance from the line a point is
             // this function uses v1, v2, v3, u is the closest point and sets this._leng
             // v1 is the vector of this line
             // v2 is the vector from this line start to point
@@ -5086,7 +5195,7 @@ groover.geom = (function (){
             v3.x = v1.x * u;
             v3.y = v1.y * u;
             return Math.hypot(v3.y - v2.y, v3.x - v2.x);
-        },        
+        },  
         distFromDir : function(point){ // same as distFrom but adds a sign to indicate if the line is left (negative) or right (positive)
             // this call fromDist Refer to that function for calc vars used.
             var d = this.distFrom(point);
@@ -5157,6 +5266,13 @@ groover.geom = (function (){
             }
             return -la;
         },    
+        unitDistOfClosestPoint : function(vec){ // returns the unit distance of the closest point on the line from the point vec
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = vec.x - this.p1.x;
+            v2.y = vec.y - this.p1.y;
+            return (v2.x * v1.x + v2.y * v1.y) / (v1.y * v1.y + v1.x * v1.x);
+        },
         closestPoint : function(vec, rVec){
             var l;
             v1.x = this.p2.x - this.p1.x;
@@ -6779,7 +6895,7 @@ groover.geom = (function (){
             return false;
         },
         isCubic : function(){ // returns true if this is a cubic 
-            if(!this.cp2.isEmpty() && !this.isEmpty()){
+            if(this.cp2 !== undefined && !this.cp2.isEmpty() && !this.isEmpty()){
                 return true;
             }            
             return false;
@@ -6790,6 +6906,13 @@ groover.geom = (function (){
             var desc =  "Bezier "+lable+" " + id + " properties : ["+(this.isCubic()?"Cubic":"Quadratic") + "] ";
             desc += "Length (approx) : " + this.approxLength();
             return desc;
+        },
+        leng : function(){
+            if(this.cp2 === undefined){
+                return this.getLength()
+            }
+            return this.approxLength();
+            
         },
         asVecArray : function(vecArray, instance){
             if(vecArray === undefined){
@@ -7412,6 +7535,14 @@ groover.geom = (function (){
             }
             return pos;
         },
+        distFrom : function(vec){
+            c1 = this.findPositionOfVec(vec);
+            if(c1 === Infinity){
+                c1 = this.p1.distFrom(vec);
+                return Math.min(c1,this.p2.distFrom(vec));
+            }
+            return c1;
+        },
         vecAt : function(position,limit,vec){ // returns the location on the curve at position. if limit true then position is clamped 0<=p<=1
             if(vec === undefined){
                 vec = new Vec();
@@ -7519,8 +7650,8 @@ groover.geom = (function (){
             retLine.p2.y += retLine.p1.y;
             return retLine;            
         },
-        snapToBezier : function(bez, from, to , coplanar, equalScale) { // snaps the end/start of this bezier to another. from = true then snaps to the start of the bez, else snaps the end, to === true snaps this start, else snaps end if coplanar = true moves the appropreat control point so that it is co linear with the othe bezier control point, equalScale, moves the appropreate control point so that it equal length
-            if(from){
+        snapToBezier : function(bez, fromStart, toStart , coplanar, equalScale) { // snaps the end/start of this bezier to another. from = true then snaps to the start of the bez, else snaps the end, to === true snaps this start, else snaps end if coplanar = true moves the appropreat control point so that it is co linear with the othe bezier control point, equalScale, moves the appropreate control point so that it equal length
+            if(fromStart){
                 v1.x = bez.p1.x;
                 v1.y = bez.p1.y;
                 v2.x = bez.cp1.x;
@@ -7543,7 +7674,7 @@ groover.geom = (function (){
                 v3.x /= u;
                 v3.y /= u;
             }
-            if(to){
+            if(toStart){
                 c = this.p1;
                 c1 = this.cp1;
             }else{
@@ -7635,7 +7766,7 @@ groover.geom = (function (){
             v4.x = this.p1.x;
             v4.y = this.p1.y;
             for(c1 = u; c1 <= a; c1 += u){
-                this.vecAt(c1,v5);
+                this.vecAt(c1,true,v5);
                 u1 += Math.hypot(v5.x - v4.x, v5.y - v4.y);
                 v4.x = v5.x;
                 v4.y = v5.y;
@@ -8242,16 +8373,7 @@ groover.geom = (function (){
             return svgMatrix;
         }
     }
-    Helpers.prototype = { // conceptual at the moment
-        circleToLineContact : function(circle, deltaV, line){ // returns the point of contact if any of a circle moving along deltaV will make contact with the line 
-            
-        },
-        circleToLineSegContact : function(circle, deltaV, lineSeg){ // returns the point of contact if any of a circle moving along deltaV will make contact with the lineSeg 
-            
-        },
-        
-        
-    }
+
   
     var geom = new Geom();
     geom.Geom = Geom;  // add geom to geom object for use by extensions or anything that needs to 

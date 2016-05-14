@@ -5,7 +5,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var inSelectionBox, boundsCorners, boundsLines,shadowPoints, shadowing,mirrorShadow, shadowSelection,cancel;
     var rightClickSelect, buttonDown, buttonDownOnSelected, buttonDownOn, dragged, dragSelection, quickDrag, draggingFinnalFlag, pointsUpdated, currentMouseFunction, rightClickMouseFunction;
     // ##Var
-    var rotationLine, boundsTransform, workTransform, cIndex, bounds, cursorNames, eventTypeNames;
+    var rotationLine, boundsTransform, workTransform, cIndex, bounds, cursorNames, eventTypeNames, selectionHash;
     
     geom = this;
     element = element1;
@@ -422,8 +422,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.dragComplete(true);     
                     this.bounds.draggingPointIndex = -1;                    
                 }else{
-                    workVec.x = mouse.x- dragStartX;
-                    workVec.y = mouse.y- dragStartY;
+                    workVec.x = dragStartX;
+                    workVec.y = dragStartY;
                     dragStartX = mouse.x;
                     dragStartY = mouse.y;  
                     if(this.onDragMove !== undefined){
@@ -433,9 +433,9 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     }
                     if(!cancel){                    
                         boundingBox.center(workVec3);
-                        workVec1.setAs(this.bounds.points.vecs[this.bounds.draggingPointIndex]).sub(workVec3);
-                        workVec2.setAs(workVec1).add(workVec);
-                        var ang = workVec1.angleBetween(workVec2);
+                        workVec2.x = mouse.x;
+                        workVec2.y = mouse.y;
+                        var ang = workVec.sub(workVec3).angleBetween(workVec2.sub(workVec3));
                         this.bounds.transform.reset()
                             .setOrigin(workVec3) // set center
                             .negateOrigin()      // invert origin so that all points are move to be relative to center
@@ -922,34 +922,38 @@ groover.geom.Geom.prototype.addUI = function(element1){
             this.selectionChanged();
             return this;
         },
-        selectionChanged : function(){
-            this.doEvent("onSelectChanged",{type:"selectChanged"});
-            if(!cancel){
-                if(selected.length === 0){
-                    boundingBox.irrate();
-                    this.bounds.active = false;
-                    this.bounds.controls = false;
-                }else
-                if(selected.length === 1){
-                    selected.asBox(boundingBox.irrate()).pad(bounds.padBy);
-                    this.bounds.active = true;
-                    this.bounds.controls = false;
-                }else{
-                    selected.asBox(boundingBox.irrate())
-                    if(boundingBox.width() < bounds.padBy && boundingBox.height() < bounds.padBy){
-                        boundingBox.pad(bounds.padBy);
+        selectionChanged : function(forced){
+            var newHash = this.selected.getHash();
+            if(forced || selectionHash !== newHash){
+                selectionHash = newHash;
+                this.doEvent("onSelectChanged",{type:"selectChanged"});
+                if(!cancel){
+                    if(selected.length === 0){
+                        boundingBox.irrate();
+                        this.bounds.active = false;
+                        this.bounds.controls = false;
+                    }else
+                    if(selected.length === 1){
+                        selected.asBox(boundingBox.irrate()).pad(bounds.padBy);
                         this.bounds.active = true;
                         this.bounds.controls = false;
                     }else{
-                        boundingBox.pad(bounds.padBy);
-                        boundingBox.center(rotationLine.p1);
-                        this.bounds.active = true;
-                        this.bounds.controls = true;
-                        this.updateBounds()
+                        selected.asBox(boundingBox.irrate())
+                        if(boundingBox.width() < bounds.padBy && boundingBox.height() < bounds.padBy){
+                            boundingBox.pad(bounds.padBy);
+                            this.bounds.active = true;
+                            this.bounds.controls = false;
+                        }else{
+                            boundingBox.pad(bounds.padBy);
+                            boundingBox.center(rotationLine.p1);
+                            this.bounds.active = true;
+                            this.bounds.controls = true;
+                            this.updateBounds()
+                        }
                     }
-                }
-                if(shadowing){
-                    this.shadowSelection();
+                    if(shadowing){
+                        this.shadowSelection();
+                    }
                 }
             }
                 
@@ -1056,7 +1060,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
             remove : "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAUCAYAAAD2rd/BAAABuUlEQVRIicWXbUtCMRTHf6AoFlyEusrV3hRi+BBRRFk+VFRC3/8D2Ysdce5u8yxFB4dzx862/87+Z+dcKLdKgpy81YAGcK6QhtifrNWBDMiBAuhEpBC7TOYdvdVk81WC9DDgM47s6QrmenNgpWkC+FFAt4AzoEqc47tiQR0nFQwn26R5+AUYYrzcxM/xNV3qhGOjYYkqTmwP98Rzr8AMmFuyAN6BD/meAGPgBuhS5nhLDpKJblGOjUIclYsuUMbJmsMdAT0E7hy5T7yBPnANXO2wG0TGonESeyW64kkvn3192fDB7ofsQuNs4iTHsKDE6dA73BTQ9mI+gFsb+7412pKJ3EBbcASD0JaqGHdigGMHSdHWOt+YWLrF8N/r4dABtgD7rtYH+D8HsOZ+Ac8YSlyQkKBKgEOe9vR/NQAjlDgcYOXGy5idbz1nfC9KFM7pf5y+Tz4jY0vFfFXQ+QD7Esub6CkmySwcmWKy4ZPoKZsENJN+aP5c1t/5rIWam1gGjowpJ5oR5jr7okfW2Fg5f68Cy04sbcIp1U27lx6bWEo+aAlrJ5ZY0aItbDTz9y5dtWWhtnRM+g37A/SOJQU/LgzQAAAAAElFTkSuQmCC') 8 5, pointer",
             rotate : "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAARCAYAAAAsT9czAAABWElEQVQ4ja2V20rDQBCGP3JR0pI0ltJTlBIrWi0mUClW8f2fSy/yrxk2m7RBB4btbv5DdjK7hWERBfLP4YtEwAiIgbHJWOsh/FUxMunmE2AKzIEFsNQ41/rEw1t+Z8RAAmQaE4ktge9A3gN3ej41HMeP+4wyieTKlRMOhTF9kOnK8NfSaxmOgNSJirD3TeyuAusvHn8HbKT7W9JI7nMr4v9WfgBn4N03DeBLoJBuLB8i6s5ahMol4qcMjsArcNB47OG8AY/SHftmy47yfMmoFHmrb7LVvOzgnYAn6V42897yGbgFZvoOM827OL1mwTIa8l47SvUN0gv4zjK6Bilsx5l0O8tp2jnTPIQ/A1WoQaBp/VxvU8ngpLGkbuU1zWFNNN/pucVX0nGVaN0mMXAjQCGwy4L6zNhD6na36cDn0uu9RVLCd2AaIA7Ft6Lvdv8PfCuG/m9dhf8BJ+ccqa7A1i0AAAAASUVORK5CYII=') 12 4, pointer",
         }
-
         var mouse = {
             x : 0, y : 0, w : 0, alt : false, shift : false, ctrl : false, buttonRaw : 0,
             active : false,
@@ -1095,7 +1098,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 }
             }
         }
-
         mouse.requestCursor = function(cursor){
             this.requestedCursor = cursor;
             mouse.updateCursor();
@@ -1103,8 +1105,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         mouse.releaseCursor = function(){
             this.requestedCursor = "default";
             mouse.updateCursor();
-        }
-        
+        }        
         mouse.addCallback = function(callback){
             if(typeof callback === "function"){
                 if(mouse.callbacks === undefined){
@@ -1139,7 +1140,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
     })();    
     
     if(element !== undefined || element !== null){
-        mouse.start(element);
+        mouse.start(element,true);
     }
     console.log("Groover.Geom.ui installed.");
     

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html id="topDoc">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-8">
+        <title>Example template</title>
+        <meta name="keywords" content="Geometry, Math, JavaScript, Mark Spronck, Groover, GrooverGeom" />
+        <meta name="description" content="Example for the use of GrooverGeom.js. GrooverGeom is a Javascript geometry libarry" />
+        <meta name="author" content="Mark Spronck" />
+        <link rel="stylesheet" type="text/css" href="grooverGeomDemo.css">
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom.js"></script>
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendRender.js"></script>
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendShapes.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendConstructors.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendUI.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/demo.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/mouse.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/creationMenu.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/imageTools.js"></script>       
+        
+        
+    </head>
+    <body class = "snug">
+        <div class="title snug" id="title">
+            <h1 class="snug" >Groover.Geom</h1>
+            <h2 class="snug" >Groover Vector Geometry Editor</h2>
+        </div>
+        <div class="content snug">
+
+            
+            <table id="workspace">
+                <tbody>
+                <tr>
+                    <td>
+                        <div class="tools snug" id="tools">
+                        </div>
+                    </td>
+                    <td>
+                        <canvas class="canvas snug" id="mainCanvas" ></canvas>
+                    </td>
+                    <td class="menu snug" id="menu_cell">
+                        <p>Command Menu</p>
+                        <div class="uiGroup" id="creation-UI">
+                        <span class="uiGroupName" id="circle-group-name">Create</span>
+                        <input class="uiButton" type="button" value="Vec"></input>
+                        <input class="uiButton" type="button" value="Line"></input>
+                        <input class="uiButton" type="button" value="Triangle"></input>
+                        <input class="uiButton" type="button" value="Rectangle"></input>
+                        <input class="uiButton" type="button" value="Circle"></input>
+                        <input class="uiButton" type="button" value="Arc"></input>
+
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="footer snug" id="foot">
+        Powered by Groover.
+        
+        </div>
+        <script>
+        "use strict";
+        const FONT = "arial";
+        const CROSSHAIR = {
+            colour : "rgba(255,255,45,0.6)",
+            fontSize : 10,
+        }
+        const GEOM_UI_STYLES = {
+            selectingBox : {
+                colour : "rgba(255, 255, 255,0.6)",
+                fill : "rgba(0,128,200,0.2)",                
+                lineWidth : 1,
+            },
+            nearMouse : {
+                mark : "circle",
+                markSize : "10",
+                colour : "red",
+                fill : "rgba(0,8,20,0.1)",
+                lineWidth : 2,
+            },
+            unselected : {
+                mark : "cross",
+                markSize : 5,
+                color : "#49F",
+                lineWidth : 1,
+            },
+            bounds : {
+                highlight : { 
+                    colour : "rgba(255,255,0,0.9)",
+                    lineWidth : 2,
+                    mark : "box",
+                    markSize : 10,
+                },
+                normal : {
+                    colour : "rgba(255,200,0,0.5)",
+                    lineWidth : 1,
+                    mark : "box",
+                    markSize : 7,
+                },
+            },
+            selected : {
+                mark : "crossDiag",
+                markSize : 8,
+                color : "#F70",
+                lineWidth : 2,
+            },
+            lables : {
+                fill : "white",
+                fontSize : 18,
+            },
+            geometry : {
+                normal : {
+                    colour : "green",
+                    lineWidth : "4",
+                },
+                highlight : {
+                    colour : "#0F0",
+                    lineWidth : "4",
+                },
+            }
+        }
+        
+        
+        const MENU_WIDTH = 300;
+        const TOOLBAR_WIDTH = 40;
+        const FOOT = {
+            height : 50,
+        };
+        const TITLE = {
+            height : 100,
+        }
+        var canvas,ctx,workspace,title,foot,tools;
+        var canWidth;
+        var canHeight;
+        var updateCanvas = true;
+        
+        function layout(){
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            tools.style.width = TOOLBAR_WIDTH + "px";
+            title.style.height = TITLE.height + "px";
+            foot.style.height = FOOT.height + "px";
+            workspace.style.height = (h - FOOT.height - TITLE.height) + "px";
+            canWidth = canvas.width = w-MENU_WIDTH-TOOLBAR_WIDTH;
+            canHeight = canvas.height = workspace.offsetHeight;
+            ctx = canvas.getContext("2d");
+            updateCanvas = true;
+            demo.start();
+        }
+        var page_UID = 0;
+        function createElement(type,data){
+            var el = document.createElement(type);
+            el.id = data.id !== undefined ? data.id + "_"+(page_UID++) : "geomElement_"+(page_UID ++);
+            el.className = data.className !== undefined ? data.className : "unknwn";
+            if(data.type !== undefined){
+                el.type = data.type;
+            }
+            if(data.text !== undefined){
+                el.textContent = data.text;
+            }
+            return el;
+        }
+        function addMenuElement(element){
+            var menuCell = document.querySelector("#menu_cell");
+            var menuItem = document.querySelector("#"+element.id);
+            if(menuItem !== null){
+                menuCell.removeChild(menuItem);
+            }
+            menuCell.appendChild(element);
+         }   
+        function addMenuItem(id,items,callback){
+            var menuCell = document.querySelector("#menu_cell");
+            var menuItem = menuCell.querySelector("#"+ id);
+            if(menuItem !== null){ // remove the old one`
+                menuCell.removeChild(menuItem);
+             }
+             menuItem = document.createElement("div");
+             menuItem.className = "uiGroup";
+             menuItem.id = id;
+             items.forEach(function(item){
+                 var el;
+                 if(item.type === "text"){
+                     el = document.createElement("span");
+                     el.className = "uiGroupName";
+                     el.textContent = item.text;
+                 }else
+                 if(item.type === "button"){
+                     el = document.createElement("input");
+                     el.className = "uiButton";
+                     el.type = "button";
+                     el.value= item.text;
+                     el.id = "uiGroup_" + id +" _ "+item.text;
+                  }
+                  item.element = el;
+                  el.uiItem = item;
+                  menuItem.appendChild(el);
+             });
+             menuCell.appendChild(menuItem);
+             items.forEach(function(item){
+                item.element.addEventListener("click",callback);
+             });
+        }
+        function windowResize(){
+            layout();
+        }
+        function pageLoaded(){
+            canvas = document.querySelector("#mainCanvas");
+            workspace = document.querySelector("#workspace");
+            title = document.querySelector("#title");
+            foot = document.querySelector("#foot");
+            tools = document.querySelector("#tools");
+            window.addEventListener("resize",windowResize);
+            windowResize();
+        
+        }
+        window.addEventListener("load",pageLoaded);
+        </script>
+    </body>
+</html>
