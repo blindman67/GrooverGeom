@@ -99,7 +99,6 @@ groover.geom = (function (){
     if(typeof Math.hypot !== "function"){ // polyfill for math hypot function.
         Math.hypot = function(x, y){ return Math.sqrt(x * x + y * y);};
     }
-      
     Math.dir = function(x,y){ // math function returns normalised direction
         return ((Math.atan2(y,x) % MPI2) + MPI2) % MPI2;
  
@@ -196,7 +195,6 @@ groover.geom = (function (){
         u = crt(sd - q2) - crt(sd + q2) - a; 
         return u;      
     }
-
     var sharedFunctions = {
         setLable : function(lable){
             this.lableStr = lable;
@@ -219,6 +217,24 @@ groover.geom = (function (){
                 
             }
             return newMe;
+        },
+        asSimpleTyped : function(obj){ // returns the simple object representing this primitive including the type property
+            if(typeof this.asSimple === "function"){
+                obj = this.asSimple(obj);
+            }else{
+                if(obj === undefined){
+                    obj = {};
+                }
+            }
+            obj.type = this.type;
+            obj.id = this.id;
+            obj.lableStr = this.lableStr;
+            return this;
+        },
+        asJSON : function(){
+            var obj;
+            obj = this.asSimpleTyped();
+            return JSON.stringify(obj);
         },
         getAllIdsAsArray : function(array){
             if(array === undefined){
@@ -414,8 +430,6 @@ groover.geom = (function (){
         this.PrimitiveArray = PrimitiveArray;
         this.Geom = Geom;
         this.Empty = Empty;
-        
-
     }
     Geom.prototype = {
         extentions : {},
@@ -507,6 +521,18 @@ groover.geom = (function (){
                 return true;
             }
             return false;
+        },
+        createFromSimple : function(obj){ // creates a primitive from a simple obj representation of the primitive
+            if(obj === undefined || obj.type === undefined){
+                throw new ReferanceError("Geom.createFromSimple can not create a primitive as the argument 'obj.type' is missing or undefined.");
+            }else
+            if(this.primitiveTypes[obj.type] === undefined){
+                throw new RangeError("Geom.createFromSimple can not create a primitive as the argument 'obj.type' does not represent a known primitive type");
+            }
+            if(typeof this[obj.type].prototype.fromSimple === "function"){
+                return new this[obj.type]().fromSimple(obj);
+            }
+            return undefined;
         },
         getDetails : function(){ // helper function for documentation. Will not remain when done
             var newLine = "\r\n";
@@ -898,6 +924,29 @@ groover.geom = (function (){
             });
             return this;
         },
+        asSimple : function(obj){
+             if(obj === undefined){
+                 obj = {};                 
+             }
+             obj.primitives = [];
+             this.each(function(prim){
+                 obj.primitives.push(prim.asSimpleTyped());
+             });
+             return obj;
+        },        
+        fromSimple : function(obj){
+            var i,len;
+            this.reset();
+            if(obj.primitives === undefined || !Array.isArray(obj.primitives)){
+                return this;
+            }
+            len = obj.primitives.length;
+            for(i = 0; i < len; i++){
+                this.push(geom.createFromSimple(obj.primitives[i]));
+            }
+            this.normalise();
+            return this;
+        },
         asBox : function(box){
             if(box === undefined){
                 box = new Box();
@@ -1084,35 +1133,40 @@ groover.geom = (function (){
             }
             return this.primitives[this.current];            
         },        
-        getClosestIndexToVec : function(vec){
+        getClosestIndexToVec : function(vec,type){
             var dist = Infinity;
             var ind = -1;
-            this.each(function(prim,i){
-                if(prim.distFrom !== undefined){
-                    c = prim.distFrom(vec);
-                    if(c < dist){
-                        ind = i;
-                        dist = c;
+            if(type !== undefined){
+                var types = [].concat(type);
+                this.each(function(prim,i){
+                    if(types.indexOf(prim.type) > -1){
+                        if(prim.distFrom !== undefined){
+                            c = prim.distFrom(vec);
+                            if(c < dist){
+                                ind = i;
+                                dist = c;
+                            }
+                        }
                     }
-                }
-            });
+                });
+                                
+            }else{
+                this.each(function(prim,i){
+                    if(prim.distFrom !== undefined){
+                        c = prim.distFrom(vec);
+                        if(c < dist){
+                            ind = i;
+                            dist = c;
+                        }
+                    }
+                });
+            }
             u = dist;
             return ind;
             
         },
-        getClosestPrimitiveToVec : function(vec){
-            var dist = Infinity;
-            var ind = -1;
-            this.each(function(prim,i){
-                if(prim.distFrom !== undefined){
-                    c = prim.distFrom(vec);
-                    if(c < dist){
-                        ind = i;
-                        dist = c;
-                    }
-                }
-            });
-            u = dist;
+        getClosestPrimitiveToVec : function(vec,type){ // returns the primitive with its path closest to vec.  Type is optional if given then will only match primitives of type
+            var ind = this.getClosestIndexToVec(vec, type);
             if(ind !== -1){
                 return this.primitives[ind];
             }
@@ -1311,6 +1365,29 @@ groover.geom = (function (){
         normalise : function(){  // set everything correctly. use after manualy manipulating this object
           this.length = this.vecs.length;  
           return this;
+        },
+        asSimple : function(obj){
+             if(obj === undefined){
+                 obj = {};                 
+             }
+             obj.vecs = [];
+             this.each(function(vec){
+                 obj.vecs.push({x : vec.x, y : vec.y});
+             });
+             return obj;
+        },        
+        fromSimple : function(obj){
+            var i,len;
+            this.reset();
+            if(obj.vecs === undefined || !Array.isArray(obj.vecs)){
+                return this;
+            }
+            len = obj.vecs.length;
+            for(i = 0; i < len; i++){
+                this.push(new Vec(obj.vecs[i].x,obj.vecs[i].y));
+            }
+            this.normalise();
+            return this;
         },
         setLength : function(len){  // sets the length of the vecs array. If greater than this.length then removes any extras and then creates new Vecs to make up the number
             if(len < 0){
@@ -1775,6 +1852,16 @@ groover.geom = (function (){
             str += ")";
             return str; // returns String
         },
+        getHash : function(){ // returns a unique hash value for the lines current state
+            var hash = 0;
+            if(!isNaN(this.id)){
+                hash += this.id;
+            }
+            hash += this.p1.getHash();
+            hash += this.p2.getHash();
+            hash += this.p3.getHash();
+            return Math.round(hash  % 0xFFFFFFFF);
+        },
         area : function(){
             return Math.abs( this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1) );
         },
@@ -1976,6 +2063,27 @@ groover.geom = (function (){
             l1.p2.y = this.p2.y;
             circle.radius = l1.distFrom(circle.center);
             return circle;
+        },
+        asSimple : function(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.x1 = this.p1.x;
+            obj.y1 = this.p1.y;
+            obj.x2 = this.p2.x;
+            obj.y2 = this.p2.y;
+            obj.x3 = this.p3.x;
+            obj.y3 = this.p3.y;      
+            return obj;
+        },
+        fromSimple : function(obj){ // set this to the simple representation of the primitive. Any missing data will be added
+            this.p1.x = obj.x1 === undefined ? 0 : obj.x1;
+            this.p1.y = obj.y1 === undefined ? 0 : obj.y1;
+            this.p2.x = obj.x2 === undefined ? 0 : obj.x2;
+            this.p2.y = obj.y2 === undefined ? 0 : obj.y2;
+            this.p3.x = obj.x3 === undefined ? 0 : obj.x3;
+            this.p3.y = obj.y3 === undefined ? 0 : obj.y3;      
+            return this;        
         },
         lines : function(){ // legacy Must remove when sure no dependancies exist
             return [
@@ -2658,6 +2766,57 @@ groover.geom = (function (){
             
             
         },
+        unitDistOfClosestPoint : function(vec){ // returns the unit distance of the closest point on the line from the point vec
+            l1.p1.setAs(this.p1);
+            l1.p2.setAs(this.p2);
+            e = l1.distFrom(vec);
+            a = u;
+            a1 = Math.hypot(v1.x,v1.y);
+            
+            l1.p1.setAs(this.p2);
+            l1.p2.setAs(this.p3);
+            e1 = l1.distFrom(vec);
+            b = u;
+            b1 = Math.hypot(v1.x,v1.y);
+            
+            l1.p1.setAs(this.p3);
+            l1.p2.setAs(this.p1);
+            c = l1.distFrom(vec);
+            c1 = Math.hypot(v1.x,v1.y);
+            if(e < e1 && e < c){
+                return (a1 * a) / (a1 + b1 + c1);
+            }else
+            if(e1 < e && e1 < c){
+                return (a1 + b1 * b) / (a1 + b1 + c1);
+            }
+            return (a1 + b1 + c1 * u) / (a1 + b1 + c1);
+        },
+        unitAlong : function ( unitDist , rVec){   // returns a point unitDist on the triangle. 1 unit is equal to the perimeter of the triangle
+            if(rVec === undefined){
+                rVec = new Vec();
+            }
+            this.lengthAll(rArray);
+            // the following code uses the registers v1,v2,v3 holding the vectors for lines p1-p2, p2-p3, and p3-p1 created by the function length all
+            a = rArray[0] + rArray[1] + rArray[2];
+            b = a * unitDist;
+            if(b < rArray[0]){
+                b /= rArray[0];
+                rVec.x = this.p1.x + v1.x * b;
+                rVec.y = this.p1.y + v1.y * b;
+            }else
+            if(b < rArray[1] + rArray[0]){
+                b -= rArray[0];
+                b /= rArray[1];
+                rVec.x = this.p2.x + v2.x * b;
+                rVec.y = this.p2.y + v2.y * b;
+            }else{
+                b -= rArray[0] + rArray[1];
+                b /= rArray[2];
+                rVec.x = this.p3.x + v3.x * b;
+                rVec.y = this.p3.y + v3.y * b;
+            }
+            return rVec;
+        },
         circumcenter : function(vec){ //returns the circumcenter as a vec of this triangle or an empty vec if the triangle is colinear. vec is optional and if supplied will be set to the cirumcenter else a new vec will be returned. This function uses Circle.fromVec3
            // This function uses the registers b and v1
            // b is the circle that fits the three points on the triangle if any
@@ -2909,6 +3068,11 @@ groover.geom = (function (){
             obj.x = this.x;
             obj.y = this.y;
             return obj;
+        },    
+        fromSimple : function(obj){ // set this to the simple representation of the primitive. Any missing data will be added
+            this.x = obj.x === undefined ? 1 : obj.x;
+            this.y = obj.y === undefined ? 0 : obj.y;    
+            return this;        
         },        
         toString : function(precision){  // returns a string representing this object
                                 // the precision can also be changed. The default is 6;
@@ -3147,13 +3311,17 @@ groover.geom = (function (){
             vec._leng = lb = Math.hypot(vec.x,vec.y);
             return Math.asin((this.x / la) * (vec.y / lb) - (this.y / la) * (vec.x / lb)); // returns number as radians
         },
-        distFrom : function(vec){ // get the distance from this to the {avec}
+        distFrom : function(vec){ // get the distance from this to the vec
             return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
         },
-        distTo : function(vec){ // get the distance from this to the {avec}
+        distTo : function(vec){ // get the distance from this to the vec
             return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
-        },        
-        angleTo : function(vec){  // Get the direction from this to the {avec}
+        },   
+        distAlongNorm : function(vec){ // similar to Line.distFrom buut this assumes that the vec is the line and the argument vec is the point
+            u = (vec.x * this.x + vec.y * this.y)/(this.y * this.y + this.x * this.x);
+            return Math.hypot(this.x * u - vec.x, this.y * u - vec.y);
+        },
+        angleTo : function(vec){  // Get the direction from this to the vec
             return Math.atan2(vec.y - this.y,vec.x-this.x); // returns number as radians
         },
         scale : function(scale){
@@ -3285,6 +3453,14 @@ groover.geom = (function (){
             return str;
             
         },
+        getHash : function(){ // returns a unquie hash value for the lines current state
+            var hash = 0;
+            if(!isNaN(this.id)){
+                hash += this.id;
+            }
+            hash += this.circle.getHash() + this.start * this.start + this.end * this.end + (this.direction ? 13 : 17);
+            return Math.round(hash  % 0xFFFFFFFF);
+        },
         asCircle : function(){
             return this.circle.copy();
         },
@@ -3328,6 +3504,27 @@ groover.geom = (function (){
 
             
         },    
+        asSimple : function(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.x = this.circle.center.x;
+            obj.y = this.circle.center.y;
+            obj.radius = this.circle.center.radius;
+            obj.start = this.start;
+            obj.end = this.end;
+            obj.direction = this.direction;
+            return obj;
+        },
+        fromSimple : function(obj){ // set this to the simple representation of the primitive. Any missing data will be added
+            this.circle.center.x = obj.x === undefined ? 0 : obj.x;
+            this.circle.center.y = obj.y === undefined ? 0 : obj.y;
+            this.circle.center.radius = obj.radius === undefined ? 0 : obj.radius;
+            this.start = obj.start === undefined ? 0 : obj.start;
+            this.end = obj.end === undefined ? MPI : obj.end;
+            this.direction = obj.direction === undefined ? false : obj.direction;      
+            return this;        
+        },        
         lerp : function(from, dest, amount){
             this.circle.center.x = (dest.circle.center.x - from.circle.center.x) * amount + from.circle.center.x;
             this.circle.center.y = (dest.circle.center.y - from.circle.center.y) * amount + from.circle.center.y;
@@ -3596,7 +3793,11 @@ groover.geom = (function (){
             vec.y = this.circle.center.y + Math.sin(c) * this.circle.radius;
             return vec
         },
-        unitPosAsVec : function(unit,vec){
+        unitPosAsVec : function(unit,vec){ // legacy  dont use
+            console.warning("Geom.Arc.unitPosAsVec has depreciated use unitAlong instead.");
+            return this.unitAlong(unit, vec);
+        },
+        unitAlong : function(unit,vec){
             this.normalise();
 
             if(this.direction){
@@ -3619,6 +3820,12 @@ groover.geom = (function (){
             vec.y = this.circle.center.y + Math.sin(c) * this.circle.radius;
             return vec
         },
+        unitDistOfClosestPoint : function(vec) { // returns the unit distance on the perimeter for the point closest to ve
+            this.normalise();
+            u = Math.dir(vec.x - this.circle.center.x, vec.y - this.circle.center.y);
+            u = (u - this.start) / (this.end - this.start);
+            return u;
+        },        
         tangentAtStart : function(retLine){
             retLine = this.circle.tangentAtAngle(this.start,retLine);
             if(this.direction){
@@ -3859,6 +4066,29 @@ groover.geom = (function (){
             }
             return "Circle: '"+l+"' id : "+id+" Center ("+this.center.toString(precision)+") Radius "+this.radius.toFixed(precision);
         },
+        asSimple : function(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.x = this.center.x;
+            obj.y = this.center.y;
+            obj.radius = this.circle.center.radius;
+            return obj;
+        },
+        fromSimple : function(obj){
+            this.center.x = obj.x === undefined ? 0 : obj.x;
+            this.center.y = obj.y === undefined ? 0 : obj.y;
+            this.radius = obj.radius === undefined ? 1 : obj.radius;
+            return this;
+        },
+        getHash : function(){ // returns a unquie hash value for the lines current state
+            var hash = 0;
+            if(!isNaN(this.id)){
+                hash += this.id;
+            }
+            hash += this.center.getHash() + this.radius;
+            return Math.round(hash  % 0xFFFFFFFF);
+        },
         asTriangles : function(sides,array){
             sides = sides === undefined || sides === null ? 8 : Math.max(4,Math.floor(sides));
             var steps = MPI2/sides;
@@ -4027,7 +4257,22 @@ groover.geom = (function (){
         isPointInside : function(vec){
             return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y) < this.radius;
         },
-        distFrom : function(vec){ // returns the distance from the circle circumferance to the point vec
+        unitAlong : function ( unitDist , rVec){ // returns a Vec unitDist around the circle. 1 unit is 360 starting from 0 deg
+            var c = MPI2 * unitDist;
+            if(rVec === undefined){
+                return new Vec(
+                    this.center.x +  Math.cos(c) * this.radius,
+                    this.center.y +  Math.sin(c) * this.radius
+                );
+            }
+            rVec.x = this.center.x +  Math.cos(c) * this.radius;
+            rVec.y = this.center.y +  Math.sin(c) * this.radius;
+            return rVec;
+        },
+        unitDistOfClosestPoint : function(vec) { // returns the unit distance on the perimeter for the point closest to ve
+            return Math.dir(vec.x - this.center.x, vec.y - this.center.y) / MPI2;
+        },
+        distFrom : function(vec){ // returns the distance from the circle circumference to the point vec
             return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y)-this.radius;
         },
         fitToCircles : function(circle1, circle2, rule){ // fits this circle so that it touches circle1 and circle2 using the rules in rule
@@ -4684,10 +4929,15 @@ groover.geom = (function (){
             obj.y1 = this.p1.y;
             obj.x2 = this.p2.x;
             obj.y2 = this.p2.y;
-            obj.length = Math.hypot(obj.x2 - obj.x1, obj.y2 - obj.y1);
-            obj.direction = Math.atan2(obj.y2 - obj.y1, obj.x2 - obj.x1);
             return obj;
-        },         
+        },    
+        fromSimple : function(obj){
+            this.p1.x = obj.x1 === undefined ? 0 : obj.x1;
+            this.p1.y = obj.y1 === undefined ? 0 : obj.y1;
+            this.p2.x = obj.x2 === undefined ? 1 : obj.x2;
+            this.p2.y = obj.y2 === undefined ? 0 : obj.y2;
+            return this;
+        },        
         isEmpty : function(){ // line is empty if either points are undefined or the length is 0 or any point has Infinity or any point has NaN
             var t;
             if(this.p1 === undefined ||  this.p2 === undefined || 
@@ -4713,6 +4963,15 @@ groover.geom = (function (){
                 precision = geom.defaultPrecision;;
             }
             return "Line: '"+l+"' id : "+id+" ( "+this.p1.toString(precision)+", "+this.p2.toString(precision)+" )";
+        },
+        getHash : function(){ // returns a unquie hash value for the lines current state
+            var hash = 0;
+            if(!isNaN(this.id)){
+                hash += this.id;
+            }
+            hash += this.p1.getHash();
+            hash += this.p2.getHash();
+            return Math.round(hash  % 0xFFFFFFFF);
         },
         swap : function(){
             u1 = this.p1;
@@ -4935,7 +5194,7 @@ groover.geom = (function (){
                 );
             }
             rVec.x = (this.p2.x - this.p1.x) * unitDist + this.p1.x;
-            rvec.y = (this.p2.y - this.p1.y) * unitDist + this.p1.y;
+            rVec.y = (this.p2.y - this.p1.y) * unitDist + this.p1.y;
             return rVec;
         },
         distanceAlong : function ( dist, rVec) { // returns a Vec that is dist along the line 0 = start and line length is the end
@@ -5177,7 +5436,7 @@ groover.geom = (function (){
             return Math.min(
                 Math.hypot(this.p2.x - point.x, this.p2.y - point.y),
                 Math.hypot(this.p1.x - point.x, this.p1.y - point.y)
-            )
+            );
         },        
         distFromLine : function(point){   // returns the distance from the line a point is
             // this function uses v1, v2, v3, u is the closest point and sets this._leng
@@ -5740,6 +5999,25 @@ groover.geom = (function (){
             }
             return array;
         },
+        asSimple : function(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.x1 = this.top.p1.x;
+            obj.y1 = this.top.p1.y;
+            obj.x2 = this.top.p2.x;
+            obj.y2 = this.top.p2.y;
+            obj.aspect = this.aspect;
+            return obj;
+        },
+        fromSimple : function(obj){
+            this.top.p1.x = obj.x1 === undefined ? 0 : obj.x1;
+            this.top.p1.y = obj.y1 === undefined ? 0 : obj.y1;
+            this.top.p2.x = obj.x2 === undefined ? 1 : obj.x2;
+            this.top.p2.y = obj.y2 === undefined ? 0 : obj.y2;
+            this.aspect = obj.aspect === undefined ? 1 : obj.aspect;
+            return this;
+        },        
         slice : function (x, y, rect){
                 // uses v1,v2,v3,v4
             var lw,lh;
@@ -6575,6 +6853,13 @@ groover.geom = (function (){
             obj.bottom = this.bottom;
             return obj;
         },
+        fromSimple : function(obj){
+             this.top = obj.top === undefined ? 0 : obj.top;
+             this.right = obj.right === undefined ? 0 : obj.right;
+             this.bottom = obj.bottom === undefined ? 0 : obj.bottom;
+             this.left = obj.left === undefined ? 0 : obj.left;
+             return this;            
+        },        
         asVecArray : function(vecArray){ // nothing to add to the vecArray
             if(vecArray === undefined){
                 vecArray =  new VecArray();
@@ -6715,6 +7000,26 @@ groover.geom = (function (){
             this.right += amount;
             return this;
         },        
+        padWidth : function(amount){ // pads the box width by amount, negative values shrink the box
+            this.left -= amount;
+            this.right += amount;
+        },
+        padHeight : function(amount){ // pads the box height by amount, negative values shrink the box
+            this.top -= amount;
+            this.bottom += amount;
+        },
+        min : function(width, height){ // pads the box if height and/or width is under the min
+            if((a = this.right - this.left) < width){
+                a = (width - a) / 2;
+                this.left -= a;
+                this.right += a;
+            }
+            if((b = this.bottom - this.top) < height){
+                b = (height - b) / 2;
+                this.top -= b;
+                this.bottom += b;
+            }  
+        },
         asRectange : function (retRect) {  // returns a rectangle. If retRect is supplied then sets that else creates a new rectangle
             a = (this.bottom- this.top)  / (this.right- this.left);
             if(retRect === undefined){
@@ -6971,6 +7276,42 @@ groover.geom = (function (){
             }
             return box;
         },
+        asSimple : function(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
+            if(obj === undefined){
+                obj = {};
+            }
+            obj.x1 = this.p1.x;
+            obj.y1 = this.p1.y;
+            obj.x2 = this.cp1.x;
+            obj.y2 = this.cp1.y;
+            if(this.cp2 === undefined){
+                obj.x3 = this.p2.x;
+                obj.y3 = this.p2.y;                
+            }else{
+                obj.x3 = this.cp2.x;
+                obj.y3 = this.cp2.y;                
+                obj.x4 = this.p2.x;
+                obj.y4 = this.p2.y;                
+            }
+            return obj;
+        },
+        fromSimple : function(obj){
+            this.p1.x = obj.x1 === undefined ? 0 : obj.x1;
+            this.p1.y = obj.y1 === undefined ? 0 : obj.y1;
+            this.cp1.x = obj.x2 === undefined ? 1 : obj.x2;
+            this.cp1.y = obj.y2 === undefined ? 0 : obj.y2;
+            if(obj.x4 === undefined){
+                this.p2.x = obj.x3 === undefined ? 1 : obj.x3;
+                this.p2.y = obj.y3 === undefined ? 0 : obj.y3;
+            }else{
+                this.cp2.x = obj.x3 === undefined ? 0 : obj.x3;
+                this.cp2.y = obj.y3 === undefined ? 0 : obj.y3;
+                this.p2.x = obj.x4
+                this.p2.y = obj.y4 === undefined ? 0 : obj.y4;
+                
+            }
+            return this;
+        },          
         interceptsAsVecArray : function(bezier,threshold,vecArray){ // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
                                                          // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
                                                          // [vecArray] the VecArray to hold the results. Creates a new VecArray if not supplied
@@ -7543,6 +7884,42 @@ groover.geom = (function (){
             }
             return c1;
         },
+        fitPointCenter : function(vec){  // adjusts the control point to fit the vec on the curve. Only works for quadratic curves for the time being
+            if(this.cp2 === undefined){
+                v1.x = (this.p2.x + this.p1.x) / 2;
+                v1.y = (this.p2.y + this.p1.y) / 2;
+                this.cp1.x = (vec.x - v1.x) * 2 + v1.x;
+                this.cp1.y = (vec.y - v1.y) * 2 + v1.y;            
+            }
+            return this;
+        },
+        fitPointAt : function(pos,vec){  // WARNING THIS IS NOT WORKING and a mess dont use// adjusts the control point to fit the vec on the curve at position pos. 0 <= Pos <= 1 on the curve else outside the curve . Only works for quadratic curves for the time being
+            if(this.cp2 === undefined){
+                v1.x = (this.p2.x - this.p1.x) * pos + this.p1.x;
+                v1.y = (this.p2.y - this.p1.y) * pos + this.p1.y;
+                this.cp1.x = (vec.x - v1.x) * (1/(1-pos)) + v1.x;
+                this.cp1.y = (vec.y - v1.y) * (1/(1-pos)) + v1.y;            
+            }
+            return this;
+/*
+                v1.x = (this.p2.x - this.p1.x) * pos;
+                v1.y = (this.p2.y - this.p1.y) * pos;
+                v2.x = vec.x - this.p1.x;
+                v2.y = vec.y - this.p1.y;
+                a = 1-pos;
+                b = v1.distAlongNorm(v2)  * a;
+                v3.x = (v1.x * u) *  pos;  // u from distAlongNorm is unit dist on vec
+                v3.y = (v1.y * u) *  pos;
+                u1 = Math.hypot(v1.x,v1.y);
+                v1.x /= u1;
+                v1.y /= u1;
+                v3.x -= v1.y * b;
+                v3.y += v1.x * b;
+                this.cp1.x = v3.x  * (1 / pos) + this.p1.x;
+                this.cp1.y = v3.y * (1 / pos) + this.p1.y;            
+            }
+            return this;*/
+        },
         vecAt : function(position,limit,vec){ // returns the location on the curve at position. if limit true then position is clamped 0<=p<=1
             if(vec === undefined){
                 vec = new Vec();
@@ -7903,7 +8280,15 @@ groover.geom = (function (){
             obj.e = this.origin.x;
             obj.f = this.origin.y;
             return obj;
-        
+        },
+        fromSimple : function(obj){
+            this.xAxis.x  = obj.a === undefined ? 1 : obj.a;
+            this.xAxis.y  = obj.b === undefined ? 0 : obj.b;
+            this.yAxis.x  = obj.c === undefined ? 0 : obj.c;
+            this.yAxis.y  = obj.d === undefined ? 1 : obj.d;
+            this.origin.x = obj.e === undefined ? 0 : obj.e;
+            this.origin.y = obj.f === undefined ? 0 : obj.f; 
+            return this;
         },
         applyToCoordinate : function(x, y, point){
             if(point !== undefined){

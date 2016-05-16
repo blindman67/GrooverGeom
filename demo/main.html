@@ -12,10 +12,11 @@
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendShapes.js"></script>       
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendConstructors.js"></script>       
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendUI.js"></script>       
-        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/demo.js"></script>       
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/mouse.js"></script>       
-        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/creationMenu.js"></script>       
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/imageTools.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/creationMenu.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/toolsMenu.js"></script>       
+        <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/demo/demo.js"></script>       
         
         
     </head>
@@ -31,8 +32,7 @@
                 <tbody>
                 <tr>
                     <td>
-                        <div class="tools snug" id="tools">
-                        </div>
+                        <canvas class="canvas snug" id="toolsCanvas" ></canvas>
                     </td>
                     <td>
                         <canvas class="canvas snug" id="mainCanvas" ></canvas>
@@ -129,7 +129,7 @@
         const TITLE = {
             height : 100,
         }
-        var canvas,ctx,workspace,title,foot,tools;
+        var canvas,ctx,workspace,title,foot,toolsCanvas,menu;
         var canWidth;
         var canHeight;
         var updateCanvas = true;
@@ -137,15 +137,15 @@
         function layout(){
             var w = window.innerWidth;
             var h = window.innerHeight;
-            tools.style.width = TOOLBAR_WIDTH + "px";
             title.style.height = TITLE.height + "px";
             foot.style.height = FOOT.height + "px";
-            workspace.style.height = (h - FOOT.height - TITLE.height) + "px";
-            canWidth = canvas.width = w-MENU_WIDTH-TOOLBAR_WIDTH;
-            canHeight = canvas.height = workspace.offsetHeight;
+            menu.style.maxHeight = workspace.style.height = (h - FOOT.height - TITLE.height) + "px";
+            toolsCanvas.width = TOOLBAR_WIDTH;
+            canWidth = canvas.width = w - MENU_WIDTH - TOOLBAR_WIDTH;
+            toolsCanvas.height = canHeight = canvas.height = workspace.offsetHeight;
             ctx = canvas.getContext("2d");
             updateCanvas = true;
-            demo.start();
+            demo.start(toolsCanvas);
         }
         var page_UID = 0;
         function createElement(type,data){
@@ -206,9 +206,10 @@
         function pageLoaded(){
             canvas = document.querySelector("#mainCanvas");
             workspace = document.querySelector("#workspace");
+            menu =  document.querySelector("#menu_cell");
             title = document.querySelector("#title");
             foot = document.querySelector("#foot");
-            tools = document.querySelector("#tools");
+            toolsCanvas = document.querySelector("#toolsCanvas");
             window.addEventListener("resize",windowResize);
             windowResize();
         

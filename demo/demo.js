@@ -27,9 +27,10 @@ var geometry = {
 var demo = (function(){
     var exposed = {};
     function resize(){
-        
+        tools.start();
     }
-    exposed.start = function demoStartup(){
+    exposed.start = function demoStartup(toolsCanvas){
+        tools.start(toolsCanvas);
         if (typeof GG.addRender === "function") {
             GG.addRender(); // add render extension if it exists
             GG.setCtx(ctx);
@@ -294,6 +295,7 @@ var demo = (function(){
             ctx.clearRect(0,0,canWidth,canHeight);
             display();
         }
+        tools.update();
         updateCanvas = false;
         oldMouse.x = mouse.x;
         oldMouse.y = mouse.y;

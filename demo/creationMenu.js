@@ -74,6 +74,8 @@ var creationMenu = (function(){
                                         .addPolar(this.hashs.dir, this.hashs.u * this.hashs.width)
                                         .addPolar(this.hashs.dir + Math.PI / 2, this.hashs.width * this.aspect);                            
                                                                       
+                                }else{
+                                    return;
                                 }
                                 
                                 this.hashs.h1 = this.top.p1.getHash();
@@ -126,6 +128,8 @@ var creationMenu = (function(){
                                 if(h2 !== this.hashs.h2){ // radius moved
                                     this.radius = this.center.distFrom(p[0]);
                                     this.hashs.dir = this.center.angleTo(p[0]);                              
+                                }else{
+                                    return;
                                 }
                                 this.hashs.h1 = this.center.getHash();
                                 this.hashs.h2 = p[0].getHash();
@@ -245,6 +249,8 @@ var creationMenu = (function(){
                                     this.circle.radius = this.circle.center.distFrom(p[2]);
                                     this.startAsVec(p[1]);
                                         
+                                }else{
+                                    return;
                                 }
                                 this.hashs.h1 = p[0].getHash();
                                 this.hashs.h2 = p[1].getHash();
@@ -285,6 +291,90 @@ var creationMenu = (function(){
                 return false;
             } 
         },        
+        snapto : {
+            clicked : function(){
+                var v1,v2,v3;
+                v1 = GG.ui.selected.first();
+                while(v1 !== undefined){
+                    var prim = objects.all.getClosestPrimitiveToVec(v1,["Line","Arc","Circle","Triangle"]);
+                    if(prim !== undefined){
+                        objects.all.push(v1);
+                        v1.hashs = {u : null, h1 : null, h2 : null},
+                        v1.addConstructor(
+                            GG.createConstructor(
+                                [prim],
+                                function(){
+                                    var cw = this.constructedWith;
+                                    var p = cw.primitives;
+                                    var h1 = this.getHash(); // this vec
+                                    var h2 = p[0].getHash(); // the prim
+                                    if(this.hashs.u === null){
+                                        this.hashs.u = p[0].unitDistOfClosestPoint(this);
+                                        p[0].unitAlong(this.hashs.u, this);
+                                    }else
+                                    if(h1 !== this.hashs.h1){
+                                        this.hashs.u = p[0].unitDistOfClosestPoint(this);
+                                        p[0].unitAlong(this.hashs.u, this);                                        
+                                    }else
+                                    if(h2 !== this.hashs.h2){
+                                        p[0].unitAlong(this.hashs.u, this);                                        
+                                        
+                                    }else{
+                                        return;
+                                    }
+                                    this.hashs.h1 = this.getHash();
+                                    this.hashs.h2 = p[0].getHash();
+                                }
+                            )
+                        );                    
+                        v1.recreate();           
+                    }
+                    v1 = GG.ui.selected.next();
+                }
+            },
+            requisites : function(){
+                if(GG.ui.selected.length > 0){
+                    return true;
+                }
+                return false;
+            } 
+            
+            
+        },
+        bezier2at : {
+            clicked : function(){
+                var v1,v2,v3;
+                v1 = GG.ui.selected.first();
+                v2 = GG.ui.selected.next();
+                v3 = GG.ui.selected.next();
+
+                while(v1 !== undefined && v2 !== undefined && v3 !== undefined){
+
+                    var bez = B(v1,v3,V(0,0),null).makeUnique();
+                    objects.all.push(bez);
+                    bez.addConstructor(
+                        GG.createConstructor(
+                            [v2],
+                            function(){
+                                var cw = this.constructedWith;
+                                var p = cw.primitives;
+                                this.fitPointCenter(p[0]);
+                            }
+                        )
+                    );                    
+                    bez.recreate();           
+                    v1 = v3;
+                    v2 = GG.ui.selected.next();
+                    v3 = GG.ui.selected.next();
+                }
+            },
+            requisites : function(){
+                if(GG.ui.selected.length > 2){
+                    return true;
+                }
+                return false;
+            } 
+        },        
         bezier2 : {
             clicked : function(){
                 var v1,v2,v3;
@@ -304,7 +394,7 @@ var creationMenu = (function(){
                 }
                 return false;
             } 
-        },        
+        }, 
         bezier3 : {
             clicked : function(){
                 var v1,v2,v3,v4;
@@ -339,7 +429,9 @@ var creationMenu = (function(){
         { type : "button", text : "Arc" , help : "Creates and arc that fits 3 points. Requires 3 points."},
         { type : "button", text : "Arc3" , help : "Creates an arc by defining the center then the start angle then the end angle. Requires 3 points."},
         { type : "button", text : "Bezier2" , help : "Creates a simple Quadratic bezier. Requires 3 points."},
+        { type : "button", text : "Bezier2At" , help : "Creates a simple Quadratic bezier with a control point on the curve. Requires 3 points."},
         { type : "button", text : "Bezier3" , help : "Creates a simple Cubic bezier. Requires 4 points."},
+        { type : "button", text : "SnapTo" , help : "Snaps the point onto the closest path at creation time."},
     ];
     function createMenuClicked(event){
         if(event.type === "click"){

@@ -63,26 +63,42 @@ groover.geom.Geom.prototype.addUI = function(element1){
     workVec3 = new geom.Vec();  // rather than create a new vec each time just use this onerror
     boundingBox = new geom.Box().makeUnique().setLable("Geom.UI.boundingBox");;
     selectionBox = new geom.Box().makeUnique().setLable("Geom.UI.selectionBox");;
+    rotationLine = new geom.Line(new geom.Vec().setLable("Top") ,new geom.Vec().setLable("Rotate"));
+    workTransform = new geom.Transform();
+    boundsTransform = new geom.Transform();
+    cancel = false; // global event cance;l
+    buttonMain = 1;
+    buttonRight = 4;
+    buttonMiddle = 2;
+    buttonDown = false;
+    buttonDownOnSelected = false;
+    buttonDownOn = undefined;
+    dragged = false;
+    dragSelection = false;
+    quickDrag = false;
+    draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
+    pointsUpdated = false; // true if there are point that have been changed. 
+    currentMouseFunction;
+    rightClickMouseFunction;
+    rightClickSelect = true;
+    
     boundsCorners = [
         new geom.Vec().setLable("TopLeft"),
         new geom.Vec().setLable("TopRight"),
         new geom.Vec().setLable("BottomRight"),
         new geom.Vec().setLable("BottomLeft"),
-        new geom.Vec().setLable("Top"),
+        rotationLine.p1,
         new geom.Vec().setLable("Right"),
         new geom.Vec().setLable("Bottom"),
         new geom.Vec().setLable("Left"),
-        new geom.Vec().setLable("Rotate"),
+        rotationLine.p2,
     ]; // from top left around clockwise
-    rotationLine = new geom.Line(boundsCorners[4],boundsCorners[8]);
     boundsLines = [ 
         new geom.Line(boundsCorners[0],boundsCorners[1]),
         new geom.Line(boundsCorners[1],boundsCorners[2]),
         new geom.Line(boundsCorners[2],boundsCorners[3]),
         new geom.Line(boundsCorners[3],boundsCorners[0])
     ];
-    boundsTransform = new geom.Transform();
-    workTransform = new geom.Transform();
     cIndex = {
             topLeft : 0,
             topRight : 1,
@@ -135,7 +151,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
         move : "move",
         select : "pointer",
     }   
-    cancel = false; // global event cance;l
     eventTypeNames = {
         onSelectChanged : "selectChanged",
         onDragStart : "dragStart",
@@ -145,20 +160,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
         onPointsChanged : "pointsChanged",
         onUnusedRightButton : "unusedRightButton",
     };
-    buttonMain = 1;
-    buttonRight = 4;
-    buttonMiddle = 2;
-    buttonDown = false;
-    buttonDownOnSelected = false;
-    buttonDownOn = undefined;
-    dragged = false;
-    dragSelection = false;
-    quickDrag = false;
-    draggingFinnalFlag = false; // this is true untill the pointer update after all dragging is complete
-    pointsUpdated = false; // true if there are point that have been changed. 
-    currentMouseFunction;
-    rightClickMouseFunction;
-    rightClickSelect = true;
 
     this.UI.prototype = {
         pointOfInterestIndex : undefined,  // this holds a index to a point in one of the exposed vecArrays and is set depending on the function and argument. use it to access the point of interest
@@ -190,6 +191,10 @@ groover.geom.Geom.prototype.addUI = function(element1){
         onUnusedRightButton : undefined, // fires when right button is clicked and dragged without a handler
         pointerLoc : pointerLoc,
         pointerDistLimit : 10,
+        mainButton : false,
+        rightButton : false,
+        actionButton : false,
+        activeButton : 0,
         doEvent : function(name,info){
             if(typeof this[name] === "function"){
                 cancel = this[name](this,{type:eventTypeNames[name],info : info});
@@ -244,10 +249,6 @@ groover.geom.Geom.prototype.addUI = function(element1){
         buttonDown : function(){
             
         },
-        mainButton : false,
-        rightButton : false,
-        actionButton : false,
-        activeButton : 0,
         dragComplete : function(updateSelection){
             this.doEvent("onDragEnd");
             if(updateSelection === true){
@@ -489,11 +490,17 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             case cIndex.topRight:
                             case cIndex.top:
                                boundingBox.top += workVec.y;
+                               if(boundingBox.top > boundingBox.bottom - 1){
+                                    boundingBox.top = boundingBox.bottom - 1;
+                               }
                                break;
                             case cIndex.bottomRight:
                             case cIndex.bottomLeft:
                             case cIndex.bottom:
                                boundingBox.bottom += workVec.y;
+                               if(boundingBox.bottom < boundingBox.top + 1){
+                                    boundingBox.bottom = boundingBox.top + 1;
+                               }
                                break;
                         }
                         switch(this.bounds.draggingPointIndex){
@@ -501,11 +508,17 @@ groover.geom.Geom.prototype.addUI = function(element1){
                             case cIndex.bottomLeft:
                             case cIndex.left:
                                boundingBox.left += workVec.x;
+                               if(boundingBox.left > boundingBox.right - 1){
+                                    boundingBox.left = boundingBox.right - 1;
+                               }
                                break;
                             case cIndex.topRight:
                             case cIndex.bottomRight:
                             case cIndex.right:
                                boundingBox.right += workVec.x;
+                               if(boundingBox.right < boundingBox.left + 1){
+                                    boundingBox.right = boundingBox.left + 1;
+                               }
                                break;
                         }
                         var v1 = this.bounds.points.vecs[this.bounds.controlPointsTransformOriginIndex[this.bounds.draggingPointIndex]];

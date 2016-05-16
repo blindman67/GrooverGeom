@@ -62,6 +62,7 @@ table {
     max-width : 300px;
     width : 300px;
     background: #231;
+    overflow-y: auto;
 }
 .uiGroup {
     font-size : small;
