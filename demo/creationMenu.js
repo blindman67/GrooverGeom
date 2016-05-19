@@ -608,92 +608,67 @@ var creationMenu = (function(){
         }
     }        
     var primitiveMenu = {
-        vec : function(vec){
-            var p = primitiveUI.vec(vec);
+        createMenuItem : function(primitive, childNodes){
+            var i,len;
             var menuItem = document.createElement("div");
             menuItem.className = "uiGroup";
-            menuItem.id = "primitiveUI_Vec_"+vec.id;
+            var type = primitive.type[0].toLowerCase() + primitive.type.substr(1);
+            menuItem.id = "primitiveUI_"+type+"_"+primitive.id;
+            menuItem.appendChild(createOpenCloseButton(true));
+            len = childNodes.length;
+            for(i = 0; i < len; i ++){
+                menuItem.appendChild(childNodes[i]);
+            }
+            return menuItem;
+        },
+        vec : function(vec){
+            var p = primitiveUI.vec(vec);
             var el = document.createElement("span");
             el.className = "uiGroupName";
             el.textContent = "Vec";
-            menuItem.appendChild(el);
-            menuItem.appendChild(p);
-            addMenuElement(menuItem,"Vecs");
+            addMenuElement(this.createMenuItem(vec, [el, p]), "Vecs");
         },
         line : function(line){
             var p1 = primitiveUI.vec(line.p1,"Start");
             var p2 = primitiveUI.vec(line.p2,"End");
-            var menuItem = document.createElement("div");
-            menuItem.appendChild(createOpenCloseButton(true));
-            menuItem.className = "uiGroup";
-            menuItem.id = "primitiveUI_line_"+line.id;
             var el = document.createElement("span");
             el.className = "uiGroupName";
             el.textContent = "ID : "+line.id + " Leng : "+ line.leng().toFixed(0) + " Dir : " + (line.dir()*180/Math.PI).toFixed(0);
-            menuItem.appendChild(el);
-            menuItem.appendChild(p1);
-            menuItem.appendChild(p2);
-            addMenuElement(menuItem,"Lines");
+            addMenuElement(this.createMenuItem(line, [el, p1, p2]), "Lines");
         },
         triangle : function(triangle){
             var p1 = primitiveUI.vec(triangle.p1,"P1");
             var p2 = primitiveUI.vec(triangle.p2,"P2");
             var p3 = primitiveUI.vec(triangle.p3,"P3");
-            var menuItem = document.createElement("div");
-            menuItem.appendChild(createOpenCloseButton(true));
-            menuItem.className = "uiGroup";
-            menuItem.id = "primitiveUI_triangle_"+triangle.id;
             var el = document.createElement("span");
             el.className = "uiGroupName";
             el.textContent = "ID : "+triangle.id + " P : "+ triangle.perimiter().toFixed(0) + " A : " + triangle.area().toFixed(0);
-            menuItem.appendChild(el);
-            menuItem.appendChild(p1);
-            menuItem.appendChild(p2);
-            menuItem.appendChild(p3);
-            addMenuElement(menuItem,"Triangles");
+            addMenuElement(this.createMenuItem(triangle, [el, p1, p2, p3]), "Triangles");
         },
         rectangle : function(rectangle){
             var p1 = primitiveUI.vec(rectangle.top.p1,"P1");
             var p2 = primitiveUI.vec(rectangle.top.p2,"P2");
-            var menuItem = document.createElement("div");
-            menuItem.appendChild(createOpenCloseButton(true));
-            menuItem.className = "uiGroup";
-            menuItem.id = "primitiveUI_rectangle_"+rectangle.id;
             var el = document.createElement("span");
             el.className = "uiGroupName";
             el.textContent = "ID : "+rectangle.id + " W : "+ rectangle.width().toFixed(0) + " H : " + rectangle.height().toFixed(0) +" A% : " + rectangle.aspect.toFixed(3)+ " P : " + rectangle.perimiter().toFixed(0) + " A : " + rectangle.area().toFixed(0);
-            menuItem.appendChild(el);
-            menuItem.appendChild(p1);
-            menuItem.appendChild(p2);
-            addMenuElement(menuItem,"Rectangles");
+            addMenuElement(this.createMenuItem(rectangle, [el, p1, p2]), "Rectangles");
         },
         circle : function(circle){
             var p1 = primitiveUI.vec(circle.center,"Center");
-            var menuItem = document.createElement("div");
-            menuItem.appendChild(createOpenCloseButton(true));
-            menuItem.className = "uiGroup";
-            menuItem.id = "primitiveUI_circle_"+circle.id;
             var el = document.createElement("span");
             el.className = "uiGroupName";
             el.textContent = "ID : "+circle.id + " R : "+ circle.radius.toFixed(0) + " C : " + circle.circumference().toFixed(0) +" A : " + circle.area().toFixed(0);
             el.title = "R is radius, C is circumference, A is area.";
-            menuItem.appendChild(el);
-            menuItem.appendChild(p1);
-            addMenuElement(menuItem,"Circles");
+            addMenuElement(this.createMenuItem(circle, [el, p1]), "Circles");
         },
         arc : function(arc){
             var p1 = primitiveUI.vec(arc.circle.center,"Center");
-            var menuItem = document.createElement("div");
-            menuItem.appendChild(createOpenCloseButton(true));
-            menuItem.className = "uiGroup";
-            menuItem.id = "primitiveUI_arc_"+arc.id;
             var el = document.createElement("span");
             el.className = "uiGroupName";
             el.textContent = "ID : "+arc.id + " R : "+ arc.circle.radius.toFixed(0) + " S : " + (arc.start*180/Math.PI).toFixed(0) +" E : " + (arc.end*180/Math.PI).toFixed(0) + " Leng : " + (arc.arcLength()*180/Math.PI).toFixed(0) ; 
             el.title = "R is radius, S start angle, E end angle";
-            menuItem.appendChild(el);
-            menuItem.appendChild(p1);
-            addMenuElement(menuItem,"Arcs");
+            addMenuElement(this.createMenuItem(arc, [el, p1]), "Arcs");
+            
         },
         bezier :function(bezier){
             var p1 = primitiveUI.vec(bezier.p1,"Start");
@@ -701,24 +676,16 @@ var creationMenu = (function(){
             var cp1 = primitiveUI.vec(bezier.cp1,"Control 1");
             if(bezier.cp2 !== undefined){
                 var cp2 = primitiveUI.vec(bezier.cp2,"Control 2");
-            }
-            var menuItem = document.createElement("div");
-            menuItem.appendChild(createOpenCloseButton(true));
-            menuItem.className = "uiGroup";
-            menuItem.id = "primitiveUI_Bezier_"+bezier.id;
-            
+            }            
             var el = document.createElement("span");
             el.className = "uiGroupName";
             el.textContent = "ID : "+bezier.id + " "+ (bezier.isCubic()?"Cubic":"Quadratic"); 
             el.textContent += " Length : "+ bezier.leng().toFixed(0);
-            menuItem.appendChild(el);
-            menuItem.appendChild(p1);
-            menuItem.appendChild(cp1);
             if(cp2 !== undefined){
-                menuItem.appendChild(cp2);
+                addMenuElement(this.createMenuItem(rectangle, [el, p1, cp1, cp2, p2]), "Beziers");
+            }else{
+                addMenuElement(this.createMenuItem(rectangle, [el, p1, cp1, p2]), "Beziers");
             }
-            menuItem.appendChild(p2);
-            addMenuElement(menuItem,"Beziers");
         },            
     }        
     function displaySelected(){

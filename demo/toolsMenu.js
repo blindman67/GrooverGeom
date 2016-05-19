@@ -10,7 +10,9 @@ var tools = (function(){
     var update;
     exposed.action = null;
     exposed.changed = true; 
+    exposed.redraw = true;
     var ready = exposed.ready = false;
+    
     var images = {
         count : 0,
         tools : "icons/tools.png",
@@ -37,38 +39,6 @@ var tools = (function(){
     };
     var tools = {
         names : [],
-        /*names : "grid,crosshairs,gridSnap".split(","),
-        grid : {
-            position : 0,
-            offImage : images.tools,
-            onImage : images.toolsHighlight,
-            status : TOOL_STATUS.on,
-            spritePos : 0,
-            cursor : "pointer",
-            name : "grid",
-            alpha : TOOL_ALPHAS.low,
-        },
-        crosshairs : {
-            position : 1,
-            offImage : images.tools,
-            onImage : images.toolsHighlight,
-            status : TOOL_STATUS.on,
-            spritePos : 1,
-            cursor : "pointer",
-            name : "crosshairs",
-            alpha : TOOL_ALPHAS.low,
-        },
-        gridSnap : {
-            position : 2,
-            offImage : images.tools,
-            onImage : images.toolsHighlight,
-            status : TOOL_STATUS.on,
-            spritePos : 2,
-            cursor : "pointer",
-            name : "gridsnap",
-            alpha : TOOL_ALPHAS.low,
-            
-        },*/
     }
     exposed.addIcon = function(name,setting){
         var tool;
@@ -95,12 +65,21 @@ var tools = (function(){
         tool.spritePos = setting.spritePos === undefined ? spritePos ++ : setting.spritePos;
         tool.dataSource = setting.dataSource;
         tool.dataName = setting.dataName;
-        tool.type = setting.type === undefined ? typeof tool.dataSource[tool.dataName]: setting.type;    
+        tool.onClick = setting.onClick;
+        if(setting.type === undefined){
+            if(tool.dataSource !== undefined && tool.dataName !== undefined){
+                tool.type = typeof tool.dataSource[tool.dataName];
+            }else{
+                tool.type = undefined;
+            }
+        }else{
+            tool.type = setting.type
+            
+        }
     }
-
     exposed.update = update = function(){
         var i,len,y,img,sy,tool,my,showBright;
-        if(ready){
+        if(ready && (mouse.over || exposed.redraw) ){
             ctx.clearRect(0,0,w,h);
             len = tools.names.length;
             my = mouse.y;
@@ -116,7 +95,11 @@ var tools = (function(){
                         if(tool.type === "boolean"){
                             img = tool.dataSource[tool.dataName] ? images.toolsHighlight : images.tools;
                         }
+                    }else{
+                        img = images.tools;
                     }
+                }else{
+                    img = images.tools;
                 }
 
                     
@@ -159,10 +142,15 @@ var tools = (function(){
                         exposed.changed = true;
                     }
                 }
+                if(mouseDownOn.onClick !== undefined){
+                    mouseDownOn.onClick();
+                    exposed.changed = true;
+                }
                 
                 exposed.action = mouseDownOn;
             }
             mouseDownOn.aplha = TOOL_ALPHAS.low;
+            redraw();
             mouseDownOn = undefined;
         }
     }

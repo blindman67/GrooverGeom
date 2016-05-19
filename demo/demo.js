@@ -31,16 +31,48 @@ var demo = (function(){
         crosshairs : true,
         gridSnap : false,
         gridSize : 8,
-        images : (function(){
-            var arr = [];
-            arr[arr.length ++ ] = imageTools.loadImage("icons/checker.png");
-            arr[arr.length ++ ] = imageTools.loadImage("icons/checker1.png");
-            arr[arr.length ++ ] = imageTools.loadImage("icons/checker2.png");
-            return arr;
-        })(),
+        showVertIndex : true,
+        displayMatrix : undefined,
+        displayInvMatrix : undefined,
+
         
     };
+    settings.images = (function(){
+        var i,len;
+        var arr = [];
+        arr[arr.length ++ ] = imageTools.loadImage("icons/checker.png");
+        arr[arr.length ++ ] = imageTools.loadImage("icons/checker1.png");
+        arr[arr.length ++ ] = imageTools.loadImage("icons/checker2.png");
+        var cols = [];
+        for(i = 0; i < 16; i ++){
+            cols.push("hsl("+Math.floor((i/16)*360).toFixed(0)+",100%,50%)");
+        }
+        arr[arr.length ++ ] = imageTools.createGradImage(16,16,cols);
+        settings.colouredLines = arr[arr.length -1];
+        return arr;
+    })();
+    var displayS = {
+        displayMatrix : undefined,
+        displayInvMatrix : undefined,
+        topLeft : undefined,
+        topRight : undefined,
+        bottomRight : undefined,
+        bottomLeft : undefined,
+        update : function(){
+            this.displayMatrix.asInverseTransform(this.displayInvMatrix);
+            this.displayInvMatrix.applyToCoordinate(0, 0, this.topLeft);
+            this.displayInvMatrix.applyToCoordinate(canvas.width, 0, this.topRight);
+            this.displayInvMatrix.applyToCoordinate(canvas.width, canvas.height, this.bottomRight);
+            this.displayInvMatrix.applyToCoordinate(0, canvas.height, this.bottomLeft);
+        },
+        home : function(){
+            this.displayMatrix.reset();
+            this.update();
+        }
+    }
     exposed.settings = settings;
+    
+    
     function resize(){
         tools.start();
     }
@@ -49,6 +81,8 @@ var demo = (function(){
         tools.addIcon("crosshairs",{dataSource : settings, dataName : "crosshairs", spritePos : 0});
         tools.addIcon("grid",{dataSource : settings, dataName : "grid", spritePos : 2});
         tools.addIcon("gridSnap",{dataSource : settings, dataName : "gridSnap", spritePos : 1});
+        tools.addIcon("displayHome",{onClick : displayS.home.bind(displayS), spritePos : 4});
+        tools.addIcon("showVertIndex",{dataSource : settings, dataName : "showVertIndex", spritePos : 3});
         if (typeof GG.addRender === "function") {
             GG.addRender(); // add render extension if it exists
             GG.setCtx(ctx);
@@ -70,6 +104,14 @@ var demo = (function(){
         geometry.selected = PA(); // new primitiveArray
         geometry.unselected = PA(); // new primitiveArray
         creationMenu.start(GG, geometry);
+        displayS.displayMatrix = new GG.Transform();
+        displayS.displayInvMatrix = displayS.displayMatrix.copy().invert();
+        displayS.topLeft = V(0,0);
+        displayS.topRight = V(0,0);
+        displayS.bottomRight = V(0,0);
+        displayS.bottomLeft = V(0,0);
+        mouse.realPos = V(0,0);
+        displayS.home();
         exposed.start = resize;
     }    
     /* groover.geom ui event handlers begin*/
@@ -187,8 +229,10 @@ var demo = (function(){
             ctx.fill();
             ctx.stroke();
         }
-        beginFontStyle(FONT, GEOM_UI_STYLES.lables.fontSize, GEOM_UI_STYLES.lables.fill, "left", "hanging");
-        GG.ui.drawPoints("selected", "lable");
+        if(settings.showVertIndex){
+            beginFontStyle(FONT, GEOM_UI_STYLES.lables.fontSize, GEOM_UI_STYLES.lables.fill, "left", "hanging");
+            GG.ui.drawPoints("selected", "lable");
+        }
      }
     function mark(array, col, size, width, shape) {
         if (array !== undefined) {
@@ -249,28 +293,78 @@ var demo = (function(){
     function showGrid(){
         var x,y;
         if(settings.grid){
-            var img = settings.images[0];
             var scale = 8;
+            var img = settings.images[0];
             var size = img.width  * scale;
             imageTools.setSmoothing(false);
-            for(y = 0; y < canHeight; y += size){
-                for(x = 0; x < canWidth; x += size){
+            ctx.globalAlpha = 0.5;
+            var sx = Math.floor(displayS.topLeft.x / size) * size
+            var sy = Math.floor(displayS.topLeft.y / size) * size
+            var ex = displayS.bottomRight.x;
+            var ey = displayS.bottomRight.y;
+            for(y = sy; y < ey; y += size){
+                for(x = sx; x < ex; x += size){
                     ctx.drawImage(img,x,y,size,size);
                 }
             }
+            img = settings.images[1];
+            size *= 8;
+            sx = Math.floor(displayS.topLeft.x / size) * size
+            sy = Math.floor(displayS.topLeft.y / size) * size
+            for(y = sy; y < ey; y += size){
+                for(x = sx; x < ex; x += size){
+                    ctx.drawImage(img,x,y,size,size);
+                }
+            }
+            ctx.globalAlpha = 0.5;
+            size = settings.images[0].width  * scale;           
+            var ssx = displayS.topLeft.x;
+            var ssy = displayS.topLeft.y;
+            sx = Math.floor(displayS.topLeft.x / size) * size;
+            sy = Math.floor(displayS.topLeft.y / size) * size;
+            var c = 4;
+            for(y = sy; y < ey; y += size){
+                ctx.drawImage(settings.colouredLines, c, 0, 1, 16, sx, y, ex - sx, 1);
+            }
+            for(x = sx; x < ex; x += size){
+                ctx.drawImage(settings.colouredLines, c, 0, 1, 16, x, sy, 1, ey - sy);
+            }
+            ctx.globalAlpha = 1;
+            beginFontStyle(FONT, CROSSHAIR.fontSize, CROSSHAIR.colour, "left", "bottom");
+            for(y = sy; y < ey; y += size){
+                ctx.fillText(y.toFixed(1) + "px", ssx, y - 2);
+            }
+            for(x = sx; x < ex; x += size){
+                ctx.fillText(x.toFixed(1) + "px", x + 2,  ssy+CROSSHAIR.fontSize + 2);            
+            }
+            
             imageTools.setSmoothing(true);
         }
     }     
     function showCrosshairs(x, y) {
         if(settings.crosshairs){
             beginStyle(null, CROSSHAIR.colour, 1);
-            ctx.strokeRect(-1, y, canWidth + 2, canHeight + 2);
-            ctx.strokeRect(x, -1, canWidth + 2, canHeight + 2);
+            ctx.moveTo(displayS.topLeft.x, y);
+            ctx.lineTo(displayS.topRight.x, y);
+            ctx.moveTo(x, displayS.topLeft.y);
+            ctx.lineTo(x, displayS.bottomLeft.y);
+            ctx.stroke();
             beginFontStyle(FONT, CROSSHAIR.fontSize, CROSSHAIR.colour, "left", "bottom");
-            ctx.fillText(y.toFixed(1) + "px", 2, y - 2);
-            ctx.fillText(x.toFixed(1) + "px", x + 2, CROSSHAIR.fontSize + 2);
+            ctx.fillText(y.toFixed(1) + "px", displayS.topLeft.x, y - 2);
+            ctx.fillText(x.toFixed(1) + "px", x + 2,  displayS.topLeft.y+CROSSHAIR.fontSize + 2);
         }
     }   
+    function doTranforms(){
+        if(mouse.buttonRaw & 2){
+            var mx = mouse.x - oldMouse.x;
+            var my = mouse.y - oldMouse.y;
+            displayS.displayMatrix.translate(mx,my);
+            displayS.update();
+
+        }
+        mouse.realPos = displayS.displayInvMatrix.applyToCoordinate(mouse.x,mouse.y,mouse.realPos);
+
+    }
     var globalTime = 0;
     exposed.globalTime = 0;
     var startTime = 0;
@@ -281,6 +375,8 @@ var demo = (function(){
         bRaw : 0,
     }    
     function display(){
+        doTranforms();
+        displayS.displayMatrix.setContextTransform(ctx);
         GG.ui.updatePointer();
         geometry.selected.callConstructors();
         geometry.unselected.callConstructors();
@@ -297,7 +393,7 @@ var demo = (function(){
          }
         drawGeomUI();
         if(mouse.over){
-            showCrosshairs(mouse.x,mouse.y);
+            showCrosshairs(mouse.realPos.x,mouse.realPos.y);
         }
     }
      // main update function

@@ -812,7 +812,7 @@ groover.geom = (function (){
         }
     }
     function Transform(xAxis,yAxis,origin){
-        this.xAxis = xAxis === undefined?new Vec() : xAxis;
+        this.xAxis = xAxis === undefined?new Vec(1,0) : xAxis;
         this.yAxis = yAxis === undefined?new Vec(0,1) : yAxis;
         this.origin = origin === undefined?new Vec(0,0) : origin;
     };
@@ -8705,9 +8705,12 @@ groover.geom = (function (){
             return this;            
         },
         setAs : function (transform) {
-            this.xAxis.setAs(transform.xAxis);
-            this.yAxis.setAs(transform.yAxis);
-            this.origin.setAs(transform.origin);
+            this.xAxis.x = transform.xAxis.x;
+            this.xAxis.y = transform.xAxis.y;
+            this.yAxis.x = transform.yAxis.x;
+            this.yAxis.y = transform.yAxis.y;
+            this.origin.x = transform.origin.x;
+            this.origin.y = transform.origin.y;
             return this;
         },
         setContextTransform : function(ctx){

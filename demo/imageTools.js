@@ -164,7 +164,19 @@ var imageTools = (function () {
 
             return image;
         },  
-    }
+        createGradImage : function(w,h,cols){
+            var i,len;
+            var img = this.canvasAndContext(w,h);
+            var grad = img.ctx.createLinearGradient(0,0,w,0);
+            len = cols.length;
+            for(i = 0; i < len; i ++){
+                grad.addColorStop(i / (len-1),cols[i]);
+            }
+            img.ctx.fillStyle = grad;
+            img.ctx.fillRect(0,0,w,h);
+            return img;
+        },
+}
     return tools;
 })();
 /** ImageTools.js end **/

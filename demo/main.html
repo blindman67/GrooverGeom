@@ -55,7 +55,7 @@
             </table>
         </div>
         <div class="footer snug" id="foot">
-        Powered by Groover.
+        Powered by Groover.<small>This is a work in progress.</small>
         
         </div>
         <script>
@@ -187,35 +187,66 @@
                 }
             }*/
         }
-        function subGroupOpenClose(){
-            if(this.dataCloseLocal === true){
-                var nodes = this.parentNode.children;
-            
+        function openCloseNode(node,close){
+             if(close){
+                node.className = node.className.replace(" show"," closed");
+             }else{
+                node.className = node.className.replace(" closed"," show");
+             }        
+        }
+        function subGroupOpenClose(event,node,state){
+            var nodes;
+            if(node === undefined){
+                node = this;
+                if(this.dataCloseLocal === true){
+                    nodes = this.parentNode.children;
+                }else{
+                    nodes = this.parentNode.parentNode.children;
+                }
             }else{
-                var nodes = this.parentNode.parentNode.children;
+                nodes = node.parentNode.children;
             }
-            //var nodes = this.children;
-            var stateOpen;
+            var stateOpen = state === undefined ? undefined : state;
             for(var i = 0; i < nodes.length; i ++){
                 if(nodes[i].className.indexOf("closed") > -1  || nodes[i].className.indexOf("show") > -1){
                     if(stateOpen === undefined){
                         if(nodes[i].className.indexOf("closed") === -1){
                             stateOpen = true;
-                            this.textContent = "-";
                          }else{
                             stateOpen = false;
-                            this.textContent = "+";
                          }
                      }
-                     if(stateOpen){
-                        nodes[i].className = nodes[i].className.replace(" show"," closed");
-                     }else{
-                        nodes[i].className = nodes[i].className.replace(" closed"," show");
-                     
+                     openCloseNode(nodes[i],stateOpen);
+                }
+            }
+            if(stateOpen === true){
+                node.textContent = "-";
+            }else
+            if(stateOpen === false){
+                node.textContent = "+";
+            }
+        }
+        function groupOpenClose(){
+            var nodes = this.parentNode.parentNode.children;
+            var stateOpen;
+            for(var i = 0; i < nodes.length; i ++){
+                if(nodes[i].className.indexOf("closed") > -1  || nodes[i].className.indexOf("show") > -1){
+                    if(stateOpen === undefined){
+                        if(this.textContent.indexOf("-") === -1){
+                            stateOpen = false;
+                            this.textContent = "-Sub";
+                         }else{
+                            stateOpen = true;
+                            this.textContent = "+Sub";
+                         }
+                     }
+                     var node = nodes[i].querySelector(".openClose");
+                     if(node !== null){
+                        subGroupOpenClose(undefined,node,stateOpen);
                      }
                  }
              }
-        }
+        }        
         function createOpenCloseButton(closeLocal){
              var openClose = document.createElement("span");
              openClose.textContent = "+";
@@ -224,6 +255,13 @@
                 openClose.dataCloseLocal = true;
              }
              openClose.addEventListener("click",subGroupOpenClose);
+             return openClose;
+        }
+        function createOpenCloseSubGroupButton(){
+             var openClose = document.createElement("span");
+             openClose.textContent = "+Sub";
+             openClose.className = "uiSubGroup openClose";
+             openClose.addEventListener("click",groupOpenClose);
              return openClose;
         }
         function getSubGroup(subGroup,container){
@@ -236,16 +274,14 @@
                  head.className = "uiSubGroup name";
                  var openClose = createOpenCloseButton();
                  head.appendChild(openClose);
+                 var openCloseSub = createOpenCloseSubGroupButton();
+                 head.appendChild(openCloseSub);
                  var name = document.createElement("span");
                  name.textContent += subGroup;
                  head.appendChild(name);
-
                  subGroupE.appendChild(head);
                  container.appendChild(subGroupE);
-                 //subGroupE.addEventListener("click",subGroupOpenClose);
             }
-
-
             return subGroupE;        
         }        
         function addMenuElement(element, subGroupName){

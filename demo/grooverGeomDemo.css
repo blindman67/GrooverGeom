@@ -64,12 +64,19 @@ table {
     background: #231;
     overflow-y: auto;
 }
+.uiGroup {
+    font-size : small;
+    /*border : white 1px solid;*/
+    border-top: 1px #fff solid;
+    margin-top: 2px;
+    overflow-y: hidden;
+}
 .uiSubGroup {
    font-size : small;
-    border : white 1px solid;
+    /*border : white 1px solid;*/
     margin-top: 2px;
     padding : 2px;
-     
+     border-top: #fff 1px solid;    
     
 }
 .primitiveType { /* groups of same primitive */
@@ -80,12 +87,6 @@ table {
     margin: 0px;    
     font-weight: 700;
 }
-.uiGroup {
-    font-size : small;
-    border : white 1px solid;
-    margin-top: 2px;
-    overflow-y: hidden;
-}
 .openClose {
     cursor : pointer;
     background : #7ca580;
@@ -94,7 +95,8 @@ table {
     padding-top: 0px;
     padding-bottom: 0px;
     margin-right: 3px;
-    margin-left: 0px;    
+    margin-left: 0px;   
+    border: none;    
 }
 .openClose:hover {
     background : #AAa580;
