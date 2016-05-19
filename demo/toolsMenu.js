@@ -5,8 +5,11 @@ var tools = (function(){
     var mouse;
     var mouseOverIcon;
     var mouseDownOn;
-
+    var pos = 0;
+    var spritePos = 0;
+    var update;
     exposed.action = null;
+    exposed.changed = true; 
     var ready = exposed.ready = false;
     var images = {
         count : 0,
@@ -33,7 +36,8 @@ var tools = (function(){
         high : 1,
     };
     var tools = {
-        names : "grid,crosshairs,gridSnap".split(","),
+        names : [],
+        /*names : "grid,crosshairs,gridSnap".split(","),
         grid : {
             position : 0,
             offImage : images.tools,
@@ -64,9 +68,36 @@ var tools = (function(){
             name : "gridsnap",
             alpha : TOOL_ALPHAS.low,
             
-        },
+        },*/
     }
-    var update;
+    exposed.addIcon = function(name,setting){
+        var tool;
+        if(name === undefined){
+            throw new ReferanceError("Tools.addIcon Required argument name missing");
+        }
+        if(name === "names"){
+            throw new RangeError("Tools.addIcon Invalid argument name. Can not add a icon named 'names'");
+        }
+        if(setting !== undefined){
+            if(setting.dataName !== undefined && setting.dataSource === undefined){
+                throw new ReferanceError("Tools.addIcon Argument setting.dataName is missing required setting.dataSource argument");
+            }
+        }
+        tool = tools[name];
+        if(tool === undefined){
+            tool = tools[name] = {
+                name : name,
+            };
+            tools.names.push(name);
+        }
+        tool.cursor = setting.cursor === undefined ? "pointer" : setting.cursor;
+        tool.position = setting.position === undefined ? pos ++ : setting.position;        
+        tool.spritePos = setting.spritePos === undefined ? spritePos ++ : setting.spritePos;
+        tool.dataSource = setting.dataSource;
+        tool.dataName = setting.dataName;
+        tool.type = setting.type === undefined ? typeof tool.dataSource[tool.dataName]: setting.type;    
+    }
+
     exposed.update = update = function(){
         var i,len,y,img,sy,tool,my,showBright;
         if(ready){
@@ -79,14 +110,17 @@ var tools = (function(){
                 tool = tools[tools.names[i]];
                 y = tool.position * w;
                 showBright = false;
-                if(tool.status === TOOL_STATUS.on){
-                    img = tool.onImage;
-                }else
-                if(tool.status === TOOL_STATUS.off){
-                    img = tool.offImage;
-                }else{
-                    img = undefined;
+                img = undefined;
+                if(tool.status === undefined){
+                    if(tool.dataName !== undefined){
+                        if(tool.type === "boolean"){
+                            img = tool.dataSource[tool.dataName] ? images.toolsHighlight : images.tools;
+                        }
+                    }
                 }
+
+                    
+
                 if(mouse.y >= y && mouse.y <= y + w && mouse.over){
                     mouseOverIcon = tool;
                     showBright = true;
@@ -119,6 +153,13 @@ var tools = (function(){
         }
         if(!(mouse.buttonRaw & 1) && mouseDownOn !== undefined){
             if(mouseOverIcon !== undefined && mouseDownOn.position === mouseOverIcon.position){
+               if(mouseDownOn.dataName !== undefined){
+                    if(mouseDownOn.type === "boolean"){
+                        mouseDownOn.dataSource[mouseDownOn.dataName] = !mouseDownOn.dataSource[mouseDownOn.dataName];
+                        exposed.changed = true;
+                    }
+                }
+                
                 exposed.action = mouseDownOn;
             }
             mouseDownOn.aplha = TOOL_ALPHAS.low;

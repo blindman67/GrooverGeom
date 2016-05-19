@@ -3375,9 +3375,17 @@ groover.geom = (function (){
         distFrom : function(vec){ // returns the distance from the vec of the arc
             a1 = this.circle.center.angleTo(vec);
             a1 = ((a1 % MPI2) + MPI2) % MPI2;
-            if( a1 >=  ((this.start % MPI2) + MPI2) % MPI2){
-                if( a1 <= ((this.end % MPI2) + MPI2) % MPI2){
-                    return this.circle.distFrom(vec);
+            if(this.direction === true){
+                if( a1 >=  ((this.end % MPI2) + MPI2) % MPI2){
+                    if( a1 <= ((this.start % MPI2) + MPI2) % MPI2){
+                        return this.circle.distFrom(vec);
+                    }
+                }
+            }else{
+                if( a1 >=  ((this.start % MPI2) + MPI2) % MPI2){
+                    if( a1 <= ((this.end % MPI2) + MPI2) % MPI2){
+                        return this.circle.distFrom(vec);
+                    }
                 }
             }
             c1 = this.startAsVec(v1).distFrom(vec);
@@ -4273,7 +4281,7 @@ groover.geom = (function (){
             return Math.dir(vec.x - this.center.x, vec.y - this.center.y) / MPI2;
         },
         distFrom : function(vec){ // returns the distance from the circle circumference to the point vec
-            return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y)-this.radius;
+            return  Math.abs(Math.hypot(this.center.x - vec.x,this.center.y - vec.y) - this.radius);
         },
         fitToCircles : function(circle1, circle2, rule){ // fits this circle so that it touches circle1 and circle2 using the rules in rule
             // rule = "left"  will fit this circle to the left of the line from circle1 to circle 2
@@ -7141,7 +7149,7 @@ groover.geom = (function (){
             }
             return this;   
         },
-        _setSpan : function(f,t){
+        _setSpan : function(f,t){ // Span is used when a bezier is sliced or cut. This allows caculations to still be relative to the origin bezier. The span is the start and end position of this bezier on the original bezier it was derived from.
             this._subStart = f;
             this._subEnd = t;
             return this;
@@ -7159,6 +7167,35 @@ groover.geom = (function (){
             str += " API incomplete )";
             return str; // returns String
         },
+        getHash : function(){ // returns a unquie hash value for the lines current state
+            var hash = 0;
+            if(!isNaN(this.id)){
+                hash += this.id;
+            }
+            hash += this.p1.getHash();
+            hash += this.p2.getHash();
+            hash += this.cp1.getHash();
+            if(this.cp2 !== undefined){
+                hash += this.cp2.getHash();
+            } 
+            return Math.round(hash  % 0xFFFFFFFF);
+        },    
+        getAllIdsAsArray : function(array){
+            if(array === undefined){
+                array = [];
+            }
+            if(array.indexOf(this.id) === -1){
+                array.push(this.id);
+            }
+
+            this.p1.getAllIdsAsArray(array);
+            this.p2.getAllIdsAsArray(array);
+            this.cp1.getAllIdsAsArray(array);
+            if(this.cp2 !== undefined){
+                this.cp2.getAllIdsAsArray(array);
+            }
+            return array;
+        },        
         empty : function(){
             this.p1.x = this.p1.y = this.p2.x = this.p2.y = Infinity;
             return this;
@@ -7852,26 +7889,35 @@ groover.geom = (function (){
                 c1 = (c1 * 4) / resolution;
             }
             d = Infinity;
-            for(var i = s; i <= u1; i += c1){
-                a = (1 - i); 
-                c = i * i; 
-                if(this.cp2 === undefined){
+            if(this.cp2 === undefined){
+                for(var i = s; i <= u1; i += c1){
+                    a = (1 - i); 
+                    c = i * i; 
                     b = a*2*i;
                     a *= a;  
                     vx = v1.x * a + v3.x * b + v2.x * c;
                     vy = v1.y * a + v3.y * b + v2.y * c;
-                }else{
+                    e = Math.hypot(vx,vy);
+                    if(e < d ){
+                        pos = i;
+                        d = e;
+                    }
+                }
+            }else{
+                for(var i = s; i <= u1; i += c1){
+                    a = (1 - i); 
+                    c = i * i; 
                     b = 3 * a * a * i; 
                     b1 = 3 * c * a; 
                     a *= a*a;
                     c *= c; 
                     vx = v1.x * a + v3.x * b + v4.x * b1 + v2.x * c;
                     vy = v1.y * a + v3.y * b + v4.y * b1 + v2.y * c;
-                }
-                e = Math.hypot(vx,vy);
-                if(e < d ){
-                    pos = i;
-                    d = e;
+                    e = Math.hypot(vx,vy);
+                    if(e < d ){
+                        pos = i;
+                        d = e;
+                    }
                 }
             }
             return pos;
@@ -7979,6 +8025,20 @@ groover.geom = (function (){
             vec.y = v1.y + (v2.y - v1.y) * c;
             return vec;     
         }, 
+        unitAlong : function(unit,vec){
+            return this.vecAt(unit,false,vec);
+        },
+        unitDistOfClosestPoint : function(vec){ 
+            // use distance between control points to set the resolution of the search
+            a = Math.hypot(this.p1.x - this.cp1.x, this.p1.y - this.cp1.y);
+            if(this.cp2 === undefined){
+                a += Math.hypot(this.p2.x - this.cp1.x, this.p2.y - this.cp1.y);
+            }else{
+                a += Math.hypot(this.cp2.x - this.cp1.x, this.cp2.y - this.cp1.y);
+                a += Math.hypot(this.cp2.x - this.p2.x, this.cp2.y - this.p2.y);
+            }
+            return this.findPositionOfVec(vec);//,Math.floor(a/10));        
+        },
         tangentAsVec : function( position,limit, retVec ) {  // returns the normalised tangent at position
             if(retVec === undefined){ retVec = new Vec(); }
             if(limit){ position = Math.min(1, Math.max(0, position)); }

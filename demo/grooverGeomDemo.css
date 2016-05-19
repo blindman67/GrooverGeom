@@ -64,15 +64,53 @@ table {
     background: #231;
     overflow-y: auto;
 }
+.uiSubGroup {
+   font-size : small;
+    border : white 1px solid;
+    margin-top: 2px;
+    padding : 2px;
+     
+    
+}
+.primitiveType { /* groups of same primitive */
+}
+.name {  /* name of same primitive group */
+    border: none;
+    padding: 0px;
+    margin: 0px;    
+    font-weight: 700;
+}
 .uiGroup {
     font-size : small;
     border : white 1px solid;
     margin-top: 2px;
     overflow-y: hidden;
 }
-
+.openClose {
+    cursor : pointer;
+    background : #7ca580;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-right: 3px;
+    margin-left: 0px;    
+}
+.openClose:hover {
+    background : #AAa580;
+}
+.closed {
+    display : none;
+}
+.show {};
 .uiGroupName {
      display: block;   
+}
+.highlight {
+    background : #358446;
+}
+.nearlight {
+    background : #858446;
 }
 .uiButton {
     color: #fff;

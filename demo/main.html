@@ -22,8 +22,8 @@
     </head>
     <body class = "snug">
         <div class="title snug" id="title">
-            <h1 class="snug" >Groover.Geom</h1>
-            <h2 class="snug" >Groover Vector Geometry Editor</h2>
+            <h1 class="snug" >Groover Vector Geometry Editor</h1>
+            <p id = "helpText">Welcome to the demo of Groover.Geom in action.</p>
         </div>
         <div class="content snug">
 
@@ -129,7 +129,7 @@
         const TITLE = {
             height : 100,
         }
-        var canvas,ctx,workspace,title,foot,toolsCanvas,menu;
+        var canvas,ctx,workspace,title,foot,toolsCanvas,menu,helpText;
         var canWidth;
         var canHeight;
         var updateCanvas = true;
@@ -160,14 +160,113 @@
             }
             return el;
         }
-        function addMenuElement(element){
+        function clearPrimitiveHighlight(lightType){
+            var prims = document.querySelectorAll(".uiGroup");
+            for(var i = 0; i < prims.length; i ++){
+                prims[i].className = prims[i].className.replace(" "+lightType,"");                
+            }
+        }
+        function primitiveHighlight(type,id,lightType,off){
+            //var prims = document.querySelectorAll(".uiGroup");
+            type = "primitiveUI_"+type.toLowerCase()+"_"+id;
+            var prims = document.querySelector("#"+type);
+            if(prims !== null){
+                if(off){
+                    prims.className = prims.className.replace(" "+lightType,"");                                
+                }else
+                if(prims.className.indexOf(" "+lightType) === -1){
+                    prims.className += " "+lightType;
+                 }
+            }
+            /*
+            for(var i = 0; i < prims.length; i ++){
+                if(prims[i].id === type){
+                    if(prims[i].className.indexOf(" highlight") === -1){
+                        prims[i].className += " highlight";
+                     }
+                }
+            }*/
+        }
+        function subGroupOpenClose(){
+            if(this.dataCloseLocal === true){
+                var nodes = this.parentNode.children;
+            
+            }else{
+                var nodes = this.parentNode.parentNode.children;
+            }
+            //var nodes = this.children;
+            var stateOpen;
+            for(var i = 0; i < nodes.length; i ++){
+                if(nodes[i].className.indexOf("closed") > -1  || nodes[i].className.indexOf("show") > -1){
+                    if(stateOpen === undefined){
+                        if(nodes[i].className.indexOf("closed") === -1){
+                            stateOpen = true;
+                            this.textContent = "-";
+                         }else{
+                            stateOpen = false;
+                            this.textContent = "+";
+                         }
+                     }
+                     if(stateOpen){
+                        nodes[i].className = nodes[i].className.replace(" show"," closed");
+                     }else{
+                        nodes[i].className = nodes[i].className.replace(" closed"," show");
+                     
+                     }
+                 }
+             }
+        }
+        function createOpenCloseButton(closeLocal){
+             var openClose = document.createElement("span");
+             openClose.textContent = "+";
+             openClose.className = "uiSubGroup openClose";
+             if(closeLocal){
+                openClose.dataCloseLocal = true;
+             }
+             openClose.addEventListener("click",subGroupOpenClose);
+             return openClose;
+        }
+        function getSubGroup(subGroup,container){
+            var subGroupE = container.querySelector("#"+ subGroup);
+            if(subGroupE === null){
+                 subGroupE = document.createElement("div");
+                 subGroupE.className = "uiSubGroup primitiveType";
+                 subGroupE.id = subGroup;   
+                 var head = document.createElement("div");
+                 head.className = "uiSubGroup name";
+                 var openClose = createOpenCloseButton();
+                 head.appendChild(openClose);
+                 var name = document.createElement("span");
+                 name.textContent += subGroup;
+                 head.appendChild(name);
+
+                 subGroupE.appendChild(head);
+                 container.appendChild(subGroupE);
+                 //subGroupE.addEventListener("click",subGroupOpenClose);
+            }
+
+
+            return subGroupE;        
+        }        
+        function addMenuElement(element, subGroupName){
             var menuCell = document.querySelector("#menu_cell");
+            var subG = getSubGroup(subGroupName,menuCell);
             var menuItem = document.querySelector("#"+element.id);
             if(menuItem !== null){
-                menuCell.removeChild(menuItem);
+                subG.removeChild(menuItem);
             }
-            menuCell.appendChild(element);
+            element.className = element.className.replace(" closed"," show");
+            if(element.className.indexOf(" show")=== -1){
+                element.className += " show";
+            }            
+            subG.appendChild(element);
+            
          }   
+        function showHelp(){
+            if(this.title !== undefined && this.title !== null){
+                helpText.textContent = this.title;
+            }        
+        }
         function addMenuItem(id,items,callback){
             var menuCell = document.querySelector("#menu_cell");
             var menuItem = menuCell.querySelector("#"+ id);
@@ -190,6 +289,7 @@
                      el.type = "button";
                      el.value= item.text;
                      el.id = "uiGroup_" + id +" _ "+item.text;
+                     el.title = item.help;
                   }
                   item.element = el;
                   el.uiItem = item;
@@ -198,6 +298,9 @@
              menuCell.appendChild(menuItem);
              items.forEach(function(item){
                 item.element.addEventListener("click",callback);
+                if(item.type === "button"){
+                    item.element.addEventListener("mouseover",showHelp);
+                }
              });
         }
         function windowResize(){
@@ -210,6 +313,7 @@
             title = document.querySelector("#title");
             foot = document.querySelector("#foot");
             toolsCanvas = document.querySelector("#toolsCanvas");
+            helpText = document.querySelector("#helpText");
             window.addEventListener("resize",windowResize);
             windowResize();
         
@@ -218,3 +322,8 @@
         </script>
     </body>
 </html>
+
+
+
+
+

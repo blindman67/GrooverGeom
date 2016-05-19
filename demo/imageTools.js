@@ -4,6 +4,7 @@ var imageTools = (function () {
     var lastDataRequest = undefined;
     var lastDataUID = undefined;
     var UID = 0; // for generating unquie image IDs
+    var ctx;
     var tools = {
         purge : function(){
             lastDataRequest = undefined;
@@ -12,6 +13,9 @@ var imageTools = (function () {
         getUID : function(){
             UID += 1;
             return UID - 1;
+        },
+        setCtx :function(context){
+            ctx = context;            
         },
         canvas : function (width, height) {  // create a blank image (canvas)
             var c = document.createElement("canvas");
@@ -132,17 +136,25 @@ var imageTools = (function () {
             c.UID = this.getUID();
             return c;
         },
+        setSmoothing : function(val){
+            ctx.imageSmoothingEnabled = val;    
+            ctx.mozImageSmoothingEnabled = val;
+        },
         loadImage : function(url,ready){
             function onload(event){
                 this.removeEventListener("load",onload); // remove events
                 this.removeEventListener("error",onload);
                 if(event.type === "error"){ 
-                    ready(undefined); 
+                    if(ready !== undefined){
+                        ready(undefined); 
+                    }
                     return;
                 }
                 imageTools.loadedImage = this;
                 image = tools.image2Canvas(this);
-                ready(image);
+                if(ready !== undefined){
+                    ready(image);
+                }
             }
             var image = new Image();
             image.src = url;
