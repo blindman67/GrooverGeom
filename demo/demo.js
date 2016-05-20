@@ -58,6 +58,7 @@ var demo = (function(){
         topRight : undefined,
         bottomRight : undefined,
         bottomLeft : undefined,
+        origin : undefined,
         update : function(){
             this.displayMatrix.asInverseTransform(this.displayInvMatrix);
             this.displayInvMatrix.applyToCoordinate(0, 0, this.topLeft);
@@ -71,7 +72,18 @@ var demo = (function(){
         }
     }
     exposed.settings = settings;
-    
+    var updatePending = false;
+    var updateUI;   
+    var newPoint = undefined;
+    var globalTime = 0;
+    exposed.globalTime = 0;
+    var startTime = 0;
+    var closestPrim;
+    var oldMouse = {
+        x : 0,
+        y : 0,
+        bRaw : 0,
+    }       
     
     function resize(){
         tools.start();
@@ -112,25 +124,24 @@ var demo = (function(){
         displayS.bottomLeft = V(0,0);
         mouse.realPos = V(0,0);
         displayS.home();
+        GG.ui.setInvTransform(displayS.displayInvMatrix);
         exposed.start = resize;
     }    
     /* groover.geom ui event handlers begin*/
-    var newPoint = undefined
-    // this event is trigger by a un used right click
-    var uiOnUnusedRightButton = function(ui,info){
+    var uiOnUnusedRightButton = function(ui,info){// this event is trigger by a un used right click
+        var i = info.info;
         if(newPoint === undefined){
-            GG.ui.addPoint(newPoint = V(mouse.x,mouse.y))
+            GG.ui.addPoint(newPoint = V(i.mouseX,i.mouseY))
         }else
-        if(info.info.type ==="drag"){
-            newPoint.setAs(mouse.x,mouse.y);
+        if(i.type ==="drag"){
+            newPoint.setAs(i.mouseX,i.mouseY);
         }else{
-           newPoint.setAs(mouse.x,mouse.y); 
+           newPoint.setAs(i.mouseX,i.mouseY); 
            newPoint = undefined
         }
         GG.ui.selectionChanged()   
     }
-    // this event is trigger when there is a selection change
-    var uiOnSelectionChanged = function(ui, info){
+    var uiOnSelectionChanged = function(ui, info){// this event is trigger when there is a selection change
         // get all geometry that has a Vec selected
         
         var uiSelectedVecs = ui.selected.getAllIdsAsArray();
@@ -143,8 +154,6 @@ var demo = (function(){
         }); 
         setTimeout(creationMenu.displayPrimitives,0);
     }
-    var updatePending = false;
-    var updateUI;
     exposed.updateUI = updateUI = function(){
         if(!updatePending){
             updatePending = true;        
@@ -156,15 +165,13 @@ var demo = (function(){
         }
     }
     /* groover.geom ui event handlers end*/
-    // Sets the canvas to start an new path
-    var beginStyle = function(fillStyle, strokeStyle, lineWidth) {
+    var beginStyle = function(fillStyle, strokeStyle, lineWidth) {// Sets the canvas to start an new path
         if(fillStyle !== undefined && fillStyle !== null) { ctx.fillStyle = fillStyle;}
         if(strokeStyle !== undefined && strokeStyle !== null) { ctx.strokeStyle = strokeStyle;}
         if(lineWidth !== undefined && lineWidth !== null) { ctx.lineWidth = lineWidth;}
         ctx.beginPath();
-    }    
-    // sets the canvas to render a font size is font size.
-    var beginFontStyle = function(font, size, fillStyle, align, alignH){
+    }      
+    var beginFontStyle = function(font, size, fillStyle, align, alignH){// sets the canvas to render a font size is font size.
         if(font !== undefined && font !== null){
             if(size !== undefined && size !== null){
                 ctx.font = size + "px "+ font;
@@ -187,8 +194,7 @@ var demo = (function(){
         if(style.markSize !== undefined){GG.setMarkSize(style.markSize);}
         beginStyle(style.fill,style.colour,style.lineWidth);    
     }
-    // draws the Geom UI parts
-    var drawGeomUI = function(){
+    var drawGeomUI = function(){// draws the Geom UI parts
         GG.setMark("circle");
         GG.setMarkSize(6)
         setStyle(GEOM_UI_STYLES.nearMouse);
@@ -293,21 +299,43 @@ var demo = (function(){
     function showGrid(){
         var x,y;
         if(settings.grid){
-            var scale = 8;
-            var img = settings.images[0];
-            var size = img.width  * scale;
+            var disScale, scaleStep, maxSteps, scale, img, imgW, size, sx, sy, ex, ey, ssx, ssy, c, lineScale, invScale;
+            disScale = displayS.displayMatrix.decomposeScale();
+            invScale = 1/ disScale;
+            scaleStep = 8;
+            maxSteps = 14;
+            lineScale = 8;
+            scale = 1;
+            ex = displayS.bottomRight.x;
+            ey = displayS.bottomRight.y;            
             imageTools.setSmoothing(false);
-            ctx.globalAlpha = 0.5;
-            var sx = Math.floor(displayS.topLeft.x / size) * size
-            var sy = Math.floor(displayS.topLeft.y / size) * size
-            var ex = displayS.bottomRight.x;
-            var ey = displayS.bottomRight.y;
-            for(y = sy; y < ey; y += size){
-                for(x = sx; x < ex; x += size){
-                    ctx.drawImage(img,x,y,size,size);
+            ctx.globalAlpha = 0.5;            
+            img = settings.images[0];
+            imgW = img.width;
+            c = 0;
+            for(var i = 0; i < maxSteps; i++){            
+                size = img.width  * scale;
+                if(size * disScale >=  128){
+                    
+                    console.log(size);
+                    sx = Math.floor(displayS.topLeft.x / size) * size
+                    sy = Math.floor(displayS.topLeft.y / size) * size
+                    for(y = sy; y < ey; y += size){
+                        for(x = sx; x < ex; x += size){
+                            ctx.drawImage(img,x,y,size,size);
+                        }
+                    }
+                    c += 1;
+                    if(c === 2){
+                        lineScale = scale / 4;
+                    }
+                    if(c > 2){
+                        break;
+                    }
                 }
+                scale *= 8;
             }
-            img = settings.images[1];
+            /*img = settings.images[1];
             size *= 8;
             sx = Math.floor(displayS.topLeft.x / size) * size
             sy = Math.floor(displayS.topLeft.y / size) * size
@@ -315,27 +343,37 @@ var demo = (function(){
                 for(x = sx; x < ex; x += size){
                     ctx.drawImage(img,x,y,size,size);
                 }
-            }
+            }*/
+            scale = lineScale;
+            
             ctx.globalAlpha = 0.5;
             size = settings.images[0].width  * scale;           
-            var ssx = displayS.topLeft.x;
-            var ssy = displayS.topLeft.y;
+            ssx = displayS.topLeft.x;
+            ssy = displayS.topLeft.y;
             sx = Math.floor(displayS.topLeft.x / size) * size;
             sy = Math.floor(displayS.topLeft.y / size) * size;
-            var c = 4;
+            c = 4;
             for(y = sy; y < ey; y += size){
-                ctx.drawImage(settings.colouredLines, c, 0, 1, 16, sx, y, ex - sx, 1);
+                if(y === 0){
+                    ctx.drawImage(settings.colouredLines, 0, 0, 1, 16, sx, y, ex - sx, invScale);
+                }else{
+                    ctx.drawImage(settings.colouredLines, c, 0, 1, 16, sx, y, ex - sx, invScale);
+                }
             }
             for(x = sx; x < ex; x += size){
-                ctx.drawImage(settings.colouredLines, c, 0, 1, 16, x, sy, 1, ey - sy);
+                if(x === 0){
+                    ctx.drawImage(settings.colouredLines, 0, 0, 1, 16, x, sy, invScale, ey - sy);
+                }else{
+                    ctx.drawImage(settings.colouredLines, c, 0, 1, 16, x, sy, invScale, ey - sy);
+                }
             }
             ctx.globalAlpha = 1;
-            beginFontStyle(FONT, CROSSHAIR.fontSize, CROSSHAIR.colour, "left", "bottom");
+            beginFontStyle(FONT, CROSSHAIR.fontSize * invScale, CROSSHAIR.colour, "left", "bottom");
             for(y = sy; y < ey; y += size){
-                ctx.fillText(y.toFixed(1) + "px", ssx, y - 2);
+                ctx.fillText(y.toFixed(1) + "px", ssx, y - 2 * invScale);
             }
             for(x = sx; x < ex; x += size){
-                ctx.fillText(x.toFixed(1) + "px", x + 2,  ssy+CROSSHAIR.fontSize + 2);            
+                ctx.fillText(x.toFixed(1) + "px", x + 2 * invScale,  ssy+(CROSSHAIR.fontSize + 2) * invScale);            
             }
             
             imageTools.setSmoothing(true);
@@ -354,7 +392,7 @@ var demo = (function(){
             ctx.fillText(x.toFixed(1) + "px", x + 2,  displayS.topLeft.y+CROSSHAIR.fontSize + 2);
         }
     }   
-    function doTranforms(){
+    function doTransforms(){
         if(mouse.buttonRaw & 2){
             var mx = mouse.x - oldMouse.x;
             var my = mouse.y - oldMouse.y;
@@ -362,20 +400,28 @@ var demo = (function(){
             displayS.update();
 
         }
+        if(mouse.w !== 0){
+            if(displayS.origin === undefined){
+                displayS.origin = V();
+            }
+            displayS.origin.setAs(mouse);//.sub(displayS.topLeft);
+            if(mouse.w < 0){
+                displayS.displayMatrix.scaleAtPoint(1/1.1 ,displayS.origin);
+                mouse.w = Math.min(0,mouse.w + 120);
+            }else{
+                displayS.displayMatrix.scaleAtPoint(1.1,displayS.origin);
+                mouse.w = Math.max(0,mouse.w - 120);
+            }
+                
+            displayS.update();
+        }
+            
         mouse.realPos = displayS.displayInvMatrix.applyToCoordinate(mouse.x,mouse.y,mouse.realPos);
 
     }
-    var globalTime = 0;
-    exposed.globalTime = 0;
-    var startTime = 0;
-    var closestPrim;
-    var oldMouse = {
-        x : 0,
-        y : 0,
-        bRaw : 0,
-    }    
+ 
     function display(){
-        doTranforms();
+        doTransforms();
         displayS.displayMatrix.setContextTransform(ctx);
         GG.ui.updatePointer();
         geometry.selected.callConstructors();
@@ -404,7 +450,7 @@ var demo = (function(){
             updateCanvas = true;
             tools.changed = false;
         }
-        if(updateCanvas || oldMouse.x !== mouse.x || oldMouse.y !== mouse.y || mouse.buttonRaw !== 0 || mouse.buttonRaw !== oldMouse.bRaw){
+        if(updateCanvas || oldMouse.x !== mouse.x || oldMouse.y !== mouse.y ||  oldMouse.w !== mouse.w || mouse.buttonRaw !== 0 || mouse.buttonRaw !== oldMouse.bRaw){
             if(settings.gridSnap){
                 mouse.x = Math.round(mouse.x/settings.gridSize)*settings.gridSize;
                 mouse.y = Math.round(mouse.y/settings.gridSize)*settings.gridSize;
@@ -419,6 +465,7 @@ var demo = (function(){
         updateCanvas = false;
         oldMouse.x = mouse.x;
         oldMouse.y = mouse.y;
+        oldMouse.w = mouse.w;
         oldMouse.bRaw = mouse.buttonRaw;
         requestAnimationFrame(update);
 

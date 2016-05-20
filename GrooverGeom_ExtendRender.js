@@ -57,11 +57,14 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         circle : function (vec){
             ctx.moveTo(vec.x + size, vec.y)
             ctx.arc(vec.x, vec.y, size, 0, Math.PI*2);
+            ctx.closePath();
         },
         square : function (vec){
+            ctx.moveTo(vec.x - size / 2, vec.y - size / 2);
             ctx.rect(vec.x - size / 2, vec.y - size / 2, size, size);
         },
         box :  function (vec){
+            ctx.moveTo(vec.x - size / 2, vec.y - size / 2);
             ctx.rect(vec.x - size / 2, vec.y - size / 2, size, size);
         },
         tri : function (vec){

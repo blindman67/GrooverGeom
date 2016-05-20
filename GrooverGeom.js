@@ -8565,30 +8565,38 @@ groover.geom = (function (){
             return this;
         },
         asInverseTransform : function(transform){  // creates a new or uses supplied transform to return the inverse of this matrix
-            var cross =  this.xAxis.x * this.yAxis.y - this.xAxis.y * this.yAxis.x;
-            v1.x = this.yAxis.y / cross;
-            v1.y = -this.xAxis.y / cross;
-            v2.x = -this.yAxis.x / cross;
-            v2.y = this.xAxis.x / cross;
-            v3.x = (this.yAxis.x * this.origin.y - this.yAxis.y * this.origin.x) / cross;
-            v3.y = -(this.xAxis.x * this.origin.y - this.xAxis.y * this.origin.x) / cross;
             if(transform === undefined){
                 transform = new Transform();
-                this.xAxis = v1.copy();
-                this.yAxis = v2.copy();
-                this.origin = v3.copy();
+            }
+            if (this.xAxis.y === 0 && this.yAxis.x === 0 && this.xAxis.x !== 0 && this.yAxis.y !== 0) {                
+                transform.xAxis.x = 1 / this.xAxis.x;
+                transform.xAxis.y = 0;
+                transform.yAxis.x = 0;
+                transform.yAxis.y = 1 / this.yAxis.y;
+                transform.origin.x = -transform.xAxis.x * this.origin.x;
+                transform.origin.y = -transform.yAxis.y * this.origin.y;    
                 return transform;
             }
-            transform.xAxis.x = v1.x;
-            transform.xAxis.y = v1.y;
-            transform.yAxis.x = v2.x;
-            transform.yAxis.y = v2.y;
-            transform.origin.x = v3.x;
-            transform.origin.y = v3.y;
+            var cross =  this.xAxis.x * this.yAxis.y - this.xAxis.y * this.yAxis.x;
+            transform.xAxis.x  = this.yAxis.y / cross;
+            transform.xAxis.y  = -this.xAxis.y / cross;
+            transform.yAxis.x  = -this.yAxis.x / cross;
+            transform.yAxis.y  = this.xAxis.x / cross;
+            transform.origin.x = (this.yAxis.x * this.origin.y - this.yAxis.y * this.origin.x) / cross;
+            transform.origin.y = -(this.xAxis.x * this.origin.y - this.xAxis.y * this.origin.x) / cross;
             return transform;
             
         },
-        invert: function() {
+        invert: function() { // inverts the transform 
+            if (this.xAxis.y === 0 && this.yAxis.x === 0 && this.xAxis.x !== 0 && this.yAxis.y !== 0) {                
+                this.xAxis.x = 1 / this.xAxis.x;
+                this.xAxis.y = 0;
+                this.yAxis.x = 0;
+                this.yAxis.y = 1 / this.yAxis.y;
+                this.origin.x = -this.xAxis.x * this.origin.x;
+                this.origin.y = -this.yAxis.y * this.origin.y;    
+                return this;
+            }
             var cross =  this.xAxis.x * this.yAxis.y - this.xAxis.y * this.yAxis.x;
             v1.x = this.yAxis.y / cross;
             v1.y = -this.xAxis.y / cross;
@@ -8604,6 +8612,9 @@ groover.geom = (function (){
             this.origin.y = v3.y;
             return this;
         },        
+        determinant : function(){ // returns the determinant of the matrix. I like to call it the axis cross product as it is identical to the cross product of x, and y axis
+            return this.xAxis.x * this.yAxis.y - this.xAxis.y * this.yAxis.x;
+        },
         mult : function(transform){
             var tt = transform;
             var t = this;
@@ -8647,6 +8658,21 @@ groover.geom = (function (){
             this.yAxis.y *= scale;
             this.origin.x *= scale;
             this.origin.y *= scale;
+            return this;            
+        },
+        scaleAtPoint  : function(scale,vec){ // scales the transform keeping the location under screen pos vec where it is
+            v1.x = (vec.x * this.xAxis.x + vec.y * this.yAxis.x + this.origin.x);
+            v1.y = (vec.x * this.xAxis.y + vec.y * this.yAxis.y + this.origin.y);              
+            this.xAxis.x *= scale;
+            this.xAxis.y *= scale;
+            this.yAxis.x *= scale;
+            this.yAxis.y *= scale;          
+            this.origin.x *= scale;
+            this.origin.y *= scale;           
+            v2.x = (vec.x * this.xAxis.x + vec.y * this.yAxis.x + this.origin.x);
+            v2.y = (vec.x * this.xAxis.y + vec.y * this.yAxis.y + this.origin.y);            
+            this.origin.x -= v2.x - v1.x;
+            this.origin.y -= v2.y - v1.y;            
             return this;            
         },
         scale : function(scaleX,scaleY){
@@ -8785,15 +8811,32 @@ groover.geom = (function (){
             this.origin.x = composit.originX;
             this.origin.y = composit.originY;
             return this;
-            
+        },
+        decomposeScale : function(){ //returns the current scale of the transform. This assumes the scale is uniform
+            return Math.hypot(this.xAxis.y,this.xAxis.x);
+        },
+        decomposeType : function(type){ // returns the decomposed item dependent on type. ["rotation","scale","scalex","scaley","skew"]);
+            type = type.toLowerCase();
+            switch(type){
+                case "rotation":
+                    return Math.atan2(this.xAxis.y, this.xAxis.x);
+                case "scale":
+                case "scalex":
+                    return Math.hypot(this.xAxis.y, this.xAxis.x);
+                case "scaley":
+                    return Math.hypot(this.yAxis.y, this.yAxis.x);
+                case "skew":
+                    return Math.atan2(-this.yAxis.x, this.yAxis.y) - Math.atan2(this.xAxis.y, this.xAxis.x)
+            }
+            return this.decompose();
         },
         decompose : function(){
             var r;
             return {
-                rotation : (r = Math.atan2(this.xAxis.y,this.xAxis.x)),
-                skew : Math.atan2(-this.yAxis.x,this.yAxis.y) - r,
-                scaleX : Math.hypot(this.xAxis.y,this.xAxis.x),
-                scaleY : Math.hypot(this.yAxis.y,this.yAxis.x),
+                rotation : (r = Math.atan2(this.xAxis.y, this.xAxis.x)),
+                skew : Math.atan2(-this.yAxis.x, this.yAxis.y) - r,
+                scaleX : Math.hypot(this.xAxis.y, this.xAxis.x),
+                scaleY : Math.hypot(this.yAxis.y, this.yAxis.x),
                 originX : this.origin.x,
                 originY : this.origin.y
             };

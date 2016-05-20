@@ -5,7 +5,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
     var inSelectionBox, boundsCorners, boundsLines,shadowPoints, shadowing,mirrorShadow, shadowSelection,cancel;
     var rightClickSelect, buttonDown, buttonDownOnSelected, buttonDownOn, dragged, dragSelection, quickDrag, draggingFinnalFlag, pointsUpdated, currentMouseFunction, rightClickMouseFunction;
     // ##Var
-    var rotationLine, boundsTransform, workTransform, cIndex, bounds, cursorNames, eventTypeNames, selectionHash;
+    var rotationLine, boundsTransform, workTransform, cIndex, bounds, cursorNames, eventTypeNames, selectionHash, displayTransform;
     
     geom = this;
     element = element1;
@@ -195,6 +195,10 @@ groover.geom.Geom.prototype.addUI = function(element1){
         rightButton : false,
         actionButton : false,
         activeButton : 0,
+        transform : undefined,
+        setInvTransform : function( transformation){ // set the transformation to move the mouse to canvas coords. This is usually the inverse of context current transform
+            this.transform = transformation;
+        },
         doEvent : function(name,info){
             if(typeof this[name] === "function"){
                 cancel = this[name](this,{type:eventTypeNames[name],info : info});
@@ -266,9 +270,13 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }else
             if(this.activeButton === 2){
                 this.actionButton = this.rightButton;
-            }                
-            pointerLoc.x = mouse.x;            
-            pointerLoc.y = mouse.y;   
+            }               
+            if(this.transform !== undefined){
+                pointerLoc = this.transform.applyToCoordinate(mouse.x,mouse.y,pointerLoc);
+            }else{                
+                pointerLoc.x = mouse.x;            
+                pointerLoc.y = mouse.y;   
+            }
             if(this.currentPointerFunction === undefined){
                 this.currentPointerFunction = this.pointerHover;                    
             }
@@ -283,8 +291,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.activeButton = 0;
                     this.currentPointerFunction = this.nextPointerFunctionOnDown;
                     this.nextPointerFunctionOnDown = undefined;
-                    dragStartX = mouse.x;
-                    dragStartY = mouse.y;    
+                    dragStartX = pointerLoc.x;
+                    dragStartY = pointerLoc.y;    
                     this.actionButton = this.mainButton;
                     this.currentPointerFunction();
                     this.actionButton = false;
@@ -295,8 +303,8 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.activeButton = 2;
                     this.currentPointerFunction = this.nextRightPointerFunctionOnDown;
                     this.nextRightPointerFunctionOnDown = undefined;
-                    dragStartX = mouse.x;
-                    dragStartY = mouse.y;                    
+                    dragStartX = pointerLoc.x;
+                    dragStartY = pointerLoc.y;                    
                     this.actionButton = this.rightButton;
                     this.currentPointerFunction();
                     this.actionButton = false;
@@ -306,16 +314,16 @@ groover.geom.Geom.prototype.addUI = function(element1){
         pointerDoNothing : function(){          
             if(!this.dragging){ 
                 this.dragging = true;   
-                this.doEvent("onUnusedRightButton",{type: "down",button:this.activeButton,mouseX : mouse.x, mouseY :mouse.y});    
+                this.doEvent("onUnusedRightButton",{type: "down",button:this.activeButton,mouseX : pointerLoc.x, mouseY :pointerLoc.y});    
                 if(cancel){            
                     this.dragComplete();                                       
                 }                
             }else{            
                 if(!this.actionButton){
-                    this.doEvent("onUnusedRightButton",{type: "up",button:this.activeButton,mouseX : mouse.x, mouseY :mouse.y});                        
+                    this.doEvent("onUnusedRightButton",{type: "up",button:this.activeButton,mouseX : pointerLoc.x, mouseY :pointerLoc.y});                        
                     this.dragComplete();                   
                 }else{
-                    this.doEvent("onUnusedRightButton",{type: "drag",button:this.activeButton,mouseX : mouse.x, mouseY :mouse.y});                        
+                    this.doEvent("onUnusedRightButton",{type: "drag",button:this.activeButton,mouseX : pointerLoc.x, mouseY :pointerLoc.y});                        
                     if(cancel){            
                         this.dragComplete();                                       
                     }                      
@@ -325,7 +333,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         },
         pointerQuickMove : function(){
             if(!this.dragging){ 
-                this.doEvent("onDragStart",{type: "quickMove",mouseX : mouse.x, mouseY :mouse.y,item : this.closestToPointer});
+                this.doEvent("onDragStart",{type: "quickMove",mouseX : pointerLoc.x, mouseY :pointerLoc.y,item : this.closestToPointer});
                 if(!cancel){            
                     this.dragging = true;   
                     this.selectNone()
@@ -370,7 +378,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         },
         pointerDragBounds : function(){  
             if(!this.dragging){ 
-                this.doEvent("onDragStart",{type: "move",mouseX : mouse.x, mouseY :mouse.y});
+                this.doEvent("onDragStart",{type: "move",mouseX : pointerLoc.x, mouseY :pointerLoc.y});
                 if(!cancel){
                     this.dragging = true;   
                     if(shadowing){
@@ -383,12 +391,12 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 if(!this.actionButton){
                     this.dragComplete(true);                   
                 }else{
-                    workVec.x = mouse.x- dragStartX;
-                    workVec.y = mouse.y- dragStartY;
-                    dragStartX = mouse.x;
-                    dragStartY = mouse.y; 
+                    workVec.x = pointerLoc.x- dragStartX;
+                    workVec.y = pointerLoc.y- dragStartY;
+                    dragStartX = pointerLoc.x;
+                    dragStartY = pointerLoc.y; 
                     if(this.onDragMove !== undefined){
-                        this.doEvent("onDragMove",{type: "move",offset:workVec.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
+                        this.doEvent("onDragMove",{type: "move",offset:workVec.asSimple(),mouseX: pointerLoc.x, mouseY:pointerLoc.y});
                     }else{
                         cancel = false;
                     }
@@ -408,7 +416,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         },
         pointerDragBoundsRotate : function(){    
             if(!this.dragging){ 
-                this.doEvent("onDragStart",{type: "rotate",mouseX : mouse.x, mouseY :mouse.y});
+                this.doEvent("onDragStart",{type: "rotate",mouseX : pointerLoc.x, mouseY :pointerLoc.y});
                 if(!cancel){
                     this.dragging = true;   
                     this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;         
@@ -425,17 +433,17 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 }else{
                     workVec.x = dragStartX;
                     workVec.y = dragStartY;
-                    dragStartX = mouse.x;
-                    dragStartY = mouse.y;  
+                    dragStartX = pointerLoc.x;
+                    dragStartY = pointerLoc.y;  
                     if(this.onDragMove !== undefined){
-                        this.doEvent("onDragMove",{type: "rotate",offset:workVec.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
+                        this.doEvent("onDragMove",{type: "rotate",offset:workVec.asSimple(),mouseX: pointerLoc.x, mouseY:pointerLoc.y});
                     }else{
                         cancel = false;
                     }
                     if(!cancel){                    
                         boundingBox.center(workVec3);
-                        workVec2.x = mouse.x;
-                        workVec2.y = mouse.y;
+                        workVec2.x = pointerLoc.x;
+                        workVec2.y = pointerLoc.y;
                         var ang = workVec.sub(workVec3).angleBetween(workVec2.sub(workVec3));
                         this.bounds.transform.reset()
                             .setOrigin(workVec3) // set center
@@ -457,7 +465,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         },
         pointerDragBoundsScale : function(){           
             if(!this.dragging){ 
-                this.doEvent("onDragStart",{type: "scale",mouseX : mouse.x, mouseY :mouse.y});
+                this.doEvent("onDragStart",{type: "scale",mouseX : pointerLoc.x, mouseY :pointerLoc.y});
                 if(!cancel){            
                     this.dragging = true;   
                     this.bounds.draggingPointIndex = this.bounds.pointerOverControlIndex;    
@@ -472,12 +480,12 @@ groover.geom.Geom.prototype.addUI = function(element1){
                     this.dragComplete(true);     
                     this.bounds.draggingPointIndex = -1;                    
                 }else{
-                    workVec.x = mouse.x- dragStartX;
-                    workVec.y = mouse.y- dragStartY;
-                    dragStartX = mouse.x;
-                    dragStartY = mouse.y;   
+                    workVec.x = pointerLoc.x- dragStartX;
+                    workVec.y = pointerLoc.y- dragStartY;
+                    dragStartX = pointerLoc.x;
+                    dragStartY = pointerLoc.y;   
                     if(this.onDragMove !== undefined){
-                        this.doEvent("onDragMove",{type: "scale",offset:workVec.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
+                        this.doEvent("onDragMove",{type: "scale",offset:workVec.asSimple(),mouseX: pointerLoc.x, mouseY:pointerLoc.y});
                     }else{
                         cancel = false;
                     }
@@ -541,7 +549,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         },
         pointerDragSelect : function(){
             if(!this.dragging){ 
-                this.doEvent("onDragStart",{type: "select",mouseX : mouse.x, mouseY :mouse.y});
+                this.doEvent("onDragStart",{type: "select",mouseX : pointerLoc.x, mouseY :pointerLoc.y});
                 if(!cancel){   
                     selectionBox.right = selectionBox.left = dragStartX;
                     selectionBox.bottom = selectionBox.top = dragStartY;
@@ -558,11 +566,11 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 }else{
                     selectionBox.left = dragStartX;
                     selectionBox.top = dragStartY;
-                    selectionBox.right = mouse.x;
-                    selectionBox.bottom = mouse.y;
+                    selectionBox.right = pointerLoc.x;
+                    selectionBox.bottom = pointerLoc.y;
                     selectionBox.normalise();
                     if(this.onDragMove !== undefined){
-                        this.doEvent("onDragMove",{type: "select",bounds:selectionBox.asSimple(),mouseX: mouse.x, mouseY:mouse.y});
+                        this.doEvent("onDragMove",{type: "select",bounds:selectionBox.asSimple(),mouseX: pointerLoc.x, mouseY:pointerLoc.y});
                     }else{
                         cancel = false;
                     }
