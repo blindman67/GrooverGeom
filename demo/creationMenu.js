@@ -482,6 +482,25 @@ var creationMenu = (function(){
             
             
         },
+        remove : {
+            clicked : function(){
+                var v1;
+                v1 = GG.ui.selected.first();
+                while(v1 !== undefined){
+                    GG.ui.points.removeById(v1.id);
+                    v1 = GG.ui.selected.next();
+                    
+                }
+                GG.ui.selectNone();
+                
+            },
+            requisites : function(){
+                if(GG.ui.selected.length > 0){
+                    return true;
+                }
+                return false;
+            } 
+        },
         weld : {
             clicked : function(){
                 var v1,v2,v3;
@@ -504,7 +523,6 @@ var creationMenu = (function(){
             
             
         },
-
         snapbezier : {
             clicked : function(){
                 var v1,v2,v3;
@@ -714,6 +732,7 @@ var creationMenu = (function(){
         { type : "button", text : "SnapBezier" , help : "Snaps the ends of a bezier together."},            
         { type : "button", text : "SnapTo" , help : "Snaps the point onto the closest path at creation time."},
         { type : "button", text : "Weld" , help : "Converts selected points to one point"},
+        { type : "button", text : "Remove" , help : "Removes selected vec primitives from UI interface and from memory if not used."},
     ];
     function createMenuClicked(event){
         if(event.type === "click"){
@@ -747,6 +766,31 @@ var creationMenu = (function(){
         }
     }        
     var primitiveMenu = {
+        visibleCallback : function(){
+            var id = Number(this.parentNode.id.split("_")[2]);
+            if(!isNaN(id)){
+                var prim = objects.all.getById(id);
+                if(prim.renderers !== undefined){
+                    prim.draw = prim.renderers.draw.bind(prim);
+                    prim.renderers = undefined
+                    this.textContent = "S";
+                }else{
+                    prim.renderers = {};
+                    prim.renderers.draw = prim.draw;
+                    prim.draw = function(){};
+                    this.textContent = "H";
+                }
+                exposed.changed = true;
+                
+            }
+        },
+        mouseOver : function(){
+            var id = Number(this.id.split("_")[2]);
+            if(!isNaN(id)){
+                exposed.mouseOverPrim = objects.all.getById(id);            
+                exposed.changed = true;
+            }
+        },
         createMenuItem : function(primitive, childNodes){
             var i,len;
             var menuItem = document.createElement("div");
@@ -754,10 +798,12 @@ var creationMenu = (function(){
             var type = primitive.type[0].toLowerCase() + primitive.type.substr(1);
             menuItem.id = "primitiveUI_"+type+"_"+primitive.id;
             menuItem.appendChild(createOpenCloseButton(true));
+            menuItem.appendChild(createItemButton("V",this.visibleCallback));
             len = childNodes.length;
             for(i = 0; i < len; i ++){
                 menuItem.appendChild(childNodes[i]);
             }
+            menuItem.addEventListener("mouseover",this.mouseOver);
             return menuItem;
         },
         vec : function(vec){
@@ -842,9 +888,12 @@ var creationMenu = (function(){
         objects = objectArray;
         addMenuItem("creation-UI",menuDetails,createMenuClicked);
     }
-    return {
+    var exposed;
+    return exposed = {
        start : initCreationMenu,
        displayPrimitives : displaySelected,
+       mouseOverPrim : undefined,
+       changed : true,
     }
     
 })();

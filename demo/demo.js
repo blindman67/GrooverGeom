@@ -323,6 +323,16 @@ var demo = (function(){
             ctx.stroke();
         }
     }
+    function drawPrim(prim, col, width) {
+        beginStyle(undefined, col, width)
+        if(prim.renderers !== undefined){
+            prim.moveTo().renderers.draw.call(prim);
+        }else{
+            prim.moveTo().draw();
+        }
+        ctx.stroke();
+   
+    }
     function showGrid(){
         var x,y;
         if(settings.grid){
@@ -473,6 +483,9 @@ var demo = (function(){
          if(closestPrim !== undefined){
             primitiveHighlight(closestPrim.type,closestPrim.id,"nearlight"); // turn on
          }
+         if(creationMenu.mouseOverPrim !== undefined){
+             drawPrim(creationMenu.mouseOverPrim,"red",2);
+         }
         drawGeomUI();
         if(mouse.over){
             showCrosshairs(mouse.realPos.x,mouse.realPos.y);
@@ -482,6 +495,10 @@ var demo = (function(){
     function update(timer){
         exposed.globalTime = globalTime = timer - startTime;
         tools.update();
+        if(creationMenu.changed){
+            creationMenu.changed = false;
+            updateCanvas = true;
+        }
         if(tools.changed){
             updateCanvas = true;
             tools.changed = false;

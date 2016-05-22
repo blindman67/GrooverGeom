@@ -1166,6 +1166,17 @@ groover.geom = (function (){
             }
             return this.primitives[this.current];            
         },        
+        getById : function(id){ // returns first primitive to match the id, else returns undefined
+            var retP = undefined;
+            this.each(function(prim){
+                if(prim.id === id){
+                    retP = prim;
+                    return false;
+                }
+            });
+            return retP;
+        
+        },
         getClosestIndexToVec : function(vec,type){
             var dist = Infinity;
             var ind = -1;

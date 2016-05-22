@@ -28,8 +28,8 @@ var mouseInterface = (function(){
             m.alt = e.altKey;m.shift = e.shiftKey;m.ctrl = e.ctrlKey;
             if (t === "mousedown") { m.buttonRaw |= m.bm[e.which-1];
             } else if (t === "mouseup") { m.buttonRaw &= m.bm[e.which + 2];
-            } else if (t === "mouseout") { m.buttonRaw = 0; m.over = false;
-            } else if (t === "mouseover") { m.over = true;
+            } else if (t === "mouseout") { m.buttonRaw = 0; m.over = false; 
+            } else if (t === "mouseover") { m.over = true; 
             } else if (t === "mousewheel") { m.w = e.wheelDelta;
             } else if (t === "DOMMouseScroll") { m.w = -e.detail;}
             if(this.callbacks){

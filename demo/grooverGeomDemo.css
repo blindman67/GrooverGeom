@@ -103,6 +103,20 @@ table {
 .openClose:hover {
     background : #AAa580;
 }
+.itemButton {
+    cursor : pointer;
+    background : #7ca580;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-right: 3px;
+    margin-left: 0px;   
+    border: none;    
+}
+.itemButton:hover {
+    background : #AAa580;
+}
 .closed {
     display : none;
 }

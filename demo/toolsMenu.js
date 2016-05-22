@@ -110,6 +110,7 @@ var tools = (function(){
                 if(mouse.y >= y && mouse.y <= y + w && mouse.over){
                     if(currentId !== tool.id){
                         canvas.title = tool.help;
+
                     }
                     currentId = tool.id;
                     mouseOverIcon = tool;

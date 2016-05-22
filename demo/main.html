@@ -269,6 +269,14 @@
              openClose.addEventListener("click",groupOpenClose);
              return openClose;
         }
+        function createItemButton(text,callback){
+             var but = document.createElement("span");
+             but.textContent = text;
+             but.title = "Toggle display of this primitive";
+             but.className = "uiSubGroup itemButton";
+             but.addEventListener("click",callback);
+             return but;
+        }        
         function getSubGroup(subGroup,container){
             var subGroupE = container.querySelector("#"+ subGroup);
             if(subGroupE === null){
@@ -321,6 +329,7 @@
                 displayHelp(this.title);
             }        
         }
+
         function addMenuItem(id,items,callback){
             var menuCell = document.querySelector("#menu_cell");
             var menuItem = menuCell.querySelector("#"+ id);
