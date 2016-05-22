@@ -2,11 +2,13 @@
 <html id="topDoc">
     <head>
         <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-8">
-        <title>Example template</title>
+        <title>GrooverGeom demo</title>
         <meta name="keywords" content="Geometry, Math, JavaScript, Mark Spronck, Groover, GrooverGeom" />
         <meta name="description" content="Example for the use of GrooverGeom.js. GrooverGeom is a Javascript geometry libarry" />
         <meta name="author" content="Mark Spronck" />
         <link rel="stylesheet" type="text/css" href="grooverGeomDemo.css">
+        <script>const GROOVER_GEOM_INCLUDE_MATH = true; // adds extensions to the built in Javascript Math object
+        </script>
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom.js"></script>
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendRender.js"></script>
         <script src = "http://localhost/MarksHome/GitHub/GrooverGeom/GrooverGeom_ExtendShapes.js"></script>       
@@ -23,11 +25,9 @@
     <body class = "snug">
         <div class="title snug" id="title">
             <h1 class="snug" >Groover Vector Geometry Editor</h1>
-            <p id = "helpText">Welcome to the demo of Groover.Geom in action.</p>
+            <p class = "helpText" id = "helpText">Welcome to the demo of Groover.Geom in action.</p>
         </div>
         <div class="content snug">
-
-            
             <table id="workspace">
                 <tbody>
                 <tr>
@@ -133,7 +133,12 @@
         var canWidth;
         var canHeight;
         var updateCanvas = true;
-        
+        var helpTips = [
+            "Tip: Click drag middle mouse button to pan.",
+            "Tip: Use mouse wheel to zoom in and out.",
+            "Tip: Right click adds a point or if over a point selects a point. A point is a Groover.Geom.Vec ",
+        ];
+        var helpTimer
         function layout(){
             var w = window.innerWidth;
             var h = window.innerHeight;
@@ -298,9 +303,22 @@
             subG.appendChild(element);
             
          }   
+        function displayHelp(text){
+            var n;
+            clearTimeout(helpTimer);
+            if(text === undefined && helpTips.length > 0){
+                n = Math.floor(Math.random() * helpTips.length);
+                text = helpTips[n];
+                helpTips.splice(n,1);
+            }
+            helpText.textContent = text;
+            if(helpTips.length > 0){
+                helpTimer = setTimeout(displayHelp,13000);
+            }
+        }
         function showHelp(){
             if(this.title !== undefined && this.title !== null){
-                helpText.textContent = this.title;
+                displayHelp(this.title);
             }        
         }
         function addMenuItem(id,items,callback){

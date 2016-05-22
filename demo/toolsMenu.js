@@ -8,6 +8,7 @@ var tools = (function(){
     var pos = 0;
     var spritePos = 0;
     var update;
+    var currentId = -1;
     exposed.action = null;
     exposed.changed = true; 
     exposed.redraw = true;
@@ -60,6 +61,8 @@ var tools = (function(){
             };
             tools.names.push(name);
         }
+        tool.id = mouse.getInterfaceId();
+        tool.help = setting.help === undefined ? "" : setting.help;
         tool.cursor = setting.cursor === undefined ? "pointer" : setting.cursor;
         tool.position = setting.position === undefined ? pos ++ : setting.position;        
         tool.spritePos = setting.spritePos === undefined ? spritePos ++ : setting.spritePos;
@@ -105,6 +108,10 @@ var tools = (function(){
                     
 
                 if(mouse.y >= y && mouse.y <= y + w && mouse.over){
+                    if(currentId !== tool.id){
+                        canvas.title = tool.help;
+                    }
+                    currentId = tool.id;
                     mouseOverIcon = tool;
                     showBright = true;
                     if(mouseDownOn !== undefined && mouseDownOn.position !== tool.position){

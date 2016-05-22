@@ -54,7 +54,9 @@ table {
 .foot {
     
 }
-
+.helpText {
+    font-size : small;
+}
 
 /* Menu and DOM ui */
 

@@ -482,6 +482,143 @@ var creationMenu = (function(){
             
             
         },
+        weld : {
+            clicked : function(){
+                var v1,v2,v3;
+                v1 = GG.ui.selected.first();
+                if(v1 !== undefined){
+                    v2 = GG.ui.selected.next();
+                    while(v2 !== undefined){
+                        var prims1 = objects.all.collectIdsAsPrimitiveArray(v2.id);
+                        prims1.replace(v2.id,v1);
+                        v2 = GG.ui.selected.next();
+                    }
+                }
+            },
+            requisites : function(){
+                if(GG.ui.selected.length > 1){
+                    return true;
+                }
+                return false;
+            } 
+            
+            
+        },
+
+        snapbezier : {
+            clicked : function(){
+                var v1,v2,v3;
+                v1 = GG.ui.selected.first();
+                v2 = GG.ui.selected.next();
+                if(v1 !== undefined && v2 !== undefined){
+                    var prims = objects.all.collectIdsAsPrimitiveArray(v1.id);
+                    var prims1 = objects.all.collectIdsAsPrimitiveArray(v2.id);
+                    var b1 = prims.firstAs("Bezier");
+                    var b2 = prims1.firstAs("Bezier");
+                    if(b1 !== undefined && b2 !== undefined){
+                        var start,start1;
+                        if(v1.id === b1.p2.id){
+                            start = false;
+                        }else
+                        if(v1.id === b1.p1.id){
+                            start = true;
+                        }
+                        if(v2.id === b2.p2.id){
+                            start1 = false;
+                        }else
+                        if(v2.id === b2.p1.id){
+                            start1 = true;
+                        }
+                        var v3 = V(v1).makeUnique();
+                        objects.all.push(v3);
+                        v3.hashs = { h1 : null, h2 : null, h3 : null, h4 : null, h5: null,fStart : start, tStart : start1, lastPos : V() };
+                        var construct = function(){
+                            var cw = this.constructedWith;
+                            var p = cw.primitives;
+                            var v1,v2,c1,c2,v,dif;
+                            var h1 = this.getHash(); // this vec
+                            var h2 = p[0].getHash(); // the prim
+                            var h3 = p[1].getHash(); // the prim
+                            var h4 = p[2].getHash(); // the prim
+                            var h5 = p[3].getHash(); // the prim
+                            if(h1 !== this.hashs.h1){
+                               // p[0].snapToBezier(p[1],this.hashs.fStart, this.hashs.tStart,true,false);
+                                p[1].snapToBezier(p[0],this.hashs.fStart, this.hashs.tStart,true,false);
+                                if(this.hashs.tStart){
+                                    this.setAs(p[1].p1);
+                                    this.hashs.lastPos.setAs(p[1].p1);
+                                }else{
+                                    this.setAs(p[1].p2);
+                                    this.hashs.lastPos.setAs(p[1].p2);
+                                }
+                            }else
+                            if(h4 !== this.hashs.h4 || h5 !== this.hashs.h5){
+                                if(h5 !== this.hashs.h5){
+                                    v = p[3];                                    
+                                    p[2].setAs(v);
+                                }else{
+                                    v = p[2];
+                                    p[3].setAs(v);
+                                }
+                                if(this.hashs.fStart){
+                                    c1 = p[0].getControlPoint("start");
+                                }else{
+                                    c1 = p[0].getControlPoint();
+                                }
+                                if(this.hashs.tStart){
+                                    c2 = p[1].getControlPoint("start");
+                                }else{
+                                    c2 = p[1].getControlPoint();
+                                }
+                                dif = v.copy().sub(this.hashs.lastPos);
+                                c1.add(dif);
+                                c2.add(dif);
+                                this.hashs.lastPos.setAs(v);
+                                this.setAs(v);
+                                
+                            }else
+                            if(h2 !== this.hashs.h2){
+                                p[1].snapToBezier(p[0],this.hashs.fStart, this.hashs.tStart,true,false);
+                                if(this.hashs.fStart){
+                                    this.setAs(p[0].p1);
+                                    this.hashs.lastPos.setAs(p[0].p1);
+                                }else{
+                                    this.setAs(p[0].p2);
+                                    this.hashs.lastPos.setAs(p[0].p2);
+                                }
+                            }else
+                            if(h3 !== this.hashs.h3){
+                                p[0].snapToBezier(p[1],this.hashs.tStart, this.hashs.fStart,true,false);
+                                if(this.hashs.tStart){
+                                    this.setAs(p[1].p1);
+                                    this.hashs.lastPos.setAs(p[1].p1);
+                                }else{
+                                    this.setAs(p[1].p2);
+                                    this.hashs.lastPos.setAs(p[1].p2);
+                                }
+                            }else{
+                                return;
+                            }
+                            this.hashs.h1 = this.getHash();
+                            this.hashs.h2 = p[0].getHash();
+                            this.hashs.h3 = p[1].getHash();
+                            this.hashs.h4 = p[2].getHash();
+                            this.hashs.h5 = p[3].getHash();
+                        }
+                        v3.addConstructor(GG.createConstructor([b1,b2,v1,v2],construct));
+                        v3.recreate();           
+                    }
+                }
+            },
+            requisites : function(){
+                if(GG.ui.selected.length > 1){
+                    return true;
+                }
+                return false;
+            } 
+            
+            
+        },
         bezier2at : {
             clicked : function(){
                 var v1,v2,v3;
@@ -574,7 +711,9 @@ var creationMenu = (function(){
         { type : "button", text : "Bezier2" , help : "Creates a simple Quadratic bezier. Requires 3 points."},
         { type : "button", text : "Bezier2At" , help : "Creates a simple Quadratic bezier with a control point on the curve. Requires 3 points."},
         { type : "button", text : "Bezier3" , help : "Creates a simple Cubic bezier. Requires 4 points."},
+        { type : "button", text : "SnapBezier" , help : "Snaps the ends of a bezier together."},            
         { type : "button", text : "SnapTo" , help : "Snaps the point onto the closest path at creation time."},
+        { type : "button", text : "Weld" , help : "Converts selected points to one point"},
     ];
     function createMenuClicked(event){
         if(event.type === "click"){
@@ -682,9 +821,9 @@ var creationMenu = (function(){
             el.textContent = "ID : "+bezier.id + " "+ (bezier.isCubic()?"Cubic":"Quadratic"); 
             el.textContent += " Length : "+ bezier.leng().toFixed(0);
             if(cp2 !== undefined){
-                addMenuElement(this.createMenuItem(rectangle, [el, p1, cp1, cp2, p2]), "Beziers");
+                addMenuElement(this.createMenuItem(bezier, [el, p1, cp1, cp2, p2]), "Beziers");
             }else{
-                addMenuElement(this.createMenuItem(rectangle, [el, p1, cp1, p2]), "Beziers");
+                addMenuElement(this.createMenuItem(bezier, [el, p1, cp1, p2]), "Beziers");
             }
         },            
     }        

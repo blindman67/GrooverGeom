@@ -32,8 +32,8 @@ groover.geom.Geom.prototype.addConstructors = function(){
         functions : [],
         info : "Provides methods to customise primitive construction"
     }; 
-    var utilityFunctions = {
-        hasIdConstruction : function(id){
+    var utilityFunctions = { // these are overload functions. They replace existing functions if they exist
+        hasId : function(id){
             var i;
             if(!this.constructedWith.hasId(id)){
                 for(i = 0; i < this.constructedWith.primitives.length; i ++){
@@ -45,13 +45,30 @@ groover.geom.Geom.prototype.addConstructors = function(){
             }
             return true;
         },
-        getAllIdsAsArrayConstruction : function(array){
+        getAllIdsAsArray : function(array){
             var i;
             this.constructedWith.getAllIdsAsArray(array);
             for(i = 0; i < this.constructedWith.primitives.length; i ++){
                 this.constructedWith.primitives[i].getAllIdsAsArray(array);
             }
             return array;
+        },
+        replace : function(id,prim){
+            if(id !== undefined){
+                if(prim !== undefined){
+                    this.constructedWith.replace(id,prim);
+                    for(i = 0; i < this.constructedWith.primitives.length; i ++){
+                        var p = this.constructedWith.primitives[i];
+                        if(p.replace !== undefined){
+                            p.replace(id,prim);
+                        }
+                        if(prim.type === p.type && p.id === id){
+                            this.constructedWith.primitives[i] = prim;
+                        }
+                    }
+                }
+            }
+            return this;
         },
     } 
     var functions = { // functions to add to each primitive
@@ -61,13 +78,19 @@ groover.geom.Geom.prototype.addConstructors = function(){
             }
             return false;
         },
-        addConstructor : function(construction){ // adds a constructing object to the primitive. Use Geom.createConstructor to create a construing object
+        addConstructor : function(construction, protectRecursion){ // adds a constructing object to the primitive. Use Geom.createConstructor to create a construing object. if protectRecursion is true then the primitive is modified so not to allow recursive searches
             this.constructedWith = construction;
-            construction.hasId = this.hasId.bind(this);
-            construction.getAllIdsAsArray = this.getAllIdsAsArray.bind(this);
             construction.create = construction.create.bind(this);
-            this.hasId = utilityFunctions.hasIdConstruction.bind(this);
-            this.getAllIdsAsArray = utilityFunctions.getAllIdsAsArrayConstruction.bind(this);
+            if(!protectRecursion){
+                construction.hasId = this.hasId.bind(this);
+                construction.getAllIdsAsArray = this.getAllIdsAsArray.bind(this);
+                if(this.replace !== undefined){
+                    construction.replace = this.replace.bind(this);
+                    this.replace = utilityFunctions.replace.bind(this);
+                }
+                this.hasId = utilityFunctions.hasId.bind(this);
+                this.getAllIdsAsArray = utilityFunctions.getAllIdsAsArray.bind(this);
+            }
             return this;
         },
         recreate : function(data){  // function recreates the primitive by calling the constructing function. Data is any optional data the constructing function may need.
@@ -78,8 +101,15 @@ groover.geom.Geom.prototype.addConstructors = function(){
         },
         removeConstructor : function(){  // removes a constructor and reverts the primitive back to standard type
             var cw = this.constructedWith;
-            this.hasId = cw.hasId.bind(this);
-            this.getAllIdsAsArray = cw.getAllIdsAsArray.bind(this);
+            if(cw.hasId !== undefined){
+                this.hasId = cw.hasId.bind(this);
+            }
+            if(cw.getAllIdsAsArray !== undefined){
+                this.getAllIdsAsArray = cw.getAllIdsAsArray.bind(this);
+            }
+            if(cw.replace !== undefined){
+                this.replace = cw.replace.bind(this);
+            }
             this.constructedWith = undefined;
             return this;
         }    
