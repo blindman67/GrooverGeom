@@ -331,8 +331,16 @@ var demo = (function(){
             prim.moveTo().draw();
         }
         ctx.stroke();
-   
     }
+    function labelPrim(prim, col, width) {
+        beginStyle(undefined, col, width)
+        if(prim.renderers !== undefined){
+            prim.moveTo().renderers.draw.call(prim);
+        }else{
+            prim.moveTo().draw();
+        }
+        ctx.stroke();
+    }    
     function showGrid(){
         var x,y;
         if(settings.grid){
@@ -479,13 +487,20 @@ var demo = (function(){
         if(closestPrim !== undefined){
             primitiveHighlight(closestPrim.type,closestPrim.id,"nearlight",true); // turn off
         };
-        draw([closestPrim = geometry.all.getClosestPrimitiveToVec(V(mouse.x,mouse.y))],"Yellow",2);
-         if(closestPrim !== undefined){
-            primitiveHighlight(closestPrim.type,closestPrim.id,"nearlight"); // turn on
-         }
-         if(creationMenu.mouseOverPrim !== undefined){
-             drawPrim(creationMenu.mouseOverPrim,"red",2);
-         }
+        if(mouse.over){
+            draw([closestPrim = geometry.all.getClosestPrimitiveToVec(V(mouse.x,mouse.y))],"Yellow",2);
+            if(closestPrim !== undefined){
+                primitiveHighlight(closestPrim.type,closestPrim.id,"nearlight"); // turn on
+            }
+        }else{
+            if(creationMenu.mouseOverPrim !== undefined){
+                drawPrim(creationMenu.mouseOverPrim,"red",2);
+            }
+            if(creationMenu.mouseOverVec !== undefined){
+                beginFontStyle(FONT, GEOM_UI_STYLES.lables.fontSize, GEOM_UI_STYLES.lables.fill, "center", "bottom");
+                creationMenu.mouseOverVec.lable("ID:"+creationMenu.mouseOverVec.id);
+            }
+        }
         drawGeomUI();
         if(mouse.over){
             showCrosshairs(mouse.realPos.x,mouse.realPos.y);

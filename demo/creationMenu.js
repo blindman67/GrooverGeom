@@ -2,6 +2,142 @@
 var creationMenu = (function(){
     var GG;
     var objects;
+    var constructors =  {
+        bezierSnapSingle : function(){
+            var cw = this.constructedWith;
+            var p = cw.primitives;
+            var v1,v2,c1,c2,v,dif;
+            var h,bez1,bez2,cp1;
+            h = this.hashs;
+            var h1 = this.getHash(); // this vec
+            var h2 = (bez1 = p[0]).getHash(); 
+            var h3 = (bez2 = p[1]).getHash(); 
+            var h4 = (cp1 =  p[2]).getHash(); 
+            if(h1 !== h.h1){
+                bez2.snapToBezier(bez1,h.fStart, h.tStart,true,true);
+                if(h.tStart){
+                    h.lastPos.setAs(bez2.p1);
+                }else{
+                    h.lastPos.setAs(bez2.p2);
+                }
+            }else
+            if(h4 !== h.h4){
+                v = cp1;
+                if(h.fStart){
+                    c1 = bez1.getControlPoint("start");
+                }else{
+                    c1 = bez1.getControlPoint();
+                }
+                if(h.tStart){
+                    c2 = bez2.getControlPoint("start");
+                }else{
+                    c2 = bez2.getControlPoint();
+                }
+                dif = v.copy().sub(h.lastPos);
+                c1.add(dif);
+                c2.add(dif);
+                h.lastPos.setAs(v);
+                this.setAs(v);
+                
+            }else
+            if(h2 !== h.h2){
+                bez2.snapToBezier(bez1,h.fStart, h.tStart,true,true);
+                if(h.fStart){
+                    h.lastPos.setAs(bez1.p1);
+                }else{
+                    h.lastPos.setAs(bez1.p2);
+                }
+            }else
+            if(h3 !== h.h3){
+                bez1.snapToBezier(bez2,h.tStart, h.fStart,true,true);
+                if(h.tStart){
+                    h.lastPos.setAs(bez2.p1);
+                }else{
+                    h.lastPos.setAs(bez2.p2);
+                }
+            }else{
+                return;
+            }
+            h.h1 = this.getHash();
+            h.h2 = bez1.getHash();
+            h.h3 = bez2.getHash();
+            h.h4 = cp1.getHash();           
+        },
+        bezierSnap : function(){
+            var cw = this.constructedWith;
+            var p = cw.primitives;
+            var v1,v2,c1,c2,v,dif;
+            var h1 = this.getHash(); // this vec
+            var h2 = p[0].getHash(); // the prim
+            var h3 = p[1].getHash(); // the prim
+            var h4 = p[2].getHash(); // the prim
+            var h5 = p[3].getHash(); // the prim
+            if(h1 !== this.hashs.h1){
+               // p[0].snapToBezier(p[1],this.hashs.fStart, this.hashs.tStart,true,false);
+                p[1].snapToBezier(p[0],this.hashs.fStart, this.hashs.tStart,true,false);
+                if(this.hashs.tStart){
+                    this.setAs(p[1].p1);
+                    this.hashs.lastPos.setAs(p[1].p1);
+                }else{
+                    this.setAs(p[1].p2);
+                    this.hashs.lastPos.setAs(p[1].p2);
+                }
+            }else
+            if(h4 !== this.hashs.h4 || h5 !== this.hashs.h5){
+                if(h5 !== this.hashs.h5){
+                    v = p[3];                                    
+                    p[2].setAs(v);
+                }else{
+                    v = p[2];
+                    p[3].setAs(v);
+                }
+                if(this.hashs.fStart){
+                    c1 = p[0].getControlPoint("start");
+                }else{
+                    c1 = p[0].getControlPoint();
+                }
+                if(this.hashs.tStart){
+                    c2 = p[1].getControlPoint("start");
+                }else{
+                    c2 = p[1].getControlPoint();
+                }
+                dif = v.copy().sub(this.hashs.lastPos);
+                c1.add(dif);
+                c2.add(dif);
+                this.hashs.lastPos.setAs(v);
+                this.setAs(v);
+                
+            }else
+            if(h2 !== this.hashs.h2){
+                p[1].snapToBezier(p[0],this.hashs.fStart, this.hashs.tStart,true,false);
+                if(this.hashs.fStart){
+                    this.setAs(p[0].p1);
+                    this.hashs.lastPos.setAs(p[0].p1);
+                }else{
+                    this.setAs(p[0].p2);
+                    this.hashs.lastPos.setAs(p[0].p2);
+                }
+            }else
+            if(h3 !== this.hashs.h3){
+                p[0].snapToBezier(p[1],this.hashs.tStart, this.hashs.fStart,true,false);
+                if(this.hashs.tStart){
+                    this.setAs(p[1].p1);
+                    this.hashs.lastPos.setAs(p[1].p1);
+                }else{
+                    this.setAs(p[1].p2);
+                    this.hashs.lastPos.setAs(p[1].p2);
+                }
+            }else{
+                return;
+            }
+            this.hashs.h1 = this.getHash();
+            this.hashs.h2 = p[0].getHash();
+            this.hashs.h3 = p[1].getHash();
+            this.hashs.h4 = p[2].getHash();
+            this.hashs.h5 = p[3].getHash();
+        },
+    }
+    
     var actions = {
         line : {
             clicked : function(){
@@ -528,6 +664,27 @@ var creationMenu = (function(){
                 var v1,v2,v3;
                 v1 = GG.ui.selected.first();
                 v2 = GG.ui.selected.next();
+                if(v1 !== undefined && v2 === undefined){
+                    var prims = objects.all.collectIdsAsPrimitiveArray(v1.id);
+                    var b1 = prims.firstAs("Bezier");
+                    var b2 = prims.nextAs("Bezier");
+                    if(b1 !== undefined && b2 !== undefined){
+                        var start,start1;
+                        start = false;
+                        start1 = true;
+                        if(v1.id === b1.p1.id){
+                            start = true;
+                        }
+                        if(v1.id === b2.p2.id){
+                            start1 = false;
+                        }
+                        var v3 = V(v1).makeUnique();
+                        objects.all.push(v3);
+                        v3.hashs = { h1 : null, h2 : null, h3 : null, h4 : null, h5: null,fStart : start, tStart : start1, lastPos : V() };
+                        v3.addConstructor(GG.createConstructor([b1,b2,v1],constructors.bezierSnapSingle));
+                        v3.recreate();           
+                    }
+                }else
                 if(v1 !== undefined && v2 !== undefined){
                     var prims = objects.all.collectIdsAsPrimitiveArray(v1.id);
                     var prims1 = objects.all.collectIdsAsPrimitiveArray(v2.id);
@@ -550,86 +707,13 @@ var creationMenu = (function(){
                         var v3 = V(v1).makeUnique();
                         objects.all.push(v3);
                         v3.hashs = { h1 : null, h2 : null, h3 : null, h4 : null, h5: null,fStart : start, tStart : start1, lastPos : V() };
-                        var construct = function(){
-                            var cw = this.constructedWith;
-                            var p = cw.primitives;
-                            var v1,v2,c1,c2,v,dif;
-                            var h1 = this.getHash(); // this vec
-                            var h2 = p[0].getHash(); // the prim
-                            var h3 = p[1].getHash(); // the prim
-                            var h4 = p[2].getHash(); // the prim
-                            var h5 = p[3].getHash(); // the prim
-                            if(h1 !== this.hashs.h1){
-                               // p[0].snapToBezier(p[1],this.hashs.fStart, this.hashs.tStart,true,false);
-                                p[1].snapToBezier(p[0],this.hashs.fStart, this.hashs.tStart,true,false);
-                                if(this.hashs.tStart){
-                                    this.setAs(p[1].p1);
-                                    this.hashs.lastPos.setAs(p[1].p1);
-                                }else{
-                                    this.setAs(p[1].p2);
-                                    this.hashs.lastPos.setAs(p[1].p2);
-                                }
-                            }else
-                            if(h4 !== this.hashs.h4 || h5 !== this.hashs.h5){
-                                if(h5 !== this.hashs.h5){
-                                    v = p[3];                                    
-                                    p[2].setAs(v);
-                                }else{
-                                    v = p[2];
-                                    p[3].setAs(v);
-                                }
-                                if(this.hashs.fStart){
-                                    c1 = p[0].getControlPoint("start");
-                                }else{
-                                    c1 = p[0].getControlPoint();
-                                }
-                                if(this.hashs.tStart){
-                                    c2 = p[1].getControlPoint("start");
-                                }else{
-                                    c2 = p[1].getControlPoint();
-                                }
-                                dif = v.copy().sub(this.hashs.lastPos);
-                                c1.add(dif);
-                                c2.add(dif);
-                                this.hashs.lastPos.setAs(v);
-                                this.setAs(v);
-                                
-                            }else
-                            if(h2 !== this.hashs.h2){
-                                p[1].snapToBezier(p[0],this.hashs.fStart, this.hashs.tStart,true,false);
-                                if(this.hashs.fStart){
-                                    this.setAs(p[0].p1);
-                                    this.hashs.lastPos.setAs(p[0].p1);
-                                }else{
-                                    this.setAs(p[0].p2);
-                                    this.hashs.lastPos.setAs(p[0].p2);
-                                }
-                            }else
-                            if(h3 !== this.hashs.h3){
-                                p[0].snapToBezier(p[1],this.hashs.tStart, this.hashs.fStart,true,false);
-                                if(this.hashs.tStart){
-                                    this.setAs(p[1].p1);
-                                    this.hashs.lastPos.setAs(p[1].p1);
-                                }else{
-                                    this.setAs(p[1].p2);
-                                    this.hashs.lastPos.setAs(p[1].p2);
-                                }
-                            }else{
-                                return;
-                            }
-                            this.hashs.h1 = this.getHash();
-                            this.hashs.h2 = p[0].getHash();
-                            this.hashs.h3 = p[1].getHash();
-                            this.hashs.h4 = p[2].getHash();
-                            this.hashs.h5 = p[3].getHash();
-                        }
-                        v3.addConstructor(GG.createConstructor([b1,b2,v1,v2],construct));
+                        v3.addConstructor(GG.createConstructor([b1,b2,v1,v2],constructors.bezierSnap));
                         v3.recreate();           
                     }
                 }
             },
             requisites : function(){
-                if(GG.ui.selected.length > 1){
+                if(GG.ui.selected.length > 0){
                     return true;
                 }
                 return false;
@@ -714,15 +798,30 @@ var creationMenu = (function(){
             } 
         },
     }
-    
-    var menuDetails = [
-        {type : "text",text : "Create", help : "Tools to create geometry"},
+    var primitiveDetails = [
+        {type : "text",text : "Primitives", help : "Tools to create geometry"},
+        { type : "button", text : "Vec", help : "Create a Vec (represented by 2 values x and y)." },
         { type : "button", text : "Line", help : "Create a line or a connected set of lines. Requires 2 points." },
         { type : "button", text : "Triangle", help : "Creates a Triangle Requires 3 points."},
         { type : "button", text : "Rectangle", help : "Creates a rectangle, the first two points define the top, the 3rd point defines the height. Requires 3 points." },
         { type : "button", text : "Circle" , help : "Creates a circle. The center at he first point, and the radius is distance from first point to 2nd point. Requires 2 points."},
-        { type : "button", text : "Circle2" , help : "Create a circle by defining its diameter. Requires 2 points."},
         { type : "button", text : "Arc" , help : "Creates and arc that fits 3 points. Requires 3 points."},
+        { type : "button", text : "Bezier" , help : "Creates a simple Quadratic bezier. Requires 3 points."},
+        { type : "button", text : "Box" , help : "A bounding box."},
+        { type : "button", text : "Transform" , help : "2D transformation matrix."},
+        { type : "button", text : "VecArray" , help : "An array of vecs"},
+        { type : "button", text : "PrimitiveArray" , help : "An array of primitives"},
+        
+    ];
+    
+    var menuDetails = [
+        {type : "text",text : "Create", help : "Tools to create geometry"},
+       // { type : "button", text : "Line", help : "Create a line or a connected set of lines. Requires 2 points." },
+       // { type : "button", text : "Triangle", help : "Creates a Triangle Requires 3 points."},
+       // { type : "button", text : "Rectangle", help : "Creates a rectangle, the first two points define the top, the 3rd point defines the height. Requires 3 points." },
+       // { type : "button", text : "Circle" , help : "Creates a circle. The center at he first point, and the radius is distance from first point to 2nd point. Requires 2 points."},
+        { type : "button", text : "Circle2" , help : "Create a circle by defining its diameter. Requires 2 points."},
+       // { type : "button", text : "Arc" , help : "Creates and arc that fits 3 points. Requires 3 points."},
         { type : "button", text : "Arc3" , help : "Creates an arc by defining the center then the start angle then the end angle. Requires 3 points."},
         { type : "button", text : "Round" , help : "Creates a rounded corner from three points. First on in coming line, 2nd at corner, and 3rd on outgoing line line attached to the selected point. Requires 3 points."},
         { type : "button", text : "RoundC" , help : "Creates a rounded corner from line attached to the selected point. Requires 1+ points attached to lines."},
@@ -748,20 +847,50 @@ var creationMenu = (function(){
         demo.updateUI();
     }  
     var primitiveUI = {
-        vec : function(vec,extra){
-            var span, id, x, y;
-            span = createElement("span",{id : "vec", className : "uiPrimitive snug show"});
-            if(vec.id === undefined){
-                id = createElement("span",{text : extra ,id : "primID", className : "uiPrimitivePropertyName snug"});
-            }else{
-                id = createElement("span",{text : extra + " Vec ID : "+vec.id ,id : "primID", className : "uiPrimitivePropertyName snug"});
+        mouseOver : function(){
+            exposed.mouseOverVec = this.id.split("_vec")[1];
+            var id = Number(this.id.split("_vec")[1]);
+            if(!isNaN(id)){
+                exposed.mouseOverVec = objects.all.getById(id);
+                if(exposed.mouseOverVec === undefined){
+                    exposed.mouseOverVec = GG.ui.points.getById(id);
+                }
+                if(!GG.isPrimitive()){
+                    exposed.mouseOverVec = undefined;
+                }
+                exposed.changed = true;
+            }            
+            
+        },
+        mouseOut : function(){
+            if(exposed.mouseOverVec !== undefined){
+                exposed.mouseOverVec = undefined;
+                exposed.changed = true;
             }
-            x = createElement("span",{text : "X : "+vec.x.toFixed(1) ,id : "vecX", className : "uiPrimitivePropertyName snug"});
-            y = createElement("span",{text : "Y : "+vec.y.toFixed(1) ,id : "vecY", className : "uiPrimitivePropertyName snug"});
-            span.appendChild(id);
-            span.appendChild(x);
-            span.appendChild(y);
-            span.appendChild(document.createElement("br"));
+        },
+        vec : function(id,vec,extra){
+            var span, id, x, y;
+            span = document.querySelector("#"+"_prim" + id +"_" + "vec"+vec.id);
+            if(span === null){
+                span = createElement("span",{id : "_prim" + id +"_vec"+vec.id, className : "uiPrimitive snug show"});
+                if(vec.id === undefined){
+                    id = createElement("span",{text : extra ,id : "primID", className : "uiPrimitivePropertyName snug"});
+                }else{
+                    id = createElement("span",{text : extra + " Vec ID : "+vec.id ,id : "primID", className : "uiPrimitivePropertyName snug"});
+                }
+                x = createElement("span",{text : "X : "+vec.x.toFixed(1) ,id : "vecX", className : "uiPrimitivePropertyName snug"});
+                y = createElement("span",{text : "Y : "+vec.y.toFixed(1) ,id : "vecY", className : "uiPrimitivePropertyName snug"});
+                span.appendChild(id);
+                span.appendChild(x);
+                span.appendChild(y);
+                span.appendChild(document.createElement("br"));
+                span.addEventListener("mouseover",this.mouseOver);
+                span.addEventListener("mouseout",this.mouseOut);
+            }else{
+                span.children[0].textContent = extra + " Vec ID : "+vec.id;
+                span.children[1].textContent = "X : "+vec.x.toFixed(1);
+                span.children[2].textContent = "Y : "+vec.y.toFixed(1);
+            }
             return span;
         }
     }        
@@ -791,85 +920,82 @@ var creationMenu = (function(){
                 exposed.changed = true;
             }
         },
-        createMenuItem : function(primitive, childNodes){
-            var i,len;
-            var menuItem = document.createElement("div");
-            menuItem.className = "uiGroup";
-            var type = primitive.type[0].toLowerCase() + primitive.type.substr(1);
-            menuItem.id = "primitiveUI_"+type+"_"+primitive.id;
-            menuItem.appendChild(createOpenCloseButton(true));
-            menuItem.appendChild(createItemButton("V",this.visibleCallback));
-            len = childNodes.length;
-            for(i = 0; i < len; i ++){
-                menuItem.appendChild(childNodes[i]);
+        createMenuItem : function(primitive, name, childNodes){
+            var i,len,menuItem;
+            var type = primitive.type[0].toLowerCase() + primitive.type.substr(1);            
+            menuItem = document.querySelector("#"+"primitiveUI_"+type+"_"+primitive.id);
+            if(menuItem === null){
+                menuItem = document.createElement("div");
+                menuItem.className = "uiGroup primitive";
+
+                menuItem.id = "primitiveUI_"+type+"_"+primitive.id;
+                menuItem.appendChild(createOpenCloseButton(true));
+                menuItem.appendChild(createItemButton("V",this.visibleCallback));
+                var el = document.createElement("span");
+                el.className = "uiGroupName";
+                el.textContent = name;
+                menuItem.appendChild(el);
+                len = childNodes.length;
+                for(i = 0; i < len; i ++){
+                    menuItem.appendChild(childNodes[i]);
+                }
+                menuItem.addEventListener("mouseover",this.mouseOver);
+            }else{
+                
+                menuItem.children[2].textContent = name;
             }
-            menuItem.addEventListener("mouseover",this.mouseOver);
             return menuItem;
         },
         vec : function(vec){
             var p = primitiveUI.vec(vec);
-            var el = document.createElement("span");
-            el.className = "uiGroupName";
-            el.textContent = "Vec";
-            addMenuElement(this.createMenuItem(vec, [el, p]), "Vecs");
+            var name = "Vec";
+            addMenuElement(this.createMenuItem(vec, name, [p]), "Vecs");
         },
         line : function(line){
-            var p1 = primitiveUI.vec(line.p1,"Start");
-            var p2 = primitiveUI.vec(line.p2,"End");
-            var el = document.createElement("span");
-            el.className = "uiGroupName";
-            el.textContent = "ID : "+line.id + " Leng : "+ line.leng().toFixed(0) + " Dir : " + (line.dir()*180/Math.PI).toFixed(0);
-            addMenuElement(this.createMenuItem(line, [el, p1, p2]), "Lines");
+            var p1 = primitiveUI.vec(line.id,line.p1,"Start");
+            var p2 = primitiveUI.vec(line.id,line.p2,"End");
+            var name = "ID: "+line.id + " Len: "+ line.leng().toFixed(0) + " Dir: " + (line.dir()*180/Math.PI).toFixed(0);
+            addMenuElement(this.createMenuItem(line, name, [ p1, p2]), "Lines");
         },
         triangle : function(triangle){
-            var p1 = primitiveUI.vec(triangle.p1,"P1");
-            var p2 = primitiveUI.vec(triangle.p2,"P2");
-            var p3 = primitiveUI.vec(triangle.p3,"P3");
-            var el = document.createElement("span");
-            el.className = "uiGroupName";
-            el.textContent = "ID : "+triangle.id + " P : "+ triangle.perimiter().toFixed(0) + " A : " + triangle.area().toFixed(0);
-            addMenuElement(this.createMenuItem(triangle, [el, p1, p2, p3]), "Triangles");
+            var p1 = primitiveUI.vec(triangle.id,triangle.p1,"P1");
+            var p2 = primitiveUI.vec(triangle.id,triangle.p2,"P2");
+            var p3 = primitiveUI.vec(triangle.id,triangle.p3,"P3");
+            var name = "ID: "+triangle.id + " P: "+ triangle.perimiter().toFixed(0) + " A: " + triangle.area().toFixed(0);
+            addMenuElement(this.createMenuItem(triangle, name, [p1, p2, p3]), "Triangles");
         },
         rectangle : function(rectangle){
-            var p1 = primitiveUI.vec(rectangle.top.p1,"P1");
-            var p2 = primitiveUI.vec(rectangle.top.p2,"P2");
-            var el = document.createElement("span");
-            el.className = "uiGroupName";
-            el.textContent = "ID : "+rectangle.id + " W : "+ rectangle.width().toFixed(0) + " H : " + rectangle.height().toFixed(0) +" A% : " + rectangle.aspect.toFixed(3)+ " P : " + rectangle.perimiter().toFixed(0) + " A : " + rectangle.area().toFixed(0);
-            addMenuElement(this.createMenuItem(rectangle, [el, p1, p2]), "Rectangles");
+            var p1 = primitiveUI.vec(rectangle.id,rectangle.top.p1,"P1");
+            var p2 = primitiveUI.vec(rectangle.id,rectangle.top.p2,"P2");
+            var name = "ID: "+rectangle.id + " W: "+ rectangle.width().toFixed(0) + " H: " + rectangle.height().toFixed(0) +" A: " + rectangle.aspect.toFixed(3)+ "% P : " + rectangle.perimiter().toFixed(0) + " A: " + rectangle.area().toFixed(0);
+            addMenuElement(this.createMenuItem(rectangle, name, [p1, p2]), "Rectangles");
         },
         circle : function(circle){
-            var p1 = primitiveUI.vec(circle.center,"Center");
-            var el = document.createElement("span");
-            el.className = "uiGroupName";
-            el.textContent = "ID : "+circle.id + " R : "+ circle.radius.toFixed(0) + " C : " + circle.circumference().toFixed(0) +" A : " + circle.area().toFixed(0);
-            el.title = "R is radius, C is circumference, A is area.";
-            addMenuElement(this.createMenuItem(circle, [el, p1]), "Circles");
+            var p1 = primitiveUI.vec(circle.id,circle.center,"Center");
+            var name = "ID: "+circle.id + " R : "+ circle.radius.toFixed(0) + " C: " + circle.circumference().toFixed(0) +" A: " + circle.area().toFixed(0);
+            //el.title = "R is radius, C is circumference, A is area.";
+            addMenuElement(this.createMenuItem(circle, name, [p1]), "Circles");
         },
         arc : function(arc){
-            var p1 = primitiveUI.vec(arc.circle.center,"Center");
-            var el = document.createElement("span");
-            el.className = "uiGroupName";
-            el.textContent = "ID : "+arc.id + " R : "+ arc.circle.radius.toFixed(0) + " S : " + (arc.start*180/Math.PI).toFixed(0) +" E : " + (arc.end*180/Math.PI).toFixed(0) + " Leng : " + (arc.arcLength()*180/Math.PI).toFixed(0) ; 
-            el.title = "R is radius, S start angle, E end angle";
-            addMenuElement(this.createMenuItem(arc, [el, p1]), "Arcs");
+            var p1 = primitiveUI.vec(arc.id,arc.circle.center,"Center");
+            var name = "ID : "+arc.id + " R : "+ arc.circle.radius.toFixed(0) + " S: " + (arc.start*180/Math.PI).toFixed(0) +" E: " + (arc.end*180/Math.PI).toFixed(0) + " Leng: " + (arc.arcLength()*180/Math.PI).toFixed(0) ; 
+            //el.title = "R is radius, S start angle, E end angle";
+            addMenuElement(this.createMenuItem(arc, name, [p1]), "Arcs");
             
         },
         bezier :function(bezier){
-            var p1 = primitiveUI.vec(bezier.p1,"Start");
-            var p2 = primitiveUI.vec(bezier.p2,"End");
-            var cp1 = primitiveUI.vec(bezier.cp1,"Control 1");
+            var p1 = primitiveUI.vec(bezier.id,bezier.p1,"Start");
+            var p2 = primitiveUI.vec(bezier.id,bezier.p2,"End");
+            var cp1 = primitiveUI.vec(bezier.id,bezier.cp1,"Control 1");
             if(bezier.cp2 !== undefined){
-                var cp2 = primitiveUI.vec(bezier.cp2,"Control 2");
+                var cp2 = primitiveUI.vec(bezier.id,bezier.cp2,"Control 2");
             }            
-            var el = document.createElement("span");
-            el.className = "uiGroupName";
-            el.textContent = "ID : "+bezier.id + " "+ (bezier.isCubic()?"Cubic":"Quadratic"); 
-            el.textContent += " Length : "+ bezier.leng().toFixed(0);
+            var name = "ID : "+bezier.id + " "+ (bezier.isCubic()?"Cubic":"Quadratic"); 
+            name += " Len: "+ bezier.leng().toFixed(0);
             if(cp2 !== undefined){
-                addMenuElement(this.createMenuItem(bezier, [el, p1, cp1, cp2, p2]), "Beziers");
+                addMenuElement(this.createMenuItem(bezier, name, [p1, cp1, cp2, p2]), "Beziers");
             }else{
-                addMenuElement(this.createMenuItem(bezier, [el, p1, cp1, p2]), "Beziers");
+                addMenuElement(this.createMenuItem(bezier, name, [p1, cp1, p2]), "Beziers");
             }
         },            
     }        
@@ -886,6 +1012,7 @@ var creationMenu = (function(){
     function initCreationMenu(grooverGeom, objectArray){
         GG = grooverGeom;
         objects = objectArray;
+        addMenuItem("primitive-UI",primitiveDetails,createMenuClicked);
         addMenuItem("creation-UI",menuDetails,createMenuClicked);
     }
     var exposed;
@@ -893,6 +1020,7 @@ var creationMenu = (function(){
        start : initCreationMenu,
        displayPrimitives : displaySelected,
        mouseOverPrim : undefined,
+       mouseOverVec : undefined,
        changed : true,
     }
     

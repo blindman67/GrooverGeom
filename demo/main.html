@@ -4,7 +4,7 @@
         <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-8">
         <title>GrooverGeom demo</title>
         <meta name="keywords" content="Geometry, Math, JavaScript, Mark Spronck, Groover, GrooverGeom" />
-        <meta name="description" content="Example for the use of GrooverGeom.js. GrooverGeom is a Javascript geometry libarry" />
+        <meta name="description" content="Example use of GrooverGeom.js" />
         <meta name="author" content="Mark Spronck" />
         <link rel="stylesheet" type="text/css" href="grooverGeomDemo.css">
         <script>const GROOVER_GEOM_INCLUDE_MATH = true; // adds extensions to the built in Javascript Math object
@@ -38,17 +38,7 @@
                         <canvas class="canvas snug" id="mainCanvas" ></canvas>
                     </td>
                     <td class="menu snug" id="menu_cell">
-                        <p>Command Menu</p>
-                        <div class="uiGroup" id="creation-UI">
-                        <span class="uiGroupName" id="circle-group-name">Create</span>
-                        <input class="uiButton" type="button" value="Vec"></input>
-                        <input class="uiButton" type="button" value="Line"></input>
-                        <input class="uiButton" type="button" value="Triangle"></input>
-                        <input class="uiButton" type="button" value="Rectangle"></input>
-                        <input class="uiButton" type="button" value="Circle"></input>
-                        <input class="uiButton" type="button" value="Arc"></input>
 
-                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -155,7 +145,7 @@
         var page_UID = 0;
         function createElement(type,data){
             var el = document.createElement(type);
-            el.id = data.id !== undefined ? data.id + "_"+(page_UID++) : "geomElement_"+(page_UID ++);
+            el.id = data.id !== undefined ? data.id : "geomElement_"+(page_UID ++);
             el.className = data.className !== undefined ? data.className : "unknwn";
             if(data.type !== undefined){
                 el.type = data.type;
@@ -225,10 +215,10 @@
                 }
             }
             if(stateOpen === true){
-                node.textContent = "-";
+                node.textContent = "+";
             }else
             if(stateOpen === false){
-                node.textContent = "+";
+                node.textContent = "-";
             }
         }
         function groupOpenClose(){
@@ -239,10 +229,10 @@
                     if(stateOpen === undefined){
                         if(this.textContent.indexOf("-") === -1){
                             stateOpen = false;
-                            this.textContent = "-Sub";
+                            this.textContent = "+Sub";
                          }else{
                             stateOpen = true;
-                            this.textContent = "+Sub";
+                            this.textContent = "-Sub";
                          }
                      }
                      var node = nodes[i].querySelector(".openClose");
@@ -264,7 +254,7 @@
         }
         function createOpenCloseSubGroupButton(){
              var openClose = document.createElement("span");
-             openClose.textContent = "+Sub";
+             openClose.textContent = "-Sub";
              openClose.className = "uiSubGroup openClose";
              openClose.addEventListener("click",groupOpenClose);
              return openClose;
@@ -302,7 +292,8 @@
             var subG = getSubGroup(subGroupName,menuCell);
             var menuItem = document.querySelector("#"+element.id);
             if(menuItem !== null){
-                subG.removeChild(menuItem);
+                return;
+                //subG.removeChild(menuItem);
             }
             element.className = element.className.replace(" closed"," show");
             if(element.className.indexOf(" show")=== -1){
@@ -334,17 +325,20 @@
             var menuCell = document.querySelector("#menu_cell");
             var menuItem = menuCell.querySelector("#"+ id);
             if(menuItem !== null){ // remove the old one`
-                menuCell.removeChild(menuItem);
+                return;
+                //menuCell.removeChild(menuItem);
              }
              menuItem = document.createElement("div");
              menuItem.className = "uiGroup";
              menuItem.id = id;
              items.forEach(function(item){
                  var el;
+                 var lineBreak = false;
                  if(item.type === "text"){
                      el = document.createElement("span");
                      el.className = "uiGroupName";
                      el.textContent = item.text;
+                     lineBreak = true;
                  }else
                  if(item.type === "button"){
                      el = document.createElement("input");
@@ -357,6 +351,11 @@
                   item.element = el;
                   el.uiItem = item;
                   menuItem.appendChild(el);
+                  if(lineBreak){
+                    menuItem.appendChild(document.createElement("br"));
+                  
+                  }
+                  
              });
              menuCell.appendChild(menuItem);
              items.forEach(function(item){

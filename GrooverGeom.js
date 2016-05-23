@@ -1550,6 +1550,17 @@ groover.geom = (function (){
             hash = Math.floor(hash % 0xFFFFFFFF);
             return hash;
         },
+        getById : function(id){ // returns first primitive to match the id, else returns undefined
+            var vec = undefined;
+            this.each(function(v){
+                if(v.id === id){
+                    vec = v;
+                    return false;
+                }
+            });
+            return vec;
+        
+        },
         copy : function (from, to){  // Creates a new VecArray with a copy of the vecs in this.
                                      // if {ofrom} and {oto} are passed then create a copy of the points from {ofrom} to but not including {oto}.
             var to2, count;                                     
@@ -8059,8 +8070,8 @@ groover.geom = (function (){
                     c = i * i; 
                     b = 3 * a * a * i; 
                     b1 = 3 * c * a; 
-                    a *= a*a;
-                    c *= c; 
+                    a = a*a*a;
+                    c *= i; 
                     vx = v1.x * a + v3.x * b + v4.x * b1 + v2.x * c;
                     vy = v1.y * a + v3.y * b + v4.y * b1 + v2.y * c;
                     e = Math.hypot(vx,vy);
@@ -8073,7 +8084,8 @@ groover.geom = (function (){
             return pos;
         },
         distFrom : function(vec){
-            c1 = this.findPositionOfVec(vec);
+            this.findPositionOfVec(vec); // this function sets d as the distance from the bezier or infinity id not found
+            c1 = d;
             if(c1 === Infinity){
                 c1 = this.p1.distFrom(vec);
                 return Math.min(c1,this.p2.distFrom(vec));
@@ -8179,14 +8191,6 @@ groover.geom = (function (){
             return this.vecAt(unit,false,vec);
         },
         unitDistOfClosestPoint : function(vec){ 
-            // use distance between control points to set the resolution of the search
-            a = Math.hypot(this.p1.x - this.cp1.x, this.p1.y - this.cp1.y);
-            if(this.cp2 === undefined){
-                a += Math.hypot(this.p2.x - this.cp1.x, this.p2.y - this.cp1.y);
-            }else{
-                a += Math.hypot(this.cp2.x - this.cp1.x, this.cp2.y - this.cp1.y);
-                a += Math.hypot(this.cp2.x - this.p2.x, this.cp2.y - this.p2.y);
-            }
             return this.findPositionOfVec(vec);//,Math.floor(a/10));        
         },
         tangentAsVec : function( position,limit, retVec ) {  // returns the normalised tangent at position
