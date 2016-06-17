@@ -11,22 +11,60 @@ groover.geom = (function (){
     const EPSILON = 1E-6; // this is still undecided Could use Number.EPSILON but I feel that is a little small for graphics based metrics
     const EPSILON1 = 1-EPSILON;
     const BEZ3_CIR = 0.55191502449; // Bezier3 circle fit from "Approximate a circle with cubic Bézier curves", lnk http://spencermortensen.com/articles/bezier-circle/
-    var UID = 1;
-    var triPh = function(a,b,c){    // return the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
+    var UID = 1; // Unique identifier for primitives
+    const  triPh = function(a,b,c){    // return the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
         return Math.acos((c * c - (a * a + b * b)) / (-2 * a * b));
     }    
-    var unitDistOnVec = function(px,py,v1x,v1y){
+    const unitDistOnVec = function(px,py,v1x,v1y){
         return (px * v1x + py * v1y)/(v1y * v1y + v1x * v1x);     
     }        
-    var dist2Vector = function(px,py,v1x,v1y){
+    const dist2Vector = function(px,py,v1x,v1y){
         var c;
         c = (px * v1x + py * v1y)/(v1y * v1y + v1x * v1x);
         return Math.hypot(v1x * c - px, v1y * c - py);        
     }     
-    var direction = function(x,y){ // math function returns normalised direction
+    const direction = function(x,y){ // math function returns normalised direction
         return ((Math.atan2(y,x) % MPI2) + MPI2) % MPI2;
  
     }
+    const isSmallestAngleClockwise = function(ang1,ang2){
+        if(ang1 < 0){
+            if( (ang2 < 0 && ang1> ang2) ||  (ang2 >= 0 && ang1 + MPI < ang2) ){
+                return false;        
+            }
+        }else{
+            if( (ang2 > 0 && ang1 > ang2) ||  (ang2 <= 0 && ang1 - MPI < ang2) ){
+                return false;        
+            }
+        }
+        return true;
+    }
+    const smallestAngleBetween = function(ang1,ang2){
+        var cw = true; // clockwise
+        var ang;
+        if(ang1 < 0){
+            if( (ang2 < 0 && ang1> ang2) ||  (ang2 >= 0 && ang1 + MPI < ang2) ){
+                cw = false;        
+            }
+        }else{
+            if( (ang2 > 0 && ang1 > ang2) ||  (ang2 <= 0 && ang1 - MPI < ang2) ){
+                cw = false;        
+            }
+        }
+        if(cw){
+            var ang = ang2- ang1;
+            if(ang < 0){
+                ang = ang2 + MPI2 - ang1;
+            }
+            return ang;
+        }
+        var ang = ang1 - ang2 ;
+        if(ang < 0){
+            ang = ang1 + MPI2- ang2;
+        }   
+        return -ang;
+    }
+    
     
     if(typeof GROOVER_GEOM_INCLUDE_MATH !== "undefined" && GROOVER_GEOM_INCLUDE_MATH === true){
         // some math extensions 
@@ -40,6 +78,7 @@ groover.geom = (function (){
         Math.triLenC2 = function(a,b,pheta){ // return the length squared of side C given the length of two sides a,b and the angle opisite the edge C
             return a*a + b*b - 2*a*b*Math.cos(pheta);
         }
+        Math.smallestAngleBetween = smallestAngleBetween;
         Math.angleBetween = function(x,y,x1,y1){
             var l = Math.hypot(x,y);
             x /= l;
@@ -338,22 +377,7 @@ groover.geom = (function (){
         l2 = new Line();
         bez = new Bezier("cubic");
         rArray = [0,0,0,0,0,0,0,0,0,0];
-        /*l2 = new Line();
-        l3 = new Line();
-        l4 = new Line();
-        l5 = new Line(); 
-        la = new Line();
-        lb = new Line();
-        lc = new Line();
-        ld = new Line();
-        le = new Line();
-        lr1 = new Line();
-        lr2 = new Line();*/
-        /*For removal */  
-        /* regl = [l1,l2,l3,l4,l5];
-        regv = [v1,v2,v3,v4,v5];
-        reglSP = 0;
-        regvSP = 0;*/
+
         this.registers = { // for access to geom registers.
             v1 : v1,
             v2 : v2,
@@ -363,22 +387,16 @@ groover.geom = (function (){
             l1 : l1,
             get : function(name){
                 switch(name){
-                    case "c":
-                       return c;
-                    case "u":
-                       return u;
-                    case "a":
-                       return u;  
-                    case "b":
-                       return u;
-                    case "c1":
-                       return c1;
-                    case "u1":
-                       return u1;
-                    case "vx":
-                       return vx;
-                    case "vy":
-                       return vy;
+                    case "c": return c;
+                    case "u": return u;
+                    case "a": return u;  
+                    case "b": return u;
+                    case "c1": return c1;
+                    case "u1": return u1;
+                    case "vx": return vx;
+                    case "vy": return vy;
+                    case "d": return d;                   
+                    case "e": return e;                   
                 }
                 return undefined;
             }
@@ -3179,7 +3197,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        getAllIdsAsArray : function(array){
+        getAllIdsAsArray : function(array){ // returns an array with this id 
             if(array === undefined){
                 array = [];
             }
@@ -3188,7 +3206,7 @@ groover.geom = (function (){
             }
             return array;
         },  
-        asVecArray : function(vecArray, instance){
+        asVecArray : function(vecArray, instance){ // returns a vec array containing a copy of this. If instance is true then the reference to this is added 
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -3206,7 +3224,7 @@ groover.geom = (function (){
             box.env (this.x, this.y);
             return box;  // returns box
         },
-        isEmpty : function (){  // returns true if undefined or infinit
+        isEmpty : function (){  // returns true if undefined or infinite
             if(this.x === undefined || this.y === undefined || 
                 this.x === Infinity || this.y === Infinity || 
                 this.x === -Infinity || this.y === -Infinity ||
@@ -3236,14 +3254,14 @@ groover.geom = (function (){
             this.y = (dest.y-from.y) * amount + from.y;
             return this;
         },
-        vectorToPolar : function(){
+        vectorToPolar : function(){ // converts the this to a polar vector. Warning there is no flag to indicate this is a pokar. It is up to the API code to track what the vec represents
             v1.x = this.x;
             v1.y = this.y;
             this.x = Math.hypot(v1.y,v1.x);
             this.y = Math.atan2(v1.y,v1.x);            
             return this;
         },
-        polarToVector : function(){
+        polarToVector : function(){ // converts from polar to a vector
             v1.x = this.x;
             v1.y = this.y;
             this.x = Math.cos(v1.y) * v1.x;
@@ -3339,18 +3357,16 @@ groover.geom = (function (){
         dir : function(){
             return Math.atan2(this.y,this.x);  // returns the direction of this in radians.
         },
-        mid : function(vec){
+        mid : function(vec){ // sets the vector to the mid point
             this.x /= 2;
             this.y /= 2;
             return this;
-            // WTF must have been a late night
-            //return vec.copy().norm().add(this.copy().norm()).div(2).norm().mult((this.leng()+vec.leng())/2);
         },
         norm : function(){ // normalises this to be a unit length.
-            var l = Math.hypot(this.x,this.y);
-            this.x /= l;
-            this.y /= l;
-            return this; // returns this            return this.div(this.leng()); // returns this
+            u = Math.hypot(this.x,this.y);
+            this.x /= u;
+            this.y /= u;
+            return this; // returns this 
         },
         dot : function(vec){  // get the dot product of this and {avec}
             return this.x * vec.x + this.y * vec.y; // returns number
@@ -3364,23 +3380,20 @@ groover.geom = (function (){
         crossUnit : function(vec){  // returns the dot product of this and vec divided by the magnitude of this
             return (this.x * vec.y - this.y * vec.x) / (this.x * this.x + this.y * this.y);
         },
-        dotNorm : function(vec){ // get the dot product of the normalised this and {avec}
-            var la, lb;            
-            this._leng = la = Math.hypot(this.x,this.y);
-            vec._leng = lb = Math.hypot(vec.x,vec.y);
-            return (this.x / la) * (vec.x / lb) + (this.y / la) * (vec.y / lb);
+        dotNorm : function(vec){ // get the dot product of the normalised this and {avec}          
+            a = Math.hypot(this.x,this.y);
+            b = Math.hypot(vec.x,vec.y);
+            return (this.x / a) * (vec.x / b) + (this.y / a) * (vec.y / b);
         },
-        crossNorm : function(vec){ // get the cross product of the normalised this and the {avec}
-            var la, lb;            
-            this._leng = la = Math.hypot(this.x,this.y);
-            vec._leng = lb = Math.hypot(vec.x,vec.y);
-            return (this.x / la) * (vec.y / lb) - (this.y / la) * (vec.x / lb);
+        crossNorm : function(vec){ // get the cross product of the normalised this and the {avec}       
+            a = Math.hypot(this.x,this.y);
+            b = Math.hypot(vec.x,vec.y);
+            return (this.x / a) * (vec.y / b) - (this.y / a) * (vec.x / b);
         },
-        angleBetween : function(vec){ // get the angle between this and the {avec}
-            var la, lb;            
-            this._leng = la = Math.hypot(this.x,this.y);
-            vec._leng = lb = Math.hypot(vec.x,vec.y);
-            return Math.asin((this.x / la) * (vec.y / lb) - (this.y / la) * (vec.x / lb)); // returns number as radians
+        angleBetween : function(vec){ // get the angle between this and the {avec}          
+            a = Math.hypot(this.x, this.y);
+            b = Math.hypot(vec.x, vec.y);
+            return Math.asin((this.x / a) * (vec.y / b) - (this.y / a) * (vec.x / b)); // returns number as radians
         },
         distFrom : function(vec){ // get the distance from this to the vec
             return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
@@ -3404,6 +3417,10 @@ groover.geom = (function (){
             this.y += vec.y;
         },
         transform : function(transform){
+            vx = this.x * transform.xAxis.x + this.y * transform.yAxis.x + transform.origin.x;
+            this.y = this.x * transform.xAxis.y + this.y * transform.yAxis.y + transform.origin.y;
+            this.x = vx;
+            return this;            
         },
     }
     Arc.prototype = {
@@ -3823,35 +3840,41 @@ groover.geom = (function (){
             return this; // returns this.
         },
         towards : function(vec){ // Changes the arc if needed to bend towards the {avec}
-            var a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
-            var s = ((this.start % MPI2) + MPI2) % MPI2;
-            var e = ((this.end % MPI2) + MPI2) % MPI2;
-            if(s > e){
-                s -= MPI2;
+            a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
+            b = ((this.start % MPI2) + MPI2) % MPI2;
+            e = ((this.end % MPI2) + MPI2) % MPI2;
+            if(b > e){
+                b -= MPI2;
             }
-            if(a > s && a < e){
+            if(a > b && a < e){
                 return this;
             }
             a -= MPI2;
-            if(a > s && a < e){
+            if(a > b && a < e){
                 return this;
             }
-            return this.swap(); // returns this.
+            c = this.start;
+            this.start = this.end;
+            this.end = c;
+            return this; // returns this.
         },
         away : function(vec){ // Changes the arc if needed to bend away from the {avec}
-            var a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
-            var s = ((this.start % MPI2) + MPI2) % MPI2;
-            var e = ((this.end % MPI2) + MPI2) % MPI2;
-            if(s > e){
-                s -= MPI2;
+            a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
+            b = ((this.start % MPI2) + MPI2) % MPI2;
+            e = ((this.end % MPI2) + MPI2) % MPI2;
+            if(b > e){
+                b -= MPI2;
             }
-            if(a > s && a < e){
+            if(a > b && a < e){
                 return this.swap();
             }
             a -= MPI2;
-            if(a > s && a < e){
+            if(a > b && a < e){
                 return this.swap();
             }
+            c = this.start;
+            this.start = this.end;
+            this.end = c;
             return this; // returns this.
         },    
         endsAsVec : function(vecArray, vecEnd) {  // if vecArray is array then vecEnd is ignored if vecArray is a vec then vecEnd nust be included or only start vec is returned
@@ -3922,14 +3945,14 @@ groover.geom = (function (){
             u = (u - this.start) / (this.end - this.start);
             return u;
         },        
-        tangentAtStart : function(retLine){
+        tangentAtStart : function(retLine){  // returns a line of the tangent at the start of the arc
             retLine = this.circle.tangentAtAngle(this.start,retLine);
             if(this.direction){
                 return retLine.reverse();
             }
             return retLine
         },
-        tangentAtEnd : function(retLine){
+        tangentAtEnd : function(retLine){ // returns a line that starts at the end of this arc along the tangent at end
             retLine = this.circle.tangentAtAngle(this.end,retLine);
             if(this.direction){
                 return retLine.reverse();
@@ -3949,12 +3972,12 @@ groover.geom = (function (){
             return this;
         },
         sweapLeng : function(){
-            var s = ((this.start % MPI2) + MPI2) % MPI2;
-            var e = ((this.end % MPI2) + MPI2) % MPI2;
-            if(s > e){
-                s -= MPI2;
+            a = ((this.start % MPI2) + MPI2) % MPI2;
+            e = ((this.end % MPI2) + MPI2) % MPI2;
+            if(a > e){
+                a -= MPI2;
             }            
-            return Math.abs(e - s) * this.circle.radius;
+            return Math.abs(e - a) * this.circle.radius;
         },
         setCircumference : function(leng){ 
             this.end = this.start  + (leng / (this.circle.radius ));
@@ -3966,15 +3989,25 @@ groover.geom = (function (){
                 (this.circle.center.y + Math.sin(this.start) * this.circle.radius) - (this.circle.center.y + Math.sin(this.end) * this.circle.radius)
             );
         },
-        cordAsLine : function(){
-            if(this.start === this.end){
-                return new Empty();
-                
+        cordAsLine : function(retLine){
+            if(retLine === undefined){
+                if(this.start === this.end){
+                    return new Empty();
+                }
+                return new Line(
+                    new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius),
+                    new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius)
+                );
             }
-            return new Line(
-                new Vec(this.circle.center.x + Math.cos(this.start) * this.circle.radius,this.circle.center.y + Math.sin(this.start) * this.circle.radius),
-                new Vec(this.circle.center.x + Math.cos(this.end) * this.circle.radius,this.circle.center.y + Math.sin(this.end) * this.circle.radius)
-            );
+            if(this.start === this.end){
+                return retLine.empty();
+            }
+            retLine.p1.x = this.circle.center.x + Math.cos(this.start) * this.circle.radius;
+            retLine.p1.y = this.circle.center.y + Math.sin(this.start) * this.circle.radius;
+            retLine.p2.x = this.circle.center.x + Math.cos(this.end) * this.circle.radius;
+            retLine.p2.y = this.circle.center.y + Math.sin(this.end) * this.circle.radius;
+            return retLine;
+
         },
         clockwise : function(){
             this.direction = false;
@@ -3985,24 +4018,22 @@ groover.geom = (function (){
             return this;
         },
         great : function(){
-            var s = ((this.start % MPI2) + MPI2) % MPI2;
-            var e = ((this.end % MPI2) + MPI2) % MPI2;
-            if(s > e){
-                var ang = s - e;
-                if(ang  < MPI){
-                    this.start = s;
+            b = ((this.start % MPI2) + MPI2) % MPI2;
+            e = ((this.end % MPI2) + MPI2) % MPI2;
+            if(b > e){
+                if(b - e  < MPI){
+                    this.start = b;
                     this.end = e;
                 }else{
                     this.start = e;
-                    this.end = s;
+                    this.end = b;
                 }
             }else{
-                var ang = e - s;
-                if(ang  < MPI){
+                if(e - b  < MPI){
                     this.start = e;
-                    this.end = s;
+                    this.end = b;
                 }else{
-                    this.start = s;
+                    this.start = b;
                     this.end = e;
                 }
             }
@@ -4010,13 +4041,13 @@ groover.geom = (function (){
         },
         minor : function(){
             this.great();
-            var t = this.start;
+            a = this.start;
             this.start = this.end;
-            this.end = t;
+            this.end = a;
             return this; // returns this.
         },
         isPointOn : function(p){
-            var a = this.circle.angleOfPoint(p1);
+            a = this.circle.angleOfPoint(p1);
             if(a >= this.start && a <= this.end){
                 return true;
             }
@@ -4092,7 +4123,7 @@ groover.geom = (function (){
             this.end += rotation;
             return this; // returns this
         },
-        transform : function(transform){
+        transform : function(transform){ // this is just a stub for now and does not transfor the arc
             return this; // returns this
         },
     }
@@ -4129,18 +4160,6 @@ groover.geom = (function (){
             }
             return false;
         },
-       /* getAllIdsAsArray : function(array){
-            if(array === undefined){
-                array = [];
-            }
-            if(array.indexOf(this.id)=== -1){
-                array.push(this.id);
-            }
-            if(array.indexOf(this.center.id)=== -1){
-                array.push(this.center.id);
-            }
-            return array;
-        },     */  
         asBox : function(box){     // Returns the bounding box 
                                    // {abox} is option
                                    // Returns `Box`
@@ -5332,57 +5351,54 @@ groover.geom = (function (){
             rvec.y = v1.y * l + this.p1.y;
             return rVec;
         },
-        angleBetween : function (line){
-            var la, lb;            
+        angleBetween : function (line){        
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             v2.x = line.p2.x - line.p1.x;
             v2.y = line.p2.y - line.p1.y;
-            
-            la = Math.hypot(v1.x,v1.y);
-            lb = Math.hypot(v2.x,v2.y);
-            return Math.asin ((v1.x / la) * (v2.y / lb) - (v1.y / la) * (v2.x / lb));
-            
+            a = Math.hypot(v1.x,v1.y);
+            b = Math.hypot(v2.x,v2.y);
+            return Math.asin ((v1.x / a) * (v2.y / b) - (v1.y / a) * (v2.x / b));
         },
-        angleFromNormal : function (line){
-            var la, lb;            
+        angleFromNormal : function (line){       
             v1.x = -(this.p2.y - this.p1.y);
             v1.y = this.p2.x - this.p1.x;
             v2.x = line.p2.x - line.p1.x;
             v2.y = line.p2.y - line.p1.y;
             
-            la = Math.hypot(v1.x,v1.y);
-            lb = Math.hypot(v2.x,v2.y);
-            return Math.asin ((v1.x / la) * (v2.y / lb) - (v1.y / la) * (v2.x / lb));
+            a = Math.hypot(v1.x,v1.y);
+            b = Math.hypot(v2.x,v2.y);
+            return Math.asin ((v1.x / a) * (v2.y / b) - (v1.y / a) * (v2.x / b));
         },
-        setTransformToLine :function(ctx){
-            var l;
+        setTransformToLine :function(ctx){            
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            this._leng = l = Math.hypot(v1.y,v1.x);
-            v1.x /= l;
-            v1.y /= l;
+            this._leng = d = Math.hypot(v1.y,v1.x);
+            v1.x /= d;
+            v1.y /= d;
             ctx.setTransform(v1.x, v1.y, -v1.y, v1.x, this.p1.x, this.p1.y)
-            return this;  // returns this.
+            return this;  
         },
         sliceOffEnd : function ( line ){
-            var p = this.intercept(line);
-            var u = this.getUnitDistOfPoint(p);
+            this.intercept(line,va);
+            u = this.getUnitDistOfPoint(va);
             if(u > 0 && u < 1){
-                var u1 = line.getUnitDistOfPoint(p);
+                u1 = line.getUnitDistOfPoint(va);
                 if(u1 >= 0 && u1 <= 1){
-                    this.p2 = p;
+                    this.p2.x = va.x;
+                    this.p2.y = va.y;
                 }
             }
             return this;  // returns this.
         },
         sliceOffStart : function ( line ){
-            var p = this.intercept(line);
-            var u = this.getUnitDistOfPoint(p);
+            this.intercept(line,va);
+            u = this.getUnitDistOfPoint(va);
             if(u > 0 && u < 1){
-                var u1 = line.getUnitDistOfPoint(p);
+                u1 = line.getUnitDistOfPoint(va);
                 if(u1 >= 0 && u1 <= 1){
-                    this.p1 = p;
+                    this.p1.x = va.x;
+                    this.p1.y = va.y;
                 }
             }
             return this; // returns this.
@@ -5390,8 +5406,8 @@ groover.geom = (function (){
         sliceToPoints : function (p1,p2){
             var pp1 = this.closestPoint(p1);
             var pp2 = this.closestPoint(p2);
-            var u = this.getUnitDistOfPoint(pp1);
-            var u1 = this.getUnitDistOfPoint(pp2);
+            u = this.getUnitDistOfPoint(pp1);
+            u1 = this.getUnitDistOfPoint(pp2);
             if(u1 < u){
                 var t = pp1;
                 pp2 = pp1;
@@ -6593,14 +6609,13 @@ groover.geom = (function (){
             
         },
         isCircleTouching : function (circle){
-            var w;
             // get center
             vc.x = this.top.p1.x + (v1.x = (this.top.p2.x - this.top.p1.x) / 2);
             vc.y = this.top.p1.y + (v1.y = (this.top.p2.y - this.top.p1.y) / 2);
             vc.x += -v1.y * this.aspect;
             vc.y += v1.x * this.aspect;
             // get width
-            w = Math.hypot(v1.x,v1.y)
+            u = Math.hypot(v1.x,v1.y)
 
             // make circle center relative to rectange center
             v2.x = circle.center.x - vc.x;
@@ -6608,11 +6623,11 @@ groover.geom = (function (){
 
             // dot product of horizontal center line and circle center div length of line 
             // goves distance from vetical center line
-            if(Math.abs((v2.x * v1.x + v2.y * v1.y) / w ) > circle.radius + w){
+            if(Math.abs((v2.x * v1.x + v2.y * v1.y) / u ) > circle.radius + u){
                 return false;
             }
             // do same for vertical line
-            if(Math.abs((v2.x * -v1.y + v2.y * v1.x) / w ) > circle.radius + w  * this.aspect){
+            if(Math.abs((v2.x * -v1.y + v2.y * v1.x) / u ) > circle.radius + u  * this.aspect){
                 return false;
             }
             return true;
@@ -6909,12 +6924,17 @@ groover.geom = (function (){
             vec.y += v1.y * point.x + v2.y;
             return vec;
         },
-        localPoint : function(vec){
+        localPoint : function(vec,rVec){
             var dy = this.top.distFromDir(vec);
             var dx = this.leftLine().distFromDir(vec);
-            var lw = this.top.leng();
-            var lh = lw * this.aspect;
-            return new Vec(dx/lw,dy/lh);
+            u = this.top.leng();
+            u1 = u * this.aspect;
+            if(rVec === undefined){
+                return new Vec(dx/u,dy/u1);
+            }
+            rVec.x = dx / u;
+            rVec.y = dy / u1;
+            return rVec;
         },
         scaleToFitIn : function(obj){
             if(obj.type === "rectangel"){
