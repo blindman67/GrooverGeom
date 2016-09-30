@@ -1,7 +1,19 @@
 ###GrooverGeom.
 ##This is a work in progress 
 
-Does geometry. Eg
+Removed example and demo. To much work for me to complete.
+
+
+This whole project is proving to be to large for any piratical use as a code base.
+
+Rather than an interrogated geom solution I have found my self copying from the core object in GrooverGeom.js 
+
+I am thinking of changing this project to a geom function repository (when time make it so).
+
+
+This does geometry, 2D at the moment.
+
+
 
 ```Javascript
 var radius = 100;
