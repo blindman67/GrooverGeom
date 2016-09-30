@@ -1160,8 +1160,9 @@ groover.geom.Geom.prototype.addUI = function(element1){
         return mouse;
     })();    
     
-    if(element !== undefined || element !== null){
+    if(element !== undefined && element !== null){
         mouse.start(element,true);
+        console.log("Groover.Geom.ui added mouse.");
     }
     console.log("Groover.Geom.ui installed.");
     

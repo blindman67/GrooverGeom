@@ -3233,6 +3233,12 @@ groover.geom = (function (){
             }
             return false;  
         },
+        isZero : function(){
+            if(this.x === 0 && this.y === 0){
+                return true;
+            }
+            return false;
+        },
         empty : function(){
             this.y = this.x = Infinity;
             return this;
@@ -3531,6 +3537,12 @@ groover.geom = (function (){
         empty : function(){
             this.start = Infinity;
             this.end = Infinity;
+        },
+        isZero : function(){
+            if(this.start === this.end){
+                return true;
+            }
+            return false;
         },
         toString : function(precision){
             var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";  
@@ -5080,6 +5092,12 @@ groover.geom = (function (){
             this.p1.x = this.p1.y = this.p2.x = this.p2.y = Infinity;
             return this;
         },
+        isZero : function(){ // returns true if the line has no length
+            if(this.p1.x === this.p2.x && this.p1.y === this.p2.y){
+                return true;
+            } 
+            return false;
+        },
         toString : function (precision){
             var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
             var id = this.id === undefined ? "": "'"+this.id+"' ";
@@ -5183,7 +5201,7 @@ groover.geom = (function (){
 
         },
         isVecLeft : function(vec){ // Is the {avec} to the left of this line.Left is left of screen when looking at it and the line moves down.
-            if((this.p2.x - this.p1.x) * (vec.y - this.p1.y) - (this.p2.y - this.p1.y) * (vec.x - this.p1.x) < 0){
+            if((this.p2.x - this.p1.x) * (vec.y - this.p1.y) - (this.p2.y - this.p1.y) * (vec.x - this.p1.x) <= 0){
                 return true;
             }
             return false;
@@ -5239,6 +5257,21 @@ groover.geom = (function (){
         },
         dir : function(){
             return Math.atan2(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
+        },
+        norm : function(rVec){ // returns the line normal as a vec
+            if(rVec === undefined){
+                rVec = new Vec();
+            }
+            rVec.y = this.p2.x - this.p1.x;
+            rVec.x = -(this.p2.y - this.p1.y);
+            d = Math.hypot(rVec.x,rVec.y);
+            rVec.x /= d;
+            rVec.y /= d;
+            return rVec;
+            
+        },
+        normDir : function(rVec){ // returns the line normal as a direction
+            return Math.atan2(this.p2.y - this.p1.y,this.p2.x - this.p1.x) + Math.PI/2;
         },
         extend : function(percentage){  // grows or shrinks the linetowards or away from its center
             v1.x = this.p2.x - this.p1.x;
@@ -5429,12 +5462,12 @@ groover.geom = (function (){
             return this; // returns this.
                 
         },
-        intercept : function(line,rVec){  // find the point of intercept between this line and {aline}
+        intercept : function(line,rVec){  // find the point of intercept between this line and line
             // this function uses V1,V2,V3,V4.y where
             // v1 is the vector of this line
             // v2 is the vector of line
             // v3 is the vector from the start of this line to the start of line
-            // v4.x is not used by this function and will have a random
+            // v4.x Unit dist on line
             // v4.y is unit distance on this line to intercept. Will be undefined if not relevant
             if(rVec === undefined){
                 rVec = new Vec();
@@ -5446,18 +5479,19 @@ groover.geom = (function (){
             var c = v1.x * v2.y - v1.y * v2.x; // cross of the two vectors
             if(c !== 0){  // rather than us EPSILON let small values through the result may be infinit but that is more true then no intercept
                 v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
-                v3.y = this.p1.y - line.p1.y;                
+                v3.y = this.p1.y - line.p1.y;     
+                v4.x = (v1.x * v3.y - v1.y * v3.x) / c;
                 v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on this line
                 rVec.x = this.p1.x + v1.x * u;
                 rVec.y = this.p1.y + v1.y * u;
             }else{
-                v4.y = rVec.y = rVec.x = undefined;  // create an empty vector
+                v4.x = v4.y = rVec.y = rVec.x = undefined;  // create an empty vector
             }
             return rVec;
         },
-        interceptSeg : function(line,rVec){ // find the point of intercept between this line segment  and {aline}
+        interceptSeg : function(line,rVec){ // find the point of intercept between this line segment  and line
             // this function uses V1,V2,V3,V4.y where
-            // v1 is the vector of this line
+            // v1 is the vector of this line, 
             // v2 is the vector of line
             // v3 is the vector from the start of this line to the start of line
             // v4.x is not used by this function and will have a random
@@ -5473,6 +5507,7 @@ groover.geom = (function (){
             if(c !== 0){  // rather than us EPSILON let small values through 
                 v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
                 v3.y = this.p1.y - line.p1.y;
+                v4.x = (v1.x * v3.y - v1.y * v3.x) / c;
                 v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on line
                 if(u >= 0 && u <= 1){
                     rVec.x = this.p1.x + v1.x * u;
@@ -5481,11 +5516,11 @@ groover.geom = (function (){
                     rVec.y = rVec.x = undefined;  // make an empty vector                         }
                 }
             }else{
-                rVec.y = rVec.x = v4.y = undefined; // incase V4 is needed && make an empty vector
+                rVec.y = rVec.x = v4.x = v4.y = undefined; // incase V4 is needed && make an empty vector
             }
             return rVec;      
         },
-        interceptSegs : function(line,rVec){ // find the point of intercept between this line segment and and the {aline} as a line segment
+        interceptSegs : function(line,rVec){ // find the point of intercept between this line segment and and the line as a line segment
             // this function uses V1,V2,V3,V4 where
             // v1 is the vector of this line
             // v2 is the vector of line
@@ -5505,16 +5540,16 @@ groover.geom = (function (){
                 v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
                 v3.y = this.p1.y - line.p1.y;
                 v4.x = u = (v1.x * v3.y - v1.y * v3.x) / c; // unit distance of intercept point on line
+                v4.y = u1 = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on this line
                 if(u >= 0 && u <= 1){
-                    v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on this line
-                    if(u >= 0 && u <= 1){
-                        rVec.x = this.p1.x + v1.x * u;
-                        rVec.y = this.p1.y + v1.y * u;
+                    if(u1 >= 0 && u1 <= 1){
+                        rVec.x = this.p1.x + v1.x * u1;
+                        rVec.y = this.p1.y + v1.y * u1;
                     }else{
                         rVec.y = rVec.x = undefined;  // make an empty vector                    
                     }
                 }else{
-                    v4.y = rVec.y = rVec.x = undefined;  // make an empty vector                         }
+                   rVec.y = rVec.x = undefined;  // make an empty vector                         }
                 }
             }else{
                 rVec.y = rVec.x = v4.x = v4.y = undefined; // incase V4 is needed && make an empty vector
@@ -7181,7 +7216,7 @@ groover.geom = (function (){
                 this.bottom += b;
             }  
         },
-        asRectange : function (retRect) {  // returns a rectangle. If retRect is supplied then sets that else creates a new rectangle
+        asRectangle : function (retRect) {  // returns a rectangle. If retRect is supplied then sets that else creates a new rectangle
             a = (this.bottom- this.top)  / (this.right- this.left);
             if(retRect === undefined){
                 return new Rectangle ( new Line( new Vec(this.left,this.top),new Vec(this.right,this.top)), a)
@@ -7472,6 +7507,25 @@ groover.geom = (function (){
                     box.env(v5.x,v5.y);
                 }
             }else{
+                
+                // Improved method for quadratic. Sorry untested so I have left tested code below
+                v1.x = this.p2.x - this.p1.x; // get x range
+                v1.y = this.p2.y - this.p1.y; // get y range
+                v2.x = this.cp1.x - this.p1.x; // get x control point offset
+                v2.y = this.cp1.y - this.p1.y; // get x control point offset
+                u = v2.x / v1.x; // normalise control point which is used to check if maxima is in range
+                u1 = v2.y / v1.y;
+
+                v3.x = this.p1.x; // set defaults in case maximas outside range
+                v3.y = this.p1.y;
+                if (u < 0 || u > 1) { // check if x maxima is on the curve
+                    v3.x = v2.x * v2.x / (2 * v2.x - v1.x) + this.p1.x; // get the x maxima
+                }
+                if (u1 < 0 || u1 > 1) { // same as x
+                    v3.y = v2.y * v2.y / (2 * v2.y - v1.y) + this.p1.y; // get the x maxima
+                }
+                
+                /* Known OK tested code in case code above fails and need quick fix.
                 solveBezier2(this.p1.x, this.cp1.x, this.p2.x);
                 if(u >= 0 && u <= 1){
                     this.vecAt(u,false,v3);
@@ -7481,7 +7535,7 @@ groover.geom = (function (){
                 if(u >= 0 && u <= 1){
                     this.vecAt(u,false,v4);
                     box.env(v4.x,v4.y);
-                }                
+                } */               
             }
             return box;
         },
