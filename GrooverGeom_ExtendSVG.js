@@ -4,7 +4,7 @@ groover.geom.Geom.prototype.addSVG = function(){
     var geom; 
     geom = this;
     
-    this.extentions.svg = {   // add extentions 
+    this.extensions.svg = {   // add extensions 
         functions : ["asSVGPath","asSVG","fromSVG"],
         info : "Provides helper functions to convert between Geom primitives and SVG"
     }; 

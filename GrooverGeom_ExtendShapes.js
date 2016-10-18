@@ -6,7 +6,7 @@ groover.geom.Geom.prototype.addShapes = function(){
         return;
     }
     var geom = this;
-    this.extentions.shapes = {   // add extentions for self documenter
+    this.extensions.shapes = {   // add extensions for self documenter
         functions : [],
         info : "Provides helper functions to create complex shapes."
     };
@@ -578,7 +578,7 @@ groover.geom.Geom.prototype.addShapes = function(){
                 return this; // returns this;
 
             }                
-            if(geom.extentions.render){
+            if(geom.extensions.render){
                 this.lineTo = function(){
                     if(this.isCircle){
                         mainC.lineTo();
@@ -722,7 +722,7 @@ groover.geom.Geom.prototype.addShapes = function(){
                 }
                 this.dirty = false;
             }
-            if(geom.extentions.render){
+            if(geom.extensions.render){
                 this.mark = function(){
                     var it,i,len;
                     this.calculate();
@@ -842,7 +842,7 @@ groover.geom.Geom.prototype.addShapes = function(){
                 }
                 return this;                
             }
-            if(geom.extentions.render){
+            if(geom.extensions.render){
                 this.mark = function(){
                     var it,i,len;
                     this.calculate();

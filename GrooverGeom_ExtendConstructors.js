@@ -28,7 +28,7 @@ groover.geom.Geom.prototype.addConstructors = function(){
     var geom; 
     geom = this;
     
-    this.extentions.constructions = {   // add extensions 
+    this.extensions.constructions = {   // add extensions 
         functions : [],
         info : "Provides methods to customise primitive construction"
     }; 
@@ -115,7 +115,7 @@ groover.geom.Geom.prototype.addConstructors = function(){
         }    
     }
     for(var i in functions){ // register all the construction functions
-        this.extentions.constructions.functions.push(i);   
+        this.extensions.constructions.functions.push(i);   
     }  
     for(var j = 0; j < this.primitiveTypes.length; j ++){ // add construction extension functions to all primitives
         if(geom[this.primitiveTypes[j]]){
@@ -140,6 +140,6 @@ groover.geom.Geom.prototype.addConstructors = function(){
         }
         return obj;
     }
-    console.log("Groover.Geom.extentions.constructions installed");
+    console.log("Groover.Geom.extensions.constructions installed");
 }
 console.log("Groover.Geom Constructors extension parsed.");

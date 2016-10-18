@@ -21,7 +21,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         throw new Error("Could not add UI for element because UI already exists. Use  groover.Geom.setUIElement(element) istead.");
     }    
     this.UI = function(){};  
-    this.extentions.UI = {   // add extentions 
+    this.extensions.UI = {   // add extensions 
         functions : [],
         info : "Provides a User interface for basic interaction."
     };

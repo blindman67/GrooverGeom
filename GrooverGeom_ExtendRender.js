@@ -10,7 +10,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     geom.Geom.prototype.ctx = ctx;    
     workVec = new geom.Vec();  // rather than create a new vec each time just use this one
     
-    this.extentions.render = {   // add extentions 
+    this.extensions.render = {   // add extensions 
         functions : ["lineTo","moveTo","draw","mark","lable"],
         info : "Provides helper functions to render primitives to the canvas 2D context."
     };

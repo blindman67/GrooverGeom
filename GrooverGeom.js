@@ -1,4 +1,10 @@
 "use strict";
+
+/* to do.
+ Groover.Geom.extention is temp fix for legacy code. The spelling has been fixed. September 2016
+
+*/
+
 var groover = {};
 groover.geom = (function (){
     const MPI2 = Math.PI * 2;
@@ -429,7 +435,7 @@ groover.geom = (function (){
             "Bezier",
             "Transform",
         ];
-        this.extentions = {}; // extensions registered by adding to this object
+        this.extensions = {}; // extensions registered by adding to this object
         this.properties = { // this will be removed soon
             Vec : ["x","y","type"],
             Box : ["t","l","b","r","type"],
@@ -471,9 +477,12 @@ groover.geom = (function (){
         this.PrimitiveArray = PrimitiveArray;
         this.Geom = Geom;
         this.Empty = Empty;
+        this.extentions = this.extensions;  // Bug quick fix. Needs to be fixed everywhere!! dang it... :(
+
     }
     Geom.prototype = {
-        extentions : {},
+        //extensions : {},  // needs to be fixed
+        extensions : null,
         safePrimitiveArray : true, // if true pushing a primitiveArray onto a primitiveArray will throw an error. If false then there is no restriction. This is to stop infinite recursion that can happen when you push a primitive array onto its self or create a cyclic reference 
         defaultPrecision : 4, // precision of toString numbers
         lineFeedDefault : "<br>", // toString linefeed default
@@ -607,7 +616,7 @@ groover.geom = (function (){
                 var methods = "Functions."+newLine;
                 var propDesc = "Properties."+newLine;
                 var pr = s.properties[n];
-                var extentions = {};
+                var extensions = {};
                 var dat = {};
                 dat.name = n;
                 dat.properties = [];
@@ -620,10 +629,10 @@ groover.geom = (function (){
                     if(typeof s[n].prototype[i] === "function"){
                         var ce = "";
                         var ext;
-                        for(var k in s.extentions){
-                            if(s.extentions[k].functions.indexOf(i) > -1){
-                                if(extentions[k] === undefined){
-                                    extentions[k] = k + " extention."+newLine;
+                        for(var k in s.extensions){
+                            if(s.extensions[k].functions.indexOf(i) > -1){
+                                if(extensions[k] === undefined){
+                                    extensions[k] = k + " extention."+newLine;
                                     dat.extensions.push({
                                         name : k,
                                         methods : []
@@ -648,10 +657,10 @@ groover.geom = (function (){
                         f = f.replace(/\/\/.*/g,"").trim();
 
                         if(ce !== ""){
-                            extentions[ce] += "- **"+n + "." + i+f + "**  " + newLine;
+                            extensions[ce] += "- **"+n + "." + i+f + "**  " + newLine;
                             ext.methods.push(i + f);
                             if(com.length > 0){
-                                extentions[ce] += com.join("  "+newLine)+newLine;
+                                extensions[ce] += com.join("  "+newLine)+newLine;
                             }
                         }else{
                             methods += "- **"+n + "." + i+f + "**  " + newLine;
@@ -674,8 +683,8 @@ groover.geom = (function (){
                 str += desc + newLine;
                 str += propDesc + newLine;
                 str += methods + newLine;
-                for(var k in extentions){
-                    str += extentions[k] + newLine;
+                for(var k in extensions){
+                    str += extensions[k] + newLine;
                 }
                 data.push(dat);
                 str += "[Back to top.](#contents)"+newLine+newLine
@@ -686,6 +695,7 @@ groover.geom = (function (){
         }
 
     }
+    
 
     function Empty(){};
     function PrimitiveArray(array){ // array can be an array of primitives. No vetting is done so you must ensure that the array only contains geom primitives compatible objects
