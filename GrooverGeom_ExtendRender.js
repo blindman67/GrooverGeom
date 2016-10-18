@@ -1,7 +1,8 @@
 "use strict";
 
 groover.geom.Geom.prototype.addRender = function(ctx1){
-    var mark,  geom, ctx, size, workVec,a,b,c;  // a,b,c are general registers for this scope
+    var mark,  geom, ctx, size, workVec,a,b,c,lowercaseMarkNameWarning;  // a,b,c are general registers for this scope
+    lowercaseMarkNameWarning = false;
     geom = this;
     ctx = ctx1;
     size = 1;
@@ -33,9 +34,10 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         this.ctx = ctx1;
         ctx = ctx1;        
     };
-    geom.Geom.prototype.setSize = function(newSize){ // depriciated use setMarkSize
-        size = newSize;
-        this.size = 1;
+    geom.Geom.prototype.setSize = function(newSize){ // depreciated use setMarkSize
+        throw new ReferenceError("Groover.Geom.setSize has been depreciated. Use Groover.Geom.setMarkSize.");
+        /*size = newSize;
+        this.size = 1;*/ // Commented code to be remove next review
     };
     geom.Geom.prototype.setMarkSize = function(newSize){
         size = newSize;
@@ -92,10 +94,21 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     geom.Geom.prototype.setMarkShape = function(vecArray){    // set the vecArray for custom mark shape
         geom.marks.vecArrayShape = vecArray;        
     }
-    geom.Geom.prototype.setMark = function ( name ){ // set the named mark
+    geom.Geom.prototype.setMark = function ( name , _size){ // set the named mark
         if(typeof geom.marks[name] === "function"){
             mark = geom.marks[name];
+        }else if(typeof geom.marks[name.toLowerCase()] === "function"){
+            if(!lowercaseMarkNameWarning){
+                lowercaseMarkNameWarning = true;
+                console.warn("Groover.Geom.setMark. mark name '"+name+"' should be lowercase '"+(name.toLowerCase())+"' The incorrect case variant has been temporarily added.(This warn is only displayed once.)");
+            }
+            mark = geom.marks[name] = geom.marks[name.toLowerCase()];
+            getMarkNames();
         }
+        if(_size !== undefined){
+            size = _size;
+            this.size = 1;
+        }        
     }
     geom.Geom.prototype.addNamedMark = function ( name, func ){ // adds a new mark shape
         if(typeof func === "function"){
