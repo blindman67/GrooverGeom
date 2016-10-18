@@ -4,7 +4,7 @@
 Removed example and demo. To much work for me to complete.
 
 
-This whole project is proving to be to large for any piratical use as a code base.
+This whole project is proving to be too large for any practical use as a code base.
 
 Rather than an interrogated geom solution I have found my self copying from the core object in GrooverGeom.js 
 
