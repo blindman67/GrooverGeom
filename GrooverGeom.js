@@ -848,7 +848,7 @@ groover.geom = (function (){
                 this.p1 = p1 === undefined ? new Vec() : p1;
                 this.p2 = p2 === undefined ? new Vec() : p2;
                 this.cp1 = cp1 === undefined ? new Vec() : cp1;
-                this.cp2 = cp2 === undefined ? new Vec() : cp2 === null ? undefined : cp2;
+                this.cp2 = cp2 === undefined ? undefined : cp2 === null ? undefined : cp2;
             }
         }
     }
