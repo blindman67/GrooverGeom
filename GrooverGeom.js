@@ -263,6 +263,156 @@ groover.geom = (function (){
         u = crt(sd - q2) - crt(sd + q2) - a; 
         return u;      
     }
+    //==============================================================================================
+    // polynomial solvers  in the forms. 
+    // getRoots4 ax^4 + bx^3 + cx^2 + dx + e
+    // getRoots3 ax^3 + bx^2 + cx + d
+    // getRoots2 ax^2 + bx + c
+    // getRoots1 ax + b
+    // results in register rArray with rArrayLen holding the count
+    //==============================================================================================
+    // WARNING WARNING Danger Will Robinson Danger
+    // The following function use the rArray register to store results. The rArrayLen has the length
+    // rArrayLen is not reset in these function. You must set the start location of the results
+    // by setting rArrayLen >= 0
+    //==============================================================================================
+    var getRoots1 = function (a,b) {
+        if (a != 0){
+            rArray[rArrayLen++] = -b / a;            
+            return;
+        }
+    };
+    var getRoots2 = function (a,b,c) {
+        var d;
+        if(Math.abs(a) < EPSILON){
+            getRoots1(b,c);
+        }
+        b /= a;
+        c /= a;
+        var d = b * b - 4 * c;
+        if (d > 0) {
+            d = Math.sqrt(d);
+            rArray[rArrayLen++] = 0.5 * (-b + d);
+            rArray[rArrayLen++] = 0.5 * (-b - d);
+        } else if (d === 0) {
+            rArray[rArrayLen++] = 0.5 * -b;
+        }
+    };    
+    var getRoots3 = function (a,b,c,d) {
+        var o,dcr,h,e,t,r,dis,ang,co,si,q3;
+        if(Math.abs(a) < EPSILON){
+            getRoots2(b,c,d);
+        }
+        b /= a;
+        c /= a;
+        d /= a;
+        o = b / 3;
+        a = (3 * c - b * b) / 3;
+        b = (2 * b * b * b - 9 * c * b + 27 * d) / 27;
+        h = b / 2;
+        dcr = b * b / 4 + a * a * a / 27;
+        if (dcr > 0) {
+            e = Math.sqrt(dcr);
+            t = -h + e;
+            r = (t >= 0) ? Math.pow(t, 1 / 3) : - Math.pow(-t, 1 / 3);
+            t = -h - e;
+            r += (t >= 0) ? Math.pow(t, 1 / 3) : - Math.pow(-t, 1 / 3);
+            rArray[rArrayLen++] = r - o;
+            return;
+        }
+        if (dcr < 0) {
+            dis = Math.sqrt(-a / 3);
+            ang = Math.atan2(Math.sqrt(-dcr), -h) / 3;
+            co = Math.cos(ang);
+            si = Math.sin(ang);
+            q3  = Math.sqrt(3);
+            rArray[rArrayLen++] = 2 * dis * cos - o;
+            rArray[rArrayLen++] = -dis * (co + q3 * si) - o;
+            rArray[rArrayLen++] = -dis * (co - q3 * si) - o;
+            return;
+        }
+        t =  (h >= 0) ? -Math.pow(h, 1 / 3) : Math.pow(-h, 1 / 3);
+        rArray[rArrayLen++] = 2 * t - o;
+        rArray[rArrayLen++] = -t - o;
+    };    
+    var getRoots3First = function (a,b,c,d) { // Returns only the first root to save time
+        var o,dcr,h,e,t,r;
+        b /= a;
+        c /= a;
+        d /= a;
+        o = b / 3;
+        a = (3 * c - b * b) / 3;
+        b = (2 * b * b * b - 9 * c * b + 27 * d) / 27;
+        dcr = b * b / 4 + a * a * a / 27;
+        h = b / 2;
+        if (dcr > 0) {
+            e = Math.sqrt(dcr);
+            t = -h + e;
+            r = (t >= 0) ? Math.pow(t, 1 / 3) : - Math.pow(-t, 1 / 3);
+            t = -h - e;
+            r += (t >= 0) ? Math.pow(t, 1 / 3) : - Math.pow(-t, 1 / 3);
+            return r - o;
+        }
+        if (dcr < 0) {
+            return 2 * Math.sqrt(-a / 3) * Math.cos(Math.atan2(Math.sqrt(-dcr), -h) / 3) - o;
+        }
+        t =  (h >= 0) ? -Math.pow(h, 1 / 3) : Math.pow(-h, 1 / 3);
+        return 2 * t - o;
+    };    
+    var getRoots4 = function (a,b,c,d,e) {
+        var y,dcr,s,t1,t2,y,p,m,f
+        if(Math.abs(a) < EPSILON){
+            getRoots3(b,c,d,e);
+        }
+        b /= a;
+        c /= a;
+        d /= a;
+        e /= a;
+        y = getRoots3First(1,-c, b * d - 4 * e, -b * b * e + 4 * c * e - d * d);
+        dcr = b * b / 4 - c + y;
+        if (Math.abs(dcr) <= EPSILON){
+            dcr = 0;
+        }
+        if (dcr > 0) {
+            s = Math.sqrt(dcr);
+            t1 = 3 * b * b / 4 - s * s - 2 * c;
+            t2 = (4 * b * c - 8 * d - b * b * b) / (4 * s);
+            p = t1 + t2;
+            m = t1 - t2;
+            p = Math.abs(p) <= EPSILON ? 0 : p;
+            m = Math.abs(m) <= EPSILON ? 0 : m;
+            b = -(b / 4);
+            if (p >= 0) {
+                p = Math.sqrt(p);
+                rArray[rArrayLen++] = b + (s + p) / 2;
+                rArray[rArrayLen++] = b + (s - p) / 2;
+            }
+            if (m >= 0) {
+                m = Math.sqrt(m);
+                rArray[rArrayLen++] = b + (m - s) / 2;
+                rArray[rArrayLen++] = b - (m + s) / 2;
+            }
+        } else if (dcr === 0) {
+            t2 = y * y - 4 * e;
+            if (t2 >= -EPSILON) {
+                t2 = t2 < 0 ? 0 : 2 * Math.sqrt(t2);
+                t1 = 3 * b * b / 4 - 2 * c;
+                b = -b / 4;
+                if (t1 + t2 >= EPSILON) {
+                    p = Math.sqrt(t1 + t2) / 2;
+                    rArray[rArrayLen++] = b + p;
+                    rArray[rArrayLen++] = b - p;
+                }
+                if (t1 - t2 >= EPSILON) {
+                    p = Math.sqrt(t1 - t2) / 2;
+                    rArray[rArrayLen++] = b + p;
+                    rArray[rArrayLen++] = b - p;
+                }
+            }
+        }
+    };    
+    
+    
     var sharedFunctions = {
         setLable : function(lable){
             this.lableStr = lable;
@@ -364,6 +514,7 @@ groover.geom = (function (){
     var l1,l2; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these useful as yet may return them but want to keep the number of closure variable as low as possible
     var bez; // a bezier that is used to a temp for some bezier functions.
     var rArray; // an internal register array
+    var rArrayLen;
 
     
     function Geom(){
@@ -391,6 +542,7 @@ groover.geom = (function (){
             v4 : v4,
             v5 : v5,
             l1 : l1,
+            array : rArray,            
             get : function(name){
                 switch(name){
                     case "c": return c;
@@ -403,6 +555,7 @@ groover.geom = (function (){
                     case "vy": return vy;
                     case "d": return d;                   
                     case "e": return e;                   
+                    case "arrayLen": return rArrayLen;                   
                 }
                 return undefined;
             }
@@ -7347,7 +7500,7 @@ groover.geom = (function (){
             }
             return this;   
         },
-        _setSpan : function(f,t){ // Span is used when a bezier is sliced or cut. This allows caculations to still be relative to the origin bezier. The span is the start and end position of this bezier on the original bezier it was derived from.
+        _setSpan : function(f,t){ // Span is used when a bezier is sliced or cut. This allows calculations to still be relative to the origin bezier. The span is the start and end position of this bezier on the original bezier it was derived from.
             this._subStart = f;
             this._subEnd = t;
             return this;
@@ -7365,7 +7518,7 @@ groover.geom = (function (){
             str += " API incomplete )";
             return str; // returns String
         },
-        getHash : function(){ // returns a unquie hash value for the lines current state
+        getHash : function(){ // returns a unique hash value for the lines current state
             var hash = 0;
             if(!isNaN(this.id)){
                 hash += this.id;
@@ -7378,7 +7531,7 @@ groover.geom = (function (){
             } 
             return Math.round(hash  % 0xFFFFFFFF);
         },    
-        replace : function(id, prim){  // replaces vec with id == id with the supplied vec
+        replace : function(id, prim){  // replaces vec with id === id with the supplied vec
             if(id !== undefined){
                 if(prim !== undefined && prim.type === "Vec"){
                     if(this.p1.id === id){
@@ -7473,7 +7626,7 @@ groover.geom = (function (){
             return this.approxLength();
             
         },
-        asVecArray : function(vecArray, instance){
+        asVecArray : function(vecArray, instance){ // if instance === true then an instance of each vec is created, else a copy of each vec is created
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -7598,6 +7751,95 @@ groover.geom = (function (){
             }
             return vecArray;
         },
+        interceptBezier : function(bez1,vecArray){
+            // rArray 
+            if(vecArray === undefined){
+                vecArray = new VecArray();
+            }
+            if(this.cp2 !== undefined || bez1.cp2 !== undefined){ // currently only quadratics
+                return vecArray; // return empty vec array
+            }
+            v3.x = this.p1.x + this.cp1.x * -2 + this.p2.x;
+            v3.y = this.p1.y + this.cp1.y * -2 + this.p2.y;
+            v2.x = this.p1.x * -2 + this.cp1.x * 2;
+            v2.y = this.p1.y * -2 + this.cp1.y * 2;
+            v1.x = this.p1.x; 
+            v1.y = this.p1.y; 
+
+            vc.x = bez1.p1.x + bez1.cp1.x * -2 + bez1.p2.x;
+            vc.y = bez1.p1.y + bez1.cp1.y * -2 + bez1.p2.y;
+            vb.x = bez1.p1.x * -2 + bez1.cp1.x * 2;
+            vb.y = bez1.p1.y * -2 + bez1.cp1.y * 2;
+            va.x = bez1.p1.x;
+            va.y = bez1.p1.y;
+            rArrayLen = 0; // reset array results count
+            if ( v3.y == 0 ) {
+                a = v3.x * (v1.y - va.y);
+                b = a - v2.x * v2.y;
+                c = v2.y * v2.y;
+                getRoots4(
+                    v3.x * vc.y * vc.y,
+                    2 * v3.x * vb.y * vc.y,
+                    v3.x * vb.y * vb.y - vc.x * c - vc.y * a - vc.y * b,
+                    -vb.x * c - vb.y * a - vb.y * b,
+                    (v1.x - va.x) * c + (v1.y - va.y) * b
+                );
+            } else {
+                a = v3.x * vc.y - v3.y * vc.x;
+                b = v3.x * vb.y - v3.y * vb.x;
+                c = v2.x * v3.y - v2.y * v3.x;
+                d = v1.y - va.y;
+                e = v3.y * (v1.x - va.x) - v3.x * d;
+                u = -v2.y * c + v3.y * e;
+                u1 = c * c;
+                getRoots4(
+                    a * a,
+                    2 * a * b,
+                    (-vc.y * u1 + v3.y * b * b + v3.y * a * e + a * u) / v3.y,
+                    (-vb.y * u1 + v3.y * b * e + b * u) / v3.y,
+                    (d * u1 + e * u) / v3.y
+                );
+            }         
+            a = rArrayLen;
+            e1 = 0;
+            for (c1 = 0; c1 < a; c1++ ) {
+                u = rArray[c1];
+                e = 0; // flags if point is used
+                if ( u >= 0 && u <= 1 ) {
+                    u1 = u * u;
+                    rArrayLen = a;
+                    getRoots2(v3.x, v2.x, v1.x - va.x - u * vb.x - u1 * vc.x);
+                    b = rArrayLen;
+                    getRoots2(v3.y, v2.y, v1.y - va.y - u * vb.y - u1 * vc.y);
+                    c = rArrayLen;  
+                    if ( b > a && c > b ) {
+                        foundRoot:
+                        for (a1 = a; a1 < b; a1++ ) {
+                            d1 = rArray[a1];
+                            if ( 0 <= d1 && d1 <= 1 ) {
+                                for ( b1 = b; b1 < c; b1++ ) {
+                                    if ( Math.abs( d1 - rArray[b1] ) < 1e-4 ) {                                        
+                                        vecArray.push( new Vec(
+                                            vc.x * u1 + vb.x * u + va.x,
+                                            vc.y * u1 + vb.y * u + va.y
+                                        )) ;
+                                        e = 1;
+                                        break foundRoot;
+                                    }
+                                }
+                            }
+                        }
+                        
+                    }
+                }
+                if(e === 1){
+                    rArray[e1++] = u;
+                }
+            }
+            rArrayLen = e1;
+            
+            return vecArray;
+        },        
         interceptsAsPositions : function(bezier,threshold,array,array1){ // Finds the intercept points between this bezier and the given bezier. this is an approximate solution only
                                                          // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
                                                          // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
@@ -7659,7 +7901,7 @@ groover.geom = (function (){
             b2.interceptsAsPositions(b4, threshold, array);
             return array;
         },        
-        __lineInterceptPos : function(line){ // find position of intercept point and puts them in u,u1,u2 geom registers
+        lineInterceptPos : function(line){ // find position of intercept point and puts them in u,u1,u2 geom registers
             var dir = line.dir();
             bez.setAs(this);
             v1.setAs(line.p1).mult(-1);
