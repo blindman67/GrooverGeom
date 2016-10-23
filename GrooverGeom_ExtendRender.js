@@ -1,7 +1,7 @@
 "use strict";
 
 groover.geom.Geom.prototype.addRender = function(ctx1){
-    var mark,  geom, ctx, size, workVec,a,b,c,lowercaseMarkNameWarning;  // a,b,c are general registers for this scope
+    var mark,  geom, ctx, size, workVec,a,b,c,lowercaseMarkNameWarning,markStyleStack;  // a,b,c are general registers for this scope
     lowercaseMarkNameWarning = false;
     geom = this;
     ctx = ctx1;
@@ -9,6 +9,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     geom.Geom.prototype.size = size;    
     geom.Geom.prototype.ctx = ctx;    
     workVec = new geom.Vec();  // rather than create a new vec each time just use this one
+    markStyleStack = []; 
     
     this.extensions.render = {   // add extensions 
         functions : ["lineTo","moveTo","draw","mark","lable"],
@@ -110,6 +111,19 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             this.size = 1;
         }        
     }
+    geom.Geom.prototype.pushMark = function ( name , _size){ // same as set mark but pushes current mark onto a stack
+                                                             // use popMark to restore to the previous marl
+        markStyleStack.push([mark,size]);   
+        this.setMark(name,_size);
+    }
+    geom.Geom.prototype.popMark = function (){ // Restores previous pushed mark style
+        if(markStyleStack.length > 0){
+            var m = markStyleStack.pop();
+            mark = m[0];
+            size = m[1];
+        }
+    }
+    
     geom.Geom.prototype.addNamedMark = function ( name, func ){ // adds a new mark shape
         if(typeof func === "function"){
             geom.marks[name] = func;

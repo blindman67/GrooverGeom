@@ -7740,8 +7740,12 @@ groover.geom = (function (){
         },          
         interceptsAsVecArray : function(bezier,threshold,vecArray){ // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
                                                          // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
+                                                         //     Note: threshold does not apply to quad on quad intercepts. Its perfect
                                                          // [vecArray] the VecArray to hold the results. Creates a new VecArray if not supplied
                                                          // calling this function on two bezier that are the same or have larger areas of points within a pixel will return many interception points
+            if(this.cp2 === undefined || bezier.cp2 === undefined){
+                return this.interceptBezier_QonQ(bezier,vecArray);                
+            }
             var results = this.interceptsAsPositions(bezier,threshold);
             if(vecArray === undefined){
                 vecArray = new VecArray();
@@ -7751,7 +7755,7 @@ groover.geom = (function (){
             }
             return vecArray;
         },
-        interceptBezier : function(bez1,vecArray){
+        interceptBezier_QonQ : function(bez1,vecArray){ // Quadratic to quadratic bezier intercepts
             // rArray 
             if(vecArray === undefined){
                 vecArray = new VecArray();
@@ -8516,6 +8520,28 @@ groover.geom = (function (){
         unitAlong : function(unit,vec){
             return this.vecAt(unit,false,vec);
         },
+        length : function(){ // Accurate length for quadratic curves. Approximation for cubic
+                             // Cubics call this.approxLength and uses a resolution of 1000
+                             // if you wish higher resolution call approxLength directly
+            if(this.cp2 === undefined){
+                v1.x = this.cp1.x * 2;
+                v1.y = this.cp1.y * 2;
+                d = this.p1.x - v1.x + this.p2.x;
+                d1 = this.p1.y - v1.y + this.p2.y;
+                e = v1.x - 2 * this.p1.x;
+                e1 = v1.y - 2 * this.p1.y;
+                c1 = (a = 4 * (d * d + d1 * d1));
+                c1 += (b = 4 * (d * e + d1 * e1));
+                c1 += (c = e * e + e1 * e1);
+                c1 = 2 * Math.sqrt(c1);
+                a1 = 2 * a * (u = Math.sqrt(a));
+                u1 = b / u;
+                a = 4 * c * a - b * b;
+                c = 2 * Math.sqrt(c);
+                return (a1 * c1 + u * b * (c1 - c) + a * Math.log((2 * u + u1 + c1) / (u1 + c))) / (4 * a1);
+            }
+            return this.approxLength(1000);
+        },   
         unitDistOfClosestPoint : function(vec){ 
             return this.findPositionOfVec(vec);//,Math.floor(a/10));        
         },
@@ -8684,48 +8710,15 @@ groover.geom = (function (){
             v4.y = this.p1.y;
             for(c1 = u; c1 <= a; c1 += u){
                 this.vecAt(c1,true,v5);
-                u1 += Math.hypot(v5.x - v4.x, v5.y - v4.y);
+                b = v5.x - v4.x;
+                e = v5.y - v4.y;
+                u1 += Math.sqrt(b * b + e * e);
                 v4.x = v5.x;
                 v4.y = v5.y;
             }
             return u1;
         },
-        lengthChange_Just_messing_about : function(resolution, vecArray , timer = 0){
-            var create = false;
-            if(vecArray === undefined){
-                vecArray = new VecArray();
-                create = true;
-            }
-            if(resolution === undefined || resolution === Infinity){
-                resolution = 100;
-            }
-            var l,ll, i = 0;
-            u = 1/Math.abs(resolution);
-            u1 = 0;
-            a = 1 + u/2; // to ensure that the for loop  does not miss 1 because of floating point error
-            v4.x = this.p1.x;
-            v4.y = this.p1.y;
-            for(c1 = u; c1 <= a; c1 += u){
-                this.vecAt(c1,v5);
-                u1 += l = Math.hypot(v5.x - v4.x, v5.y - v4.y);
-                if(ll !== undefined){
-                    if(create || vecArray.vecs[i] === undefined){
-                        vecArray.push( new Vec(200-(ll - l)*500,i * 4));
-                    }else{
-                        var ang = c1 * Math.PI * 2 + timer /400; 
 
-                        vecArray.vecs[i].x = Math.cos(ang)* (100 +(ll - l)*250) + 200;
-                        vecArray.vecs[i].y = Math.sin(ang)* (100 +(ll - l)*250) + 200;;
-                    }
-                    i ++;
-                }
-                ll = l
-                v4.x = v5.x;
-                v4.y = v5.y;
-            }
-            vecArray.normalise();
-            return vecArray;
-        },
             
     }
     Transform.prototype = {
