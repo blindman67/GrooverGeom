@@ -530,7 +530,19 @@ groover.geom = (function (){
     var rArray; // an internal register array
     var rArrayLen;
     const namedRegisters = {
-        u(){return u},
+        u(){return u;},
+        u1(){return u1;},
+        a(){return a;},
+        b(){return b;},
+        c(){return c;},
+        d(){return d;},
+        e(){return e;},
+        arraylen(){return arrayLen;},
+        a1(){return a1;},
+        b1(){return b1;},
+        c1(){return c1;},
+        d1(){return d1;},
+        e1(){return e1;},
     };
     
     function Geom(){
@@ -563,18 +575,8 @@ groover.geom = (function (){
                 return namedRegisters;
             },
             get : function(name){
-                switch(name){
-                    case "c": return c;
-                    case "u": return u;
-                    case "a": return u;  
-                    case "b": return u;
-                    case "c1": return c1;
-                    case "u1": return u1;
-                    case "vx": return vx;
-                    case "vy": return vy;
-                    case "d": return d;                   
-                    case "e": return e;                   
-                    case "arrayLen": return rArrayLen;                   
+                if(namedRegisters[name] !== undefined){
+                    return namedRegisters[name]();
                 }
                 return undefined;
             }
