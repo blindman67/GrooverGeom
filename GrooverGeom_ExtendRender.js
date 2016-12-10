@@ -171,7 +171,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             this.p1.lineTo();
             return this;// returns this
         };
-        geom.Line.prototype.draw = function (dir) { // The {odir} is a boolean that if true reveres the direction to the draw
+        geom.Line.prototype.draw = function (dir) { // dir draw direction
             if(dir){
                 this.p2.lineTo();
                 this.p1.lineTo();            

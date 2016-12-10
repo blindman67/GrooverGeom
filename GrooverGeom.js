@@ -11,6 +11,7 @@
  * Distance is dist
  * Direction is dir and in radians
  * Normal is norm
+ *   dimensioned objects norm means vector perpendicular and normalised
  * Multiply mult
  * Subtract is sub
  * Vector is vec
@@ -528,7 +529,9 @@ groover.geom = (function (){
     var bez; // a bezier that is used to a temp for some bezier functions.
     var rArray; // an internal register array
     var rArrayLen;
-
+    const namedRegisters = {
+        u(){return u},
+    };
     
     function Geom(){
         v1 = new Vec();
@@ -555,7 +558,10 @@ groover.geom = (function (){
             v4 : v4,
             v5 : v5,
             l1 : l1,
-            array : rArray,            
+            array : rArray,   
+            getNamedRegList : function(){
+                return namedRegisters;
+            },
             get : function(name){
                 switch(name){
                     case "c": return c;
@@ -5549,7 +5555,7 @@ groover.geom = (function (){
         distanceAlong : function ( dist, rVec) { // returns a Vec that is dist along the line 0 = start and line length is the end
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            var l = dist / Math.hypot(v1.x,v1,y);
+            var l = dist / Math.hypot(v1.x,v1.y);
             if(rVec === undefined){
                 return new Vec(
                     v1.x * l + this.p1.x,
@@ -5557,7 +5563,21 @@ groover.geom = (function (){
                 );
             }
             rVec.x = v1.x * l + this.p1.x;
-            rvec.y = v1.y * l + this.p1.y;
+            rVec.y = v1.y * l + this.p1.y;
+            return rVec;
+        },
+        distAlong : function ( dist, rVec) { // returns a Vec that is dist along the line 0 = start and line length is the end
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            var l = dist / Math.hypot(v1.x,v1.y);
+            if(rVec === undefined){
+                return new Vec(
+                    v1.x * l + this.p1.x,
+                    v1.y * l + this.p1.y
+                );
+            }
+            rVec.x = v1.x * l + this.p1.x;
+            rVec.y = v1.y * l + this.p1.y;
             return rVec;
         },
         angleBetween : function (line){        
@@ -5909,15 +5929,30 @@ groover.geom = (function (){
             var a2 = Math.asin((n1 * a1)/n2);
             return new Line(p1,new Vec(null,a-MPI+a2).mult(l).add(p1));
         },*/
-        reflect : function(l){
-            var v2 = this.asVec();
-            var v1 = l.asVec();
+        reflect : function(l){  // returns a vector...  Warning depreciating soon.
+            v2 = this.asVec();
+            v1 = l.asVec();
             var len = v1.dot(v2.norm())*2;
             return v2.mult(len).sub(v1)
         },
-        reflectLine : function(l){
-            var p1 = this.intercept(l);
-            return new Line(p1,p1.copy().add(this.reflect(l)));
+        reflectAsVec : function(l,retVec){  // returns a vector... 
+            if(retVec === unedfined){
+                retVec = new Vec();
+            }
+            this.asVec(retVec);
+            v1 = l.asVec();
+            var len = v1.dot(retVec.norm())*2;
+            return retVect.mult(len).sub(v1)
+        },
+        reflectLine : function(line, retLine){   // reflects line from this returning the new line. retLine if given is set to the reflected line
+            if(retLine === undefined){
+                v1 = this.intercept(line,v1);
+                return new Line(v1.copy(),v1.copy().add(this.reflect(line)));
+            }
+            retLine.p2.setAs(this.intercept(line,retLine.p1));
+            retLine.p2.x += retLine.p1.x;
+            retLine.p2.y += retLine.p1.y;
+            return retLine;
         },
         getNormalAsLine : function(retLine){ // returns a unit line perpendiculare and to the right from the midpoint
             if(retLine === undefined){
