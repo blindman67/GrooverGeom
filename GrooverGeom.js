@@ -4,7 +4,20 @@
  Groover.Geom.extention is temp fix for legacy code. The spelling has been fixed. September 2016
 
 */
-
+/**
+ *   Some notes on naming convetions
+ * Length is leng 
+ * Length squared os leng2
+ * Distance is dist
+ * Direction is dir and in radians
+ * Normal is norm
+ * Multiply mult
+ * Subtract is sub
+ * Vector is vec
+ *    Vector is also a point. They are interchangeable and always referenced as a vec
+ */
+ 
+ 
 var groover = {};
 groover.geom = (function (){
     const MPI2 = Math.PI * 2;
@@ -6767,14 +6780,14 @@ groover.geom = (function (){
             }            
             return true;         
         },
-        isCircleInside : function (circle){  // need improvment
+        isCircleInside : function (circle){  // need improvement
             var x,y,x1,y1,x2,y2,l,l1
             // get top as vec
             x2 = this.top.p2.x - this.top.p1.x;
             y2 = this.top.p2.y - this.top.p1.y;            
             l = Math.hypot(x2,y2);
-            // if the radius is greater then the lenghth of a side then can not fit.
-            if( l / 2 < circle.radiua || (l * this.aspect) / 2 < circle.radius){
+            // if the radius is greater then the length of a side then can not fit.
+            if( l / 2 < circle.radius || (l * this.aspect) / 2 < circle.radius){
                 return false;
             }    
 
