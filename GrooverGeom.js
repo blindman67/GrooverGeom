@@ -5,7 +5,7 @@
 
 */
 /**
- *   Some notes on naming convetions
+ *   Some notes on naming conventions
  * Length is leng 
  * Length squared os leng2
  * Distance is dist
@@ -16,6 +16,46 @@
  * Subtract is sub
  * Vector is vec
  *    Vector is also a point. They are interchangeable and always referenced as a vec
+ * LineSegment is a line, lineSeg, or seg, and represents a line with a start and end point
+ * Unit refers to a unit dimension
+ * Id for identifier. I have done my best to be consistent but sometimes late at night I do ID If you see that consider it a bug that will be fixed when I find it. 
+ */
+ 
+ /**
+    List of primitives
+    Vec     two dimensioned point as a verity of abstracts, vector, point
+    Line    two vecs representing a line, lineSeg
+    Rectangle A line defining the top and an aspect defining depth
+    Box     Axis aligned box
+    Circle  Center as vec and radius
+    Arc     A circle with a start and end angle and a direction flag
+    Bezier  3 or 4 vec representing the start and end and control point/s of a cubic and quadratic bezier curve
+    Triangle 3 vec representing the corners of a triangle
+    
+    Lists like 
+    VecArray a list of vectors
+    PrimitiveArray a list of primitives
+    
+    Additional types
+    Matrix  a 2D matrix as 2 vectors representing the x and y axies and an vec as a point representing the origin.
+    
+ */
+ 
+ /**
+    common properties. All object must have these properties
+    type : A string of the type eg Line.type = "Line"
+    toString(precision) : converts the primitive to a string. Precision is the number of decimal places.
+    copy() : Creates a new copy of the primitive
+    setAs(prim) : Sets the primitive to the same as the supplied primitive prim must be the same type.
+    getHash() : Returns a unique has for the primitive in its current state. Note the has is dependent on the primitives state and will return a different hash if there are any changes.
+    isEmpty() : Returns true if the primitives current state does not represent any of its possible abstract types
+    empty() : forces the primitive into an empty state
+    hasId() : returns true if the primitive has been given an Id.
+    asSimple() : returns a new object that is just a representation of the objects state
+    fromSimple(obj) : creates a new primitive from a simple obj. Missing poverties will be set to the primitive defaults
+    makeUnique() : Adds a new and unique to groover.geom current instance. (Note if you have workers each worker is a new instance of groover.geom. Ids between workers are not unique.
+    asJSON() : returns a JSON string representing the primitive's state as returned by the primitives asSimple function
+    ... this list is incomplete
  */
  
  
@@ -2358,7 +2398,7 @@ groover.geom = (function (){
             this.p3.y = obj.y3 === undefined ? 0 : obj.y3;      
             return this;        
         },
-        lines : function(){ // legacy Must remove when sure no dependancies exist
+        lines : function(){ // legacy Must remove when sure no dependencies exist
             return [
                 new Line(this.p1,this.p2),
                 new Line(this.p2,this.p3),
@@ -2379,7 +2419,7 @@ groover.geom = (function (){
             array[2] = triPh(c,b,a);
             return array;       
         },
-        getSideBisectorAsLine : function(line, sideIndex){ // gets the unit line bisecting the side. line if suppled is the line to set, else creates a new line. sideIndex is the side 0 to 2 or the closest side index or 0
+        getSideBisectorAsLine : function(line, sideIndex){ // gets the unit line bisecting the side. line if supplied is the line to set, else creates a new line. sideIndex is the side 0 to 2 or the closest side index or 0
             if(line === undefined){
                 line = new Line();
             }
@@ -2414,7 +2454,7 @@ groover.geom = (function (){
             line.p2.y = v1.y + v3.x;
             return line;
         },                
-        getCornerBisectorAsLine : function(line, cornerIndex){ // gets the unit line bisecting the corner. line if suppled is the line to set, else creates a new line. cornerIndex is the corner 0 to 2 or the closest corner index or 0
+        getCornerBisectorAsLine : function(line, cornerIndex){ // gets the unit line bisecting the corner. line if supplied is the line to set, else creates a new line. cornerIndex is the corner 0 to 2 or the closest corner index or 0
             if(line === undefined){
                 line = new Line();
             }
@@ -3090,7 +3130,7 @@ groover.geom = (function (){
             }
             return rVec;
         },
-        circumcenter : function(vec){ //returns the circumcenter as a vec of this triangle or an empty vec if the triangle is colinear. vec is optional and if supplied will be set to the cirumcenter else a new vec will be returned. This function uses Circle.fromVec3
+        circumcenter : function(vec){ //returns the circumcenter as a vec of this triangle or an empty vec if the triangle is collinear. vec is optional and if supplied will be set to the cirumcenter else a new vec will be returned. This function uses Circle.fromVec3
            // This function uses the registers b and v1
            // b is the circle that fits the three points on the triangle if any
            // v1 is the center
@@ -3106,7 +3146,7 @@ groover.geom = (function (){
            vec.y = v1.y;
            return vec;        
         },
-        meanCenter : function(vec){ // the center of mass (Though I could be wrong as I can not find this formular to confirm it to be but I need this and as I am at aloss as what to call it for now it is the mean center)
+        meanCenter : function(vec){ // the center of mass (Though I could be wrong as I can not find this formula to confirm it to be but I need this and as I am at a loss as what to call it for now it is the mean center)
             if(vec === undefined){
                 vec = new Vec();
             }
@@ -3114,7 +3154,7 @@ groover.geom = (function (){
             vec.y = (this.p1.y + this.p2.y + this.p3.y) / 3;
             return vec;
         },
-        isSimilar : function(triangle){// returns true if supplied triangle is a similar to this triangle. A similar triangle has the same ratio betwwen the sides though the sides may be rotated within the point p1,p2,p3
+        isSimilar : function(triangle){// returns true if supplied triangle is a similar to this triangle. A similar triangle has the same ratio between the sides though the sides may be rotated within the point p1,p2,p3
             u = this.angleAll();
             u1 = triangle.angleAll();
             c1 = function(a,b){return a-b;};
@@ -3125,7 +3165,7 @@ groover.geom = (function (){
             }
             return false;        
         },
-        reverse : function(swap){ // if swap is supplied then swaps that point and the next. Defualts to 0 if not given. swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
+        reverse : function(swap){ // if swap is supplied then swaps that point and the next. Defaults to 0 if not given. swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
             if(swap === undefined || swap === 0){
                 v1.x  = this.p1.x;
                 v1.y  = this.p1.y;
@@ -3178,7 +3218,7 @@ groover.geom = (function (){
             array[2] = Math.hypot(vec.x - this.p3.x, vec.y - this.p3.y);
             return array;
         },
-        lengthAll : function(array){ // returns an array containg the length of each side if array supplied the first three items are set
+        lengthAll : function(array){ // returns an array containing the length of each side if array supplied the first three items are set
             if(array === undefined){
                 array = [];
             }
@@ -3193,7 +3233,7 @@ groover.geom = (function (){
             array[2] = Math.hypot(v3.x,v3.y);
             return array;
         },
-        angleAll : function(array){ // returns an array containg the angles at each pount if array supplied the first three items are set
+        angleAll : function(array){ // returns an array containing the angles at each pount if array supplied the first three items are set
             if(array === undefined){
                 array = [];
             }
@@ -3223,7 +3263,7 @@ groover.geom = (function (){
             }
             return Math.sqrt(b);
         },
-        inflate : function(amount){ // only currently for for clockwise triangles need to use a different approch to correcyly mitter and should be quicker
+        inflate : function(amount){ // only currently for for clockwise triangles need to use a different approach to correctly miter and should be quicker
             // create vectors for each side
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
@@ -3745,7 +3785,7 @@ groover.geom = (function (){
             return str;
             
         },
-        getHash : function(){ // returns a unquie hash value for the lines current state
+        getHash : function(){ // returns a unique hash value for the lines current state
             var hash = 0;
             if(!isNaN(this.id)){
                 hash += this.id;
@@ -5321,7 +5361,7 @@ groover.geom = (function (){
             this.p2 = u1;
             return this;  // returns this
         },
-        reverse : function(){
+        reverse : function(){ // changes the direction of the line by swapping the end points
             return this.swap(); // returns this.
         },
         lerp : function(from, dest, amount){
@@ -5442,7 +5482,7 @@ groover.geom = (function (){
         dir : function(){
             return Math.atan2(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
         },
-        norm : function(rVec){ // returns the line normal as a vec
+        norm : function(rVec){ // returns the line normal (perpendicular to the line) as a vec
             if(rVec === undefined){
                 rVec = new Vec();
             }
@@ -5507,41 +5547,13 @@ groover.geom = (function (){
             this.p2.y += vec.y;
             return this; // returns this.
         },
-        translate : function(vec){
-            this.p1.x += vec.x;
-            this.p1.y += vec.y;
-            this.p2.x += vec.x;
-            this.p2.y += vec.y;
-            return this; // returns this.
-        },
-        rotate : function(num){
-            var xdx = Math.cos(num);
-            var xdy = Math.sin(num);
-            var x = this.p1.x * xdx + this.p1.y * - xdy;
-            var y = this.p1.x * xdy + this.p1.y *  xdx;
-            this.p1.x = x;
-            this.p1.y = y;
-            var x = this.p2.x * xdx + this.p2.y * - xdy;
-            var y = this.p2.x * xdy + this.p2.y *  xdx;
-            this.p2.x = x;
-            this.p2.y = y;
-            return this; // returns this.
-        },
-        scale : function(num){
-            this.p1.x *= num;
-            this.p1.y *= num;
-            this.p2.x *= num;
-            this.p2.y *= num;
-            return this; // returns this.
-        },
-        midPoint : function(rVec){
+        midPoint : function(rVec){  // returns the vec as mid point of line
             if(rVec === undefined){
                 return new Vec((this.p1.x + this.p2.x)/2,(this.p1.y + this.p2.y)/2);                
             }
             rVec.x = (this.p1.x + this.p2.x)/2;
             rVec.y = (this.p1.y + this.p2.y)/2;
-            return rVec;
-            
+            return rVec;            
         },
         unitAlong : function ( unitDist , rVec){ // returns a Vec unitDist (0 is start 1 is end) along the line 
             if(rVec === undefined){
@@ -5554,7 +5566,7 @@ groover.geom = (function (){
             rVec.y = (this.p2.y - this.p1.y) * unitDist + this.p1.y;
             return rVec;
         },
-        distanceAlong : function ( dist, rVec) { // returns a Vec that is dist along the line 0 = start and line length is the end
+        distanceAlong : function ( dist, rVec) { // Depreciated Use distAlong
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             var l = dist / Math.hypot(v1.x,v1.y);
@@ -5755,7 +5767,7 @@ groover.geom = (function (){
             return rVec;
 
         },
-        isLineSegsIntercepting : function(line){ // Returns true if the {aline} intercepts this line segment
+        isLineSegsIntercepting : function(line){ // Returns true if the line intercepts this line segment
             // this function uses V1,V2,V3,V4 where
             // v1 is the vector of this line
             // v2 is the vector of line
@@ -5785,7 +5797,7 @@ groover.geom = (function (){
             }
             v4.x = undefined;
             return false;  
-        },
+        },       
         distFrom : function(point){   // returns the distance from the line segment a point is
             // this function uses v1, v2, v3, u is the closest point and sets this._leng
             // v1 is the vector of this line
@@ -5799,16 +5811,16 @@ groover.geom = (function (){
             v2.y = point.y - this.p1.y;
             u = (v2.x * v1.x + v2.y * v1.y)/(v1.y * v1.y + v1.x * v1.x);
             if(u >= 0 && u <= 1){
-                v3.x = v1.x * u;
-                v3.y = v1.y * u;
-                return Math.hypot(v3.y - v2.y, v3.x - v2.x);
+                v3.x = this.p1.x + v1.x * u;
+                v3.y = this.p1.y + v1.y * u;
+                return Math.hypot(v3.y - point.y, v3.x - point.x);
             }
             return Math.min(
                 Math.hypot(this.p2.x - point.x, this.p2.y - point.y),
                 Math.hypot(this.p1.x - point.x, this.p1.y - point.y)
             );
-        },        
-        distFromLine : function(point){   // returns the distance from the line a point is
+        },         
+        distFromPoint : function(point){   // returns the distance from the line a point is
             // this function uses v1, v2, v3, u is the closest point and sets this._leng
             // v1 is the vector of this line
             // v2 is the vector from this line start to point
@@ -5821,10 +5833,10 @@ groover.geom = (function (){
             v2.x = point.x - this.p1.x;
             v2.y = point.y - this.p1.y;
             u = (v2.x * v1.x + v2.y * v1.y)/(this._leng * this._leng);
-            v3.x = v1.x * u;
-            v3.y = v1.y * u;
-            return Math.hypot(v3.y - v2.y, v3.x - v2.x);
-        },  
+            v3.x = this.p1.x + v1.x * u;
+            v3.y = this.p1.y + v1.y * u;
+            return Math.hypot(v3.y - point.y, v3.x - point.x);
+        },        
         distFromDir : function(point){ // same as distFrom but adds a sign to indicate if the line is left (negative) or right (positive)
             // this call fromDist Refer to that function for calc vars used.
             var d = this.distFrom(point);
@@ -5902,7 +5914,7 @@ groover.geom = (function (){
             v2.y = vec.y - this.p1.y;
             return (v2.x * v1.x + v2.y * v1.y) / (v1.y * v1.y + v1.x * v1.x);
         },
-        closestPoint : function(vec, rVec){
+        closestPoint : function(vec, rVec){ // returns the point on the line that is closest to the point vec
             var l;
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
@@ -5931,32 +5943,40 @@ groover.geom = (function (){
             var a2 = Math.asin((n1 * a1)/n2);
             return new Line(p1,new Vec(null,a-MPI+a2).mult(l).add(p1));
         },*/
-        reflect : function(l){  // returns a vector...  Warning depreciating soon.
-            v2 = this.asVec();
-            v1 = l.asVec();
+        reflect : function(l){  // Depreciated use reflectAsVec
+            this.asVec(v2);
+            l.asVec(v1);
             var len = v1.dot(v2.norm())*2;
             return v2.mult(len).sub(v1)
         },
-        reflectAsVec : function(l,retVec){  // returns a vector... 
-            if(retVec === unedfined){
+        reflectAsVec : function(line,retVec){  // returns a vector... 
+            if(retVec === undefined){
                 retVec = new Vec();
             }
-            this.asVec(retVec);
-            v1 = l.asVec();
-            var len = v1.dot(retVec.norm())*2;
-            return retVect.mult(len).sub(v1)
+            v2.x = this.p2.x - this.p1.x;
+            v2.y = this.p2.y - this.p1.y;
+            v1.x = line.p2.x - line.p1.x;
+            v1.y = line.p2.y - line.p1.y;
+            var len = v1.dot(v2.norm())*2;
+            retVec.x = v2.x * len - v1.x;
+            retVec.y = v2.y * len - v1.y;
+            return retVec;
         },
         reflectLine : function(line, retLine){   // reflects line from this returning the new line. retLine if given is set to the reflected line
             if(retLine === undefined){
-                v1 = this.intercept(line,v1);
-                return new Line(v1.copy(),v1.copy().add(this.reflect(line)));
+                v5 = this.intercept(line,v5);
+                return new Line(v5.copy(),v5.copy().add(this.reflectAsVec(line,v4)));
             }
-            retLine.p2.setAs(this.intercept(line,retLine.p1));
-            retLine.p2.x += retLine.p1.x;
-            retLine.p2.y += retLine.p1.y;
+            this.intercept(line,v5);
+            retLine.p1.x = v5.x
+            retLine.p1.y = v5.y;
+            
+            this.reflectAsVec(line,v4);
+            retLine.p2.x = v5.x + v4.x ;
+            retLine.p2.y = v5.y + v4.y;
             return retLine;
         },
-        getNormalAsLine : function(retLine){ // returns a unit line perpendiculare and to the right from the midpoint
+        getNormalAsLine : function(retLine){ // returns a unit line perpendicular and to the right from the midpoint
             if(retLine === undefined){
                 retLine = new Line();
             }
@@ -6011,10 +6031,17 @@ groover.geom = (function (){
             this.p1.y = (this.p2.x = vec.y + (v1.y = this.p1.y - this.p2.y)/2) - v1.y;
             return this; // returns this.
         },
+        rotate180OnStart : function(){
+            this.p2.x = this.p1.x - (this.p2.x - this.p1.x);
+            this.p2.y = this.p1.y - (this.p2.y - this.p1.y);
+            return this;            
+        },
+        rotate180OnEnd : function(){
+            this.p1.x = this.p2.x + (this.p2.x - this.p1.x);
+            this.p1.y = this.p2.y + (this.p2.y - this.p1.y);
+            return this;            
+        },
         rotate90OnCenter : function(){ // rotates 90 deg clockwise on the center
-            // this function uses Geom registers v1, v2
-            // v1 is the vector of this line before rotation
-            // v2 is the mid point of this line
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             v2.x = this.p1.x + v1.x / 2;
@@ -6024,23 +6051,89 @@ groover.geom = (function (){
             return this;            
         },
         rotate90OnStart : function(){ // rotates 90 deg clockwise on its start point
-            // this function uses Geom registers v1.x
-            // v1.x is the vector x component of this line before rotation
             v1.x = this.p2.x - this.p1.x;
             this.p2.x = this.p1.x - (this.p2.y - this.p1.y);
             this.p2.y = this.p1.y + v1.x;
-            return this;            
-            
+            return this;                        
         },
         rotate90OnEnd : function(){ // rotates 90 deg clockwise on its end point
-            // this function uses Geom registers v1
-            // v1 is the vector of this line before rotation
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             this.p1.x = this.p2.x + v1.y;
             this.p1.y = this.p2.y - v1.x;
             return this;                        
         },
+        rotate90OnUnit : function(unit){ // rotates 90 deg clockwise on the unit dist from start
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = this.p1.x + v1.x * unit;
+            v2.y = this.p1.y + v1.y * unit;
+            this.p2.x = (this.p1.x = v2.x + v1.y * unit) - v1.y;
+            this.p2.y = (this.p1.y = v2.y - v1.x * unit) + v1.x;
+            return this;            
+        },        
+        rotateOnStart : function(rotation){  // rotates line around start
+            v2.x = Math.cos(rotation);
+            v2.y = Math.sin(rotation);
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            this.p2.x = this.p1.x + v1.x * v2.x - v1.y * v2.y;
+            this.p2.y = this.p1.y + v1.x * v2.y + v1.y * v2.x;
+            return this;
+        },
+        rotateOnEnd : function(rotation){  // rotates lines around end
+            v2.x = Math.cos(rotation);
+            v2.y = Math.sin(rotation);
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            this.p1.x = this.p2.x - v1.x * v2.x - v1.y * v2.y;
+            this.p1.y = this.p2.y - v1.x * v2.y + v1.y * v2.x;
+            return this;
+        },
+        rotateOnCenter : function(rotation){ // rotates line around center
+            v2.x = Math.cos(rotation) * 0.5;
+            v2.y = Math.sin(rotation) * 0.5;
+            v3.x = (this.p2.x + this.p1.x) * 0.5;
+            v3.y = (this.p2.y + this.p1.y) * 0.5;
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            this.p1.x = v3.x - v1.x * v2.x - v1.y * v2.y;
+            this.p1.y = v3.y - v1.x * v2.y + v1.y * v2.x;
+            this.p2.x = v3.x + v1.x * v2.x - v1.y * v2.y;
+            this.p2.y = v3.y + v1.x * v2.y + v1.y * v2.x;
+            return this;
+        },
+        rotateOnUnit : function(rotation,unit){ // rotates line around unit dist from start point
+            v4.x = (v2.x = Math.cos(rotation)) * unit;
+            v4.y = (v2.y = Math.sin(rotation)) * unit;
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v3.x = this.p1.x + v1.x * unit;
+            v3.y = this.p1.y + v1.y * unit;
+            this.p1.x = v3.x - v1.x * v4.x - v1.y * v4.y;
+            this.p1.y = v3.y - v1.x * v4.y + v1.y * v4.x;
+            v2.x *= (1-unit);
+            v2.y *= (1-unit);
+            this.p2.x = v3.x + v1.x * v2.x - v1.y * v2.y;
+            this.p2.y = v3.y + v1.x * v2.y + v1.y * v2.x;
+            return this;
+        },
+        rotateOnDist : function(rotation,dist){ // rotates line around dist from start point
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            d = dist / Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            v4.x = (v2.x = Math.cos(rotation)) * d;
+            v4.y = (v2.y = Math.sin(rotation)) * d;
+            v3.x = this.p1.x + v1.x * d;
+            v3.y = this.p1.y + v1.y * d;
+            this.p1.x = v3.x - v1.x * v4.x - v1.y * v4.y;
+            this.p1.y = v3.y - v1.x * v4.y + v1.y * v4.x;
+            v2.x *= (1-d);
+            v2.y *= (1-d);
+            this.p2.x = v3.x + v1.x * v2.x - v1.y * v2.y;
+            this.p2.y = v3.y + v1.x * v2.y + v1.y * v2.x;
+            return this;
+        },        
         slide : function(distance){ // moves the line segment backwards (- distance) or forward (+distance)        
             // this function uses Geom registers v1
             // v1 is the vector of the distance moved;
@@ -6122,17 +6215,17 @@ groover.geom = (function (){
             this.p2.y += vec.y;
             return this; // returns this
         },
-        rotate : function(rotation){
-            var dx = Math.cos(rotation);
-            var dy = Math.sin(rotation);
-            var x = this.p1.x;
-            var y = this.p1.y;
-            this.p1.x = x * dx + y * -dy;
-            this.p1.y = x * dy + y * dx;
-            x = this.p2.x;
-            y = this.p2.y;
-            this.p2.x = x * dx + y * -dy;
-            this.p2.y = x * dy + y * dx;         
+        rotate : function(rotation){ // rotate line around origin
+            v1.x = Math.cos(rotation);
+            v1.y = Math.sin(rotation);
+            v2.x = this.p1.x;
+            v2.y = this.p1.y;
+            this.p1.x = v2.x * v1.x + v2.y * -v1,y;
+            this.p1.y = v2.x * v1.y + v2.y * v1.x;
+            v2.x = this.p2.x;
+            v2.y = this.p2.y;
+            this.p2.x = v2.x * v1.x + v2.y * -v1,y;
+            this.p2.y = v2.x * v1.y + v2.y * v1.x;
             return this; // returns this
         },
         transform : function(transform){
@@ -7172,7 +7265,7 @@ groover.geom = (function (){
             vec.y += v1.y * point.x + v2.y;
             return vec;
         },
-        localPoint : function(vec,rVec){
+        localPoint : function(vec,rVec){ // returns a vec that is the unit coordinates on the rectangle
             var dy = this.top.distFromDir(vec);
             var dx = this.leftLine().distFromDir(vec);
             u = this.top.leng();
