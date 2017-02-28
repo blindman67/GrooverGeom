@@ -179,6 +179,63 @@ groover.geom = (function (){
         Math.dist2Vector = dist2Vector;
         Math.circle = {};  
         Math.sphere = {};    
+        Math.cylinder = {};
+        Math.inertia = {};
+        Math.inertia.moment = {};
+        Math.inertia.moment.hoopZ = function(radius,length,density){
+            return MPI2 * length * density * Math.pow(radius,3);
+        }
+        Math.inertia.moment.hoopX = function(radius,length,density){
+            return (1 / 2) * MPI2 * length * density * Math.pow(radius,3);
+        }
+        Math.inertia.moment.discZ = Math.inertia.moment.HoopX;
+        Math.inertia.moment.cylinderZ = Math.inertia.moment.HoopX;
+        Math.inertia.moment.cylinderShellZ = Math.inertia.moment.HoopZ;
+        Math.inertia.moment.discX = function(radius,length,density){
+            return (1 / 4) * MPI2 * length * density * Math.pow(radius,3);
+        }
+        Math.inertia.moment.cylinderX = function(radius,length,density){
+            return ((radius * MPI2 * length) / 12) * (3 * radius * radius + length * length);
+        }
+        Math.inertia.moment.rod = function(radius,length,density){
+            return (1 / 12) * radius * MPI2 * Math.pow(length, 3) * density;
+        }
+        Math.inertia.moment.tubeZ = function(radiusInside, radiusOutside, length, density){
+           var t = (radiusOutside - radiusInside) / radiusOutside;
+           var lp = MPI2 * length;
+           return (radiusOutside * lp - radiusInside * lp) *  density * radiusOutside * radiusOutside *(1- t + (t * t) / 2);
+        }
+        Math.inertia.moment.tubeX = function(radiusInside, radiusOutside, length, density){
+            var lp = MPI2 * length;
+            return (1 / 12) * (radiusOutside * lp - radiusInside * lp) *  density * (3 * (radiusOutside * radiusOutside + radiusInside * radiusInside ) + length * length);
+        }
+        Math.inertia.moment.sphere = function(radius,length,density){
+            return (8 / 15)  * Math.pow(radius, 5) *  Math.PI * density;
+        }
+        Math.inertia.moment.cuboidH = function(width, height, depth, density){
+            return width * height * depth * density * (1 / 12) * (width * width + depth * depth);
+        }
+        Math.inertia.moment.cuboidW = function(width, height, depth, density){
+            return width * height * depth * density * (1 / 12) * (height * height + depth * depth);
+        }
+        Math.inertia.moment.cuboidD = function(width, height, depth, density){
+            return width * height * depth * density * (1 / 12) * (height * height + width * width);
+        }
+        Math.inertia.moment.cube = function(size,density){
+            return Math.pow(size, 6) * density * (1/ 6);
+        }
+        Math.cylinder.area = function(radius, length){  // surface
+            return radius * radius * Math.PI + radius * MPI2 * length;
+        }
+        Math.cylinder.volume = function(radius, length){
+            return radius * MPI2 * length;
+        }
+        Math.cylinder.radius = function(volume, length){
+            return volume / (MPI2 * length);
+        }
+        Math.cylinder.length = function(radius, volume){
+            return volume / (MPI2 * radius);
+        }
         Math.circle.area = function(radius){
             return radius * radius * MPI2;
         }    
@@ -1042,7 +1099,7 @@ groover.geom = (function (){
         this.top = top === undefined || top === null ? new Line() : top;
         this.aspect = v2Aspect === undefined || v2Aspect === null ? 1 : v2Aspect;
     };
-    function Box(left,top,right,bottom){
+    function Box(left,top,right,bottom){ //axis aligned box
         if((left === undefined || left === null) && (top === undefined || top === null)  && (right === undefined || right === null) && (bottom === undefined || bottom === null)){
             this.irrate();
             return;
@@ -3498,12 +3555,12 @@ groover.geom = (function (){
             this.y = Math.sin(v1.y) * v1.x;            
             return this;            
         },
-        add : function(vec){ // adds {avec} to this.
+        add : function(vec){ // adds {avec} to this
             this.x += vec.x;
             this.y += vec.y;
             return this;    // returns this
         },
-        sub : function(vec){  // subtracts {avec} from this.
+        sub : function(vec){  // subtracts {avec} from this
             this.x -= vec.x;
             this.y -= vec.y;
             return this; // returns this
@@ -5786,7 +5843,7 @@ groover.geom = (function (){
                 if(u >= 0 && u <= 1){
                     v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on this line
                     if(u >= 0 && u <= 1){
-                        v4.x = u;  // in case needed for caculating the position of the intercept
+                        v4.x = u;  // in case needed for calculating the position of the intercept
                         return true;
                     }else{
                         return false;
@@ -7420,7 +7477,7 @@ groover.geom = (function (){
             }
             return false;           
         },
-        isBoxTouching : function(box){ // returns true if this box is touching the given box. Warning both boxs are normalised
+        isBoxTouching : function(box){ // returns true if this box is touching the given box. Warning both boxes are normalised
             this.normalise();
             box.normalise();
             if(this.top > box.bottom || this.bottom < box.top || this.left > box.right || this.right < box.left){
@@ -7543,15 +7600,14 @@ groover.geom = (function (){
             
         },
         normalise : function (){ // ensures that all values are correct
-            var t,r,l,b;
-            t = Math.min(this.top,this.bottom);
-            b = Math.max(this.top,this.bottom);
-            l = Math.min(this.left,this.right);
-            r = Math.max(this.left,this.right);
-            this.top = t;
+            a = this.top < this.bottom ? this.top : this.bottom; // quicker than using Math.min
+            b = this.top >= this.bottom ? this.top : this.bottom; // quicker than using Math.max
+            c = this.left < this.right ? this.left : this.right; // quicker than using Math.min
+            d = this.left >= this.right ? this.left : this.right; // quicker than using Math.max
+            this.top = a;
             this.bottom = b;
-            this.left = l;
-            this.right = r;
+            this.left = c;
+            this.right = d;
             return this; // returns this.
         },
         max : function () { // max the box Infinitely large
