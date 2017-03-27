@@ -1,7 +1,7 @@
 "use strict";
 
 /* to do.
- Groover.Geom.extention is temp fix for legacy code. The spelling has been fixed. September 2016
+ Groover.Geom.extension is temp fix for legacy code. The spelling has been fixed. September 2016
 
 */
 /**
@@ -382,10 +382,14 @@ groover.geom = (function (){
     // getRoots1 ax + b
     // results in register rArray with rArrayLen holding the count
     //==============================================================================================
-    // WARNING WARNING Danger Will Robinson Danger
-    // The following function use the rArray register to store results. The rArrayLen has the length
+    // WARNING WARNING 
+    // The following functions use the rArray register to store results. The rArrayLen has the length
     // rArrayLen is not reset in these function. You must set the start location of the results
     // by setting rArrayLen >= 0
+    //==============================================================================================
+    // WARNING 
+    // Looking at this code 27/3/2017 and it does not look right. I can not find any testing 
+    // log so there is a good chance that none of these functions have been tested.
     //==============================================================================================
     var getRoots1 = function (a,b) {
         if (a != 0){
@@ -5298,8 +5302,7 @@ groover.geom = (function (){
         p2 : undefined,
         type : "Line",      
         _leng : null,
-        _dir : null,
-        
+        _dir : null,        
         copy : function(){
             return new Line(this.p1.copy(),this.p2.copy());
         },
@@ -5530,13 +5533,121 @@ groover.geom = (function (){
             }
             return false;
         },        
+        isLineOnLine : function(line,threshold){ // returns true if the line is on this line
+            if(threshold === undefined){
+                threshold = EPSILON;
+            }
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x;
+            v2.y = line.p2.y - line.p1.y;
+            u = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            u1 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+            a = (v1.x * v2.y) / (u * u1) - (v1.y * v2.x) / (u * u1);
+            if(Math.abs(a) < EPSILON){ // parallel
+                v3.x = line.p2.x - this.p1.x;
+                v3.y = line.p2.y - this.p1.y;
+                u = (v3.x * v1.x + v3.y * v1.y)/(u * u);
+                v3.x = this.p1.x + v1.x * u;
+                v3.y = this.p1.y + v1.y * u;
+                b = Math.hypot(v3.y - line.p2.x, v3.x - line.p2.y);   
+                if(b < threshold){
+                    return true;
+                }                
+            }
+            return false;
+        },
+        isLineParallelToLine : function(line,threshold){ // returns true if the line is parallel to this line
+            if(threshold === undefined){
+                threshold = EPSILON;
+            }
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x;
+            v2.y = line.p2.y - line.p1.y;
+            u = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            u1 = u * Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+            a = (v1.x * v2.y) / u1 - (v1.y * v2.x) / u1;
+            if(Math.abs(a) < EPSILON){ // parallel
+                return true;
+            }
+            return false;
+        },
+        isLineOnSeg : function(line,threshold){ // returns true if the line starts or ends on this line seg and is parallel to this line seg
+            if(threshold === undefined){
+                threshold = EPSILON;
+            }
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x;
+            v2.y = line.p2.y - line.p1.y;
+            u = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            u1 = u * Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+            a = (v1.x * v2.y) / u1 - (v1.y * v2.x) / u1;
+            if(Math.abs(a) < EPSILON){ // parallel
+                v3.x = line.p2.x - this.p1.x;
+                v3.y = line.p2.y - this.p1.y;
+                u1 = (v3.x * v1.x + v3.y * v1.y)/(u * u);
+                if(u1 >= 0 && u1 <= 1){
+                    v3.x = this.p1.x + v1.x * u1;
+                    v3.y = this.p1.y + v1.y * u1;
+                    b = Math.hypot(v3.y - line.p2.x, v3.x - line.p2.y);   
+                    if(b < threshold){
+                        return true;
+                    }                
+                }
+                v3.x = line.p1.x - this.p1.x;
+                v3.y = line.p1.y - this.p1.y;
+                u1 = (v3.x * v1.x + v3.y * v1.y)/(u * u);
+                if(u1 >= 0 && u1 <= 1){
+                    v3.x = this.p1.x + v1.x * u1;
+                    v3.y = this.p1.y + v1.y * u1;
+                    b = Math.hypot(v3.y - line.p1.x, v3.x - line.p1.y);   
+                    if(b < threshold){
+                        return true;
+                    }                
+                }
+            }
+            return false;
+        },
+        isLineInSeg : function(line,threshold){ // returns true if the line starts and ends on this line seg and is parallel to this line seg
+            if(threshold === undefined){
+                threshold = EPSILON;
+            }
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x;
+            v2.y = line.p2.y - line.p1.y;
+            u = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            u1 = u * Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+            a = (v1.x * v2.y) / u1 - (v1.y * v2.x) / u1;
+            if(Math.abs(a) < EPSILON){ // parallel
+                v3.x = line.p2.x - this.p1.x;
+                v3.y = line.p2.y - this.p1.y;
+                u1 = (v3.x * v1.x + v3.y * v1.y)/(u * u);
+                if(u1 >= 0 && u1 <= 1){
+                    v3.x = this.p1.x + v1.x * u1;
+                    v3.y = this.p1.y + v1.y * u1;
+                    b = Math.hypot(v3.y - line.p2.x, v3.x - line.p2.y);   
+                    if(b < threshold){
+                        v3.x = line.p1.x - this.p1.x;
+                        v3.y = line.p1.y - this.p1.y;
+                        u1 = (v3.x * v1.x + v3.y * v1.y)/(u * u);
+                        if(u1 >= 0 && u1 <= 1){
+                            return true;
+                        }
+                    }                
+                }
+            }
+            return false;
+        },        
         leng : function(){
             return Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
         },
         leng2 : function(){ // length squared
             return Math.pow(this.p2.x-this.p1.x,2) + Math.pow(this.p2.y-this.p1.y,2);
         },
-        dir : function(){
+        dir : function(){ // returns direction in radians in the range -pi to pi
             return Math.atan2(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
         },
         norm : function(rVec){ // returns the line normal (perpendicular to the line) as a vec
@@ -5551,10 +5662,10 @@ groover.geom = (function (){
             return rVec;
             
         },
-        normDir : function(rVec){ // returns the line normal as a direction
-            return Math.atan2(this.p2.y - this.p1.y,this.p2.x - this.p1.x) + Math.PI/2;
+        normDir : function(){ // returns the line normal as a direction in radians in the range -pi to pi
+            return Math.atan2(-(this.p2.x - this.p1.x),(this.p2.y - this.p1.y)) ;
         },
-        extend : function(percentage){  // grows or shrinks the linetowards or away from its center
+        extend : function(percentage){  // grows or shrinks the line towards or away from its center
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             var l = (Math.hypot(v1.x,v1.y) * 2) / percentage;
@@ -9144,7 +9255,7 @@ groover.geom = (function (){
             this.yAxis.y = -this.yAxis.y;        
             return this;
         },
-        mirrorXY : function(){ // mirror the transform along its a and y Axis. 
+        mirrorXY : function(){ // mirror the transform along its x and y Axis. 
             this.xAxis.x = -this.xAxis.x;
             this.xAxis.y = -this.xAxis.y;        
             this.yAxis.x = -this.yAxis.x;
