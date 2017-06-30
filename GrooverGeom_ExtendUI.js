@@ -26,21 +26,21 @@ groover.geom.Geom.prototype.addUI = function(element1){
         info : "Provides a User interface for basic interaction."
     };
     this.objectNames.push("UI");
-    geom.Geom.prototype.setUIElement = function(element1){
-        if(element1 === undefined || element1 === null){
+    geom.Geom.prototype.setUIElement = function(_element){
+        if(_element === undefined || _element === null){
             if(mouse.active){
                 mouse.remove();
             }
             throw new TypeError("Groover.Geom.setUIElement invalid element can not start.");
         }
-        element = geom.Geom.prototype.UIelement = element1;    
+        element = geom.Geom.prototype.UIelement = _element;    
         mouse.start(element)
     }
 
     
   
-    points = new geom.VecArray().makeUnique().setLable("Geom.UI.Points");
-    shadowPoints = new geom.VecArray().makeUnique().setLable("Geom.UI.shadowPoints");
+    points = new geom.VecArray().makeUnique().setLabel("Geom.UI.Points");
+    shadowPoints = new geom.VecArray().makeUnique().setLabel("Geom.UI.shadowPoints");
                                         // IF the client app modifies points  when they change (such as snap to) this array can be used to maintain the correct aspects and dragging offsets during dragging operations.
                                         // call shadowPoints to activate shadows
                                         // call unshadowPoints to deactivate
@@ -52,18 +52,18 @@ groover.geom.Geom.prototype.addUI = function(element1){
             a2.vecs[i].y = p.y;
         });
     }      
-    shadowSelection = new geom.VecArray().makeUnique().setLable("Geom.UI.shadowSelected");    
-    selected = new geom.VecArray().makeUnique().setLable("Geom.UI.Selected");
-    unselected = new geom.VecArray().makeUnique().setLable("Geom.UI.unSelected");;
-    inSelectionBox = new geom.VecArray().makeUnique().setLable("Geom.UI.inSelectionBax");
-    pointerLoc = new geom.Vec().makeUnique().setLable("Geom.UI.pointer");;
+    shadowSelection = new geom.VecArray().makeUnique().setLabel("Geom.UI.shadowSelected");    
+    selected = new geom.VecArray().makeUnique().setLabel("Geom.UI.Selected");
+    unselected = new geom.VecArray().makeUnique().setLabel("Geom.UI.unSelected");;
+    inSelectionBox = new geom.VecArray().makeUnique().setLabel("Geom.UI.inSelectionBax");
+    pointerLoc = new geom.Vec().makeUnique().setLabel("Geom.UI.pointer");;
     workVec = new geom.Vec();  // rather than create a new vec each time just use this onerror
     workVec1 = new geom.Vec();  // rather than create a new vec each time just use this onerror
     workVec2 = new geom.Vec();  // rather than create a new vec each time just use this onerror
     workVec3 = new geom.Vec();  // rather than create a new vec each time just use this onerror
-    boundingBox = new geom.Box().makeUnique().setLable("Geom.UI.boundingBox");;
-    selectionBox = new geom.Box().makeUnique().setLable("Geom.UI.selectionBox");;
-    rotationLine = new geom.Line(new geom.Vec().setLable("Top") ,new geom.Vec().setLable("Rotate"));
+    boundingBox = new geom.Box().makeUnique().setLabel("Geom.UI.boundingBox");;
+    selectionBox = new geom.Box().makeUnique().setLabel("Geom.UI.selectionBox");;
+    rotationLine = new geom.Line(new geom.Vec().setLabel("Top") ,new geom.Vec().setLabel("Rotate"));
     workTransform = new geom.Transform();
     boundsTransform = new geom.Transform();
     cancel = false; // global event cance;l
@@ -83,14 +83,14 @@ groover.geom.Geom.prototype.addUI = function(element1){
     rightClickSelect = true;
     
     boundsCorners = [
-        new geom.Vec().setLable("TopLeft"),
-        new geom.Vec().setLable("TopRight"),
-        new geom.Vec().setLable("BottomRight"),
-        new geom.Vec().setLable("BottomLeft"),
+        new geom.Vec().setLabel("TopLeft"),
+        new geom.Vec().setLabel("TopRight"),
+        new geom.Vec().setLabel("BottomRight"),
+        new geom.Vec().setLabel("BottomLeft"),
         rotationLine.p1,
-        new geom.Vec().setLable("Right"),
-        new geom.Vec().setLable("Bottom"),
-        new geom.Vec().setLable("Left"),
+        new geom.Vec().setLabel("Right"),
+        new geom.Vec().setLabel("Bottom"),
+        new geom.Vec().setLabel("Left"),
         rotationLine.p2,
     ]; // from top left around clockwise
     boundsLines = [ 
@@ -117,7 +117,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
         points : new geom.VecArray(boundsCorners),
         lines : new geom.PrimitiveArray(boundsLines),
         pointerOverPointIndex : -1,
-        controls : false,  // if true then control points are active. Usualy when only a single point is selected
+        controls : false,  // if true then control points are active. Usually false when only a single point is selected
         active : false, // if true then bounds is set and active
         pointerOverControlIndex : -1,
         transform : boundsTransform,
@@ -1012,7 +1012,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             }
             return false;
         },
-        drawPoints : function(what,how){  // draws UI parts. What is what to draw. "all","selected","unselected". How is who to draw. how = "mark" marks vecs, how = "lable" lables the vec
+        drawPoints : function(what,how){  // draws UI parts. What is what to draw. "all","selected","unselected". How is who to draw. how = "mark" marks vecs, how = "label" labels the vec
             if(typeof points.mark !== "function"){
                 throw new Error("UI cant draw as there is no rendering extension 'mark()'");
             }
@@ -1024,7 +1024,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
             if(how === undefined){
                 how = "mark";
             }else
-            if(how !== "lable" && how !== "mark"){
+            if(how !== "label" && how !== "mark"){
                 how = "mark";
             }
                 
@@ -1032,7 +1032,7 @@ groover.geom.Geom.prototype.addUI = function(element1){
                 points[how]();
             }else
             if(what === "selected"){
-                if(how === "lable"){
+                if(how === "label"){
                     selected[how]("#");
                 }else{
                     selected[how]();
@@ -1179,7 +1179,7 @@ console.log("Groover.Geom UI extension parsed.");
 // then this resets, adds element 
 GG.ui.reset()
 GG.setUIElement(canvas);
-GG.setCtx(ctx);  // sets render target for render extention.
+GG.setCtx(ctx);  // sets render target for render extension.
 GG.ui.setDragMode("quickDrag")
 GG.ui.addPoints(tri.asVecArray(undefined,true));
 GG.ui.addPoints(cir.asVecArray(undefined,true));

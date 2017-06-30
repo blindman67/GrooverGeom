@@ -1,7 +1,7 @@
 "use strict";
 
 groover.geom.Geom.prototype.addRender = function(ctx1){
-    var mark,  geom, ctx, size, workVec,a,b,c,lowercaseMarkNameWarning,markStyleStack;  // a,b,c are general registers for this scope
+    var mark, currentMarkName, markStyleStackTop, geom, ctx, size, workVec,a,b,c,lowercaseMarkNameWarning,markStyleStack;  // a,b,c are general registers for this scope
     lowercaseMarkNameWarning = false;
     geom = this;
     ctx = ctx1;
@@ -10,9 +10,11 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     geom.Geom.prototype.ctx = ctx;    
     workVec = new geom.Vec();  // rather than create a new vec each time just use this one
     markStyleStack = []; 
+	markStyleStackTop = 0;
+
     
     this.extensions.render = {   // add extensions 
-        functions : ["lineTo","moveTo","draw","mark","lable"],
+        functions : ["lineTo","moveTo","draw","mark","label"],
         info : "Provides helper functions to render primitives to the canvas 2D context."
     };
     function getMarkNames(){  // set the list of names
@@ -45,35 +47,35 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         this.size = 1;
     };    
     geom.Geom.prototype.marks = {
-        cross : function (vec){
-            ctx.moveTo(vec.x - size, vec.y);
-            ctx.lineTo(vec.x + size, vec.y);
-            ctx.moveTo(vec.x, vec.y - size);
-            ctx.lineTo(vec.x, vec.y + size);
+        cross : function (vec, _size = size){
+            ctx.moveTo(vec.x - _size, vec.y);
+            ctx.lineTo(vec.x + _size, vec.y);
+            ctx.moveTo(vec.x, vec.y - _size);
+            ctx.lineTo(vec.x, vec.y + _size);
         },
-        crossDiag : function (vec){
-            ctx.moveTo(vec.x - size, vec.y - size);
-            ctx.lineTo(vec.x + size, vec.y + size);
-            ctx.moveTo(vec.x + size, vec.y - size);
-            ctx.lineTo(vec.x - size, vec.y + size);
+        crossdiag : function (vec, _size = size){
+            ctx.moveTo(vec.x - _size, vec.y - _size);
+            ctx.lineTo(vec.x + _size, vec.y + _size);
+            ctx.moveTo(vec.x + _size, vec.y - _size);
+            ctx.lineTo(vec.x - _size, vec.y + _size);
         },
-        circle : function (vec){
-            ctx.moveTo(vec.x + size, vec.y)
-            ctx.arc(vec.x, vec.y, size, 0, Math.PI*2);
+        circle : function (vec, _size = size){
+            ctx.moveTo(vec.x + _size, vec.y)
+            ctx.arc(vec.x, vec.y, _size, 0, Math.PI*2);
             ctx.closePath();
         },
-        square : function (vec){
-            ctx.moveTo(vec.x - size / 2, vec.y - size / 2);
-            ctx.rect(vec.x - size / 2, vec.y - size / 2, size, size);
+        square : function (vec, _size = size){
+            ctx.moveTo(vec.x - _size / 2, vec.y - _size / 2);
+            ctx.rect(vec.x - _size / 2, vec.y - _size / 2, _size, _size);
         },
-        box :  function (vec){
-            ctx.moveTo(vec.x - size / 2, vec.y - size / 2);
-            ctx.rect(vec.x - size / 2, vec.y - size / 2, size, size);
+        box :  function (vec, _size = size){
+            ctx.moveTo(vec.x - _size / 2, vec.y - _size / 2);
+            ctx.rect(vec.x - _size / 2, vec.y - _size / 2, _size, _size);
         },
-        tri : function (vec){
-            ctx.moveTo(vec.x, vec.y - size);
-            ctx.lineTo(vec.x + size, vec.y + size);
-            ctx.lineTo(vec.x - size, vec.y + size);
+        tri : function (vec, _size = size){
+            ctx.moveTo(vec.x, vec.y - _size);
+            ctx.lineTo(vec.x + _size, vec.y + _size);
+            ctx.lineTo(vec.x - _size, vec.y + _size);
             ctx.closePath();
         },
         vecArrayShape : undefined,
@@ -98,12 +100,14 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     geom.Geom.prototype.setMark = function ( name , _size){ // set the named mark
         if(typeof geom.marks[name] === "function"){
             mark = geom.marks[name];
+			currentMarkName = name;
         }else if(typeof geom.marks[name.toLowerCase()] === "function"){
             if(!lowercaseMarkNameWarning){
                 lowercaseMarkNameWarning = true;
-                console.warn("Groover.Geom.setMark. mark name '"+name+"' should be lowercase '"+(name.toLowerCase())+"' The incorrect case variant has been temporarily added.(This warn is only displayed once.)");
+                console.warn("Groover.Geom.setMark. mark name '"+name+"' should be lower-case '"+(name.toLowerCase())+"' The incorrect case variant has been temporarily added.(This warn is only displayed once.)");
             }
             mark = geom.marks[name] = geom.marks[name.toLowerCase()];
+			currentMarkName = name;
             getMarkNames();
         }
         if(_size !== undefined){
@@ -112,15 +116,23 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         }        
     }
     geom.Geom.prototype.pushMark = function ( name , _size){ // same as set mark but pushes current mark onto a stack
-                                                             // use popMark to restore to the previous marl
-        markStyleStack.push([mark,size]);   
+                                                             // use popMark to restore to the previous mark
+		if(markStyleStack.length === markStyleStackTop){ 									 
+			markStyleStack.push([mark,size,currentMarkName]);   
+			markStyleStackTop ++;
+		}else{
+			markStyleStack[markStyleStackTop][0] = mark;
+			markStyleStack[markStyleStackTop][2] = currentMarkName;   
+			markStyleStack[markStyleStackTop++][1] = size;   
+		}
         this.setMark(name,_size);
     }
     geom.Geom.prototype.popMark = function (){ // Restores previous pushed mark style
-        if(markStyleStack.length > 0){
-            var m = markStyleStack.pop();
-            mark = m[0];
-            size = m[1];
+        if(markStyleStackTop > 0){
+            markStyleStackTop --;
+            mark = markStyleStack[markStyleStackTop][0];
+            size = markStyleStack[markStyleStackTop][1];
+            currentMarkName = markStyleStack[markStyleStackTop][2];
         }
     }
     
@@ -133,7 +145,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
     
     getMarkNames(); 
     mark = geom.marks.cross;  // set current mark shape
- 
+	currentMarkName = "cross";
     if(geom.Vec){
         geom.Vec.prototype.moveTo = function (){
             ctx.moveTo(this.x,this.y);   
@@ -143,17 +155,24 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             ctx.lineTo(this.x,this.y);
             return this;// returns this
         };
-        geom.Vec.prototype.mark = function (){
-            mark(this);
+        geom.Vec.prototype.mark = function (name = currentMarkName, _size = size){
+			
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				mark(this, _size);
+				geom.popMark();			
+			}else{			
+				mark(this, _size);
+			}
             return this;// returns this
         };
         geom.Vec.prototype.draw = function (dir){ // The dir is a boolean that if true reveres the direction to the draw. Not applicable in this case
             mark(this);
             return this;// returns this
         };
-        geom.Vec.prototype.lable = function (text){
+        geom.Vec.prototype.label = function (text){
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
@@ -181,17 +200,24 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             }
             return this;// returns this
         };
-        geom.Line.prototype.mark = function(){
-            this.p1.mark();
-            this.p2.mark();
+        geom.Line.prototype.mark = function(name = currentMarkName, _size = size){
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				this.p1.mark(name, _size);
+				this.p2.mark(name, _size);
+				geom.popMark();			
+			}else{			
+				this.p1.mark(name, _size);
+				this.p2.mark(name, _size);
+			}
             return this;// returns this
         };
-        geom.Line.prototype.lable = function (text,pos){
+        geom.Line.prototype.label = function (text,pos){
             if(pos === undefined){
                 pos = 0.5;
             }
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
@@ -231,23 +257,36 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             }
             return this;// returns this
         };
-        geom.Bezier.prototype.mark = function(){
-            this.p1.mark();
-            this.p2.mark();
-            if(this.cp2 === undefined){
-                this.cp1.mark();                
-            }else{
-                this.cp1.mark();
-                this.cp2.mark();
-            }
+        geom.Bezier.prototype.mark = function(name = currentMarkName, _size = size){
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				this.p1.mark(name, _size);
+				this.p2.mark(name, _size);
+				if(this.cp2 === undefined){
+					this.cp1.mark(name, _size);                
+				}else{
+					this.cp1.mark(name, _size);
+					this.cp2.mark(name, _size);
+				}
+				geom.popMark();			
+			}else{			
+				this.p1.mark(name, _size);
+				this.p2.mark(name, _size);
+				if(this.cp2 === undefined){
+					this.cp1.mark(name, _size);                
+				}else{
+					this.cp1.mark(name, _size);
+					this.cp2.mark(name, _size);
+				}
+			}
             return this;// returns this
         };
-        geom.Bezier.prototype.lable = function (text,pos){
+        geom.Bezier.prototype.label = function (text,pos){
             if(pos === undefined){
                 pos = 0.5;
             }
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
@@ -290,28 +329,28 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             }
             return this; // returns this
         };
-        geom.PrimitiveArray.prototype.mark = function(){
+        geom.PrimitiveArray.prototype.mark = function(name, _size){
             this.each(paMark);
             return this;// returns this
         };
-        geom.PrimitiveArray.prototype.lable = function (text){
+        geom.PrimitiveArray.prototype.label = function (text){
             if(text === null || text === undefined){
                 this.each(function(primitive){
-                    primitive.lable(null);
+                    primitive.label(null);
                 });            
             }else
             if(text === "#"){
                 this.each(function(primitive,i){
-                    primitive.lable(i);
+                    primitive.label(i);
                 });            
             }else
             if(typeof text === "string"){
                 this.each(function(primitive,i){
-                    primitive.lable(text);
+                    primitive.label(text);
                 });
             }else{
                 this.each(function(primitive,i){
-                    primitive.lable(text[i]);
+                    primitive.label(text[i]);
                 });
             }
             return this;
@@ -366,30 +405,35 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             });
             return this; // returns this
         };
-        geom.VecArray.prototype.mark = function(){
-            this.each(function(vec,i){
-                vec.mark();
-            });
+        geom.VecArray.prototype.mark = function(name = currentMarkName, _size = size){
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				this.each(vec => { vec.mark(name, _size) });
+				geom.popMark();			
+			}else{			
+				this.each(vec => { vec.mark(name, _size) });
+			}
+
             return this;// returns this
         };
-        geom.VecArray.prototype.lable = function (text){
+        geom.VecArray.prototype.label = function (text){
             if(text === null || text === undefined){
                 this.each(function(vec,i){
-                    vec.lable(null);
+                    vec.label(null);
                 });            
             }else
             if(text === "#"){
                 this.each(function(vec,i){
-                    vec.lable(i);
+                    vec.label(i);
                 });            
             }else
             if(typeof text === "string"){
                 this.each(function(vec,i){
-                    vec.lable(text);
+                    vec.label(text);
                 });
             }else{
                 this.each(function(vec,i){
-                    vec.lable(text[i]);
+                    vec.label(text[i]);
                 });
             }
             return this;
@@ -412,13 +456,19 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             }
             return this;// returns this
         }
-        geom.Circle.prototype.mark = function(){
-            this.center.mark();
+        geom.Circle.prototype.mark = function(name = currentMarkName, _size = size){
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				this.center.mark(name, _size);
+				geom.popMark();			
+			}else{			
+				this.center.mark(name, _size);
+			}
             return this;// returns this
         }
-        geom.Circle.prototype.lable = function (text){
+        geom.Circle.prototype.label = function (text){
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
@@ -462,15 +512,21 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             }
             return this;// returns this
         };
-        geom.Arc.prototype.mark = function(){
-            if(this.start !== this.end){
-                this.endsAsVec().mark();
+        geom.Arc.prototype.mark = function(name = currentMarkName, _size = size){
+			if(this.start !== this.end){
+				if(name !== currentMarkName){
+					geom.pushMark( name , _size);
+					this.endsAsVec().mark(name, _size);
+					geom.popMark();			
+				}else{			
+					this.endsAsVec().mark(name, _size);
+				}
             }
             return this;// returns this
         };
-        geom.Arc.prototype.lable = function (text){
+        geom.Arc.prototype.label = function (text){
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
@@ -495,13 +551,19 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             ctx.closePath();
             return this;// returns this
         };
-        geom.Rectangle.prototype.mark = function(){
-            this.corners().mark();
+        geom.Rectangle.prototype.mark = function(name = currentMarkName, _size = size){
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				this.corners().mark(name, _size);
+				geom.popMark();			
+			}else{			
+				this.corners().mark(name, _size);
+			}
             return this;// returns this
         };
-        geom.Rectangle.prototype.lable = function (text){
+        geom.Rectangle.prototype.label = function (text){
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
@@ -533,21 +595,29 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             return this;// returns this
         };
         
-        geom.Triangle.prototype.mark = function(){
-            this.p1.mark();
-            this.p2.mark();
-            this.p3.mark();
+        geom.Triangle.prototype.mark = function(name = currentMarkName, _size = size){
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				this.p1.mark(name, _size);
+				this.p2.mark(name, _size);
+				this.p3.mark(name, _size);
+				geom.popMark();			
+			}else{			
+				this.p1.mark(name, _size);
+				this.p2.mark(name, _size);
+				this.p3.mark(name, _size);
+			}
             return this;// returns this
         };
         
-        geom.Triangle.prototype.lable = function (text){
+        geom.Triangle.prototype.label = function (text){
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
             }        
-            this.center(workVec).lable(text);
+            this.center(workVec).label(text);
             return this;
         };    
     }
@@ -568,21 +638,36 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
             }
             return this;// returns this
         };
-        geom.Box.prototype.mark = function(){
-            workVec.x = this.left;
-            workVec.y = this.top;
-            workVect.mark();
-            workVec.x = this.right;
-            workVect.mark();
-            workVec.y = this.bottom;
-            workVect.mark();
-            workVec.x = this.left;
-            workVect.mark();
+        geom.Box.prototype.mark = function(name = currentMarkName, _size = size){
+			if(name !== currentMarkName){
+				geom.pushMark( name , _size);
+				workVec.x = this.left;
+				workVec.y = this.top;
+				workVect.mark(name, _size);
+				workVec.x = this.right;
+				workVect.mark(name, _size);
+				workVec.y = this.bottom;
+				workVect.mark(name, _size);
+				workVec.x = this.left;
+				workVect.mark(name, _size);
+				geom.popMark();			
+			}else{			
+				workVec.x = this.left;
+				workVec.y = this.top;
+				workVect.mark(name, _size);
+				workVec.x = this.right;
+				workVect.mark(name, _size);
+				workVec.y = this.bottom;
+				workVect.mark(name, _size);
+				workVec.x = this.left;
+				workVect.mark(name, _size);
+			}
+
             return this;// returns this
         };    
-        geom.Box.prototype.lable = function (text){
+        geom.Box.prototype.label = function (text){
             if(text === null || text === undefined){
-                text = this.lableStr;            
+                text = this.labelStr;            
                 if(text === null || text === undefined){
                     text = this.type;
                 }
@@ -605,7 +690,7 @@ groover.geom.Geom.prototype.addRender = function(ctx1){
         geom.Empty.prototype.mark = function(){
             return this;// returns this
         };
-        geom.Empty.prototype.lable = function(){
+        geom.Empty.prototype.label = function(){
             return this;// returns this
         };
     }

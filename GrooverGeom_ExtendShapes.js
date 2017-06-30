@@ -497,8 +497,8 @@ groover.geom.Geom.prototype.addShapes = function(){
                     }
                     return this;// returns this;
                 }
-                this.lable = function(text){
-                    this.center().lable(text);
+                this.label = function(text){
+                    this.center().label(text);
                     return this;
                 }
             }  
@@ -762,7 +762,7 @@ groover.geom.Geom.prototype.addShapes = function(){
                     
                     return this;
                 }
-                this.lable = function(text){
+                this.label = function(text){
                     return this;
                 }
             }
@@ -878,7 +878,7 @@ groover.geom.Geom.prototype.addShapes = function(){
                     }
                     return this;
                 }
-                this.lable = function(text){
+                this.label = function(text){
                     return this;
                 }
             }

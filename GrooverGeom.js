@@ -72,22 +72,22 @@ groover.geom = (function (){
     const EPSILON1 = 1-EPSILON;
     const BEZ3_CIR = 0.55191502449; // Bezier3 circle fit from "Approximate a circle with cubic Bézier curves", lnk http://spencermortensen.com/articles/bezier-circle/
     var UID = 1; // Unique identifier for primitives
-    const  triPh = function(a,b,c){    // return the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
+    const  triPh = function (a,b,c){    // return the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
         return Math.acos((c * c - (a * a + b * b)) / (-2 * a * b));
     }    
-    const unitDistOnVec = function(px,py,v1x,v1y){
+    const unitDistOnVec = function (px,py,v1x,v1y){
         return (px * v1x + py * v1y)/(v1y * v1y + v1x * v1x);     
     }        
-    const dist2Vector = function(px,py,v1x,v1y){
+    const dist2Vector = function (px,py,v1x,v1y){
         var c;
         c = (px * v1x + py * v1y)/(v1y * v1y + v1x * v1x);
         return Math.hypot(v1x * c - px, v1y * c - py);        
     }     
-    const direction = function(x,y){ // math function returns normalised direction
+    const direction = function (x,y){ // math function returns normalised direction
         return ((Math.atan2(y,x) % MPI2) + MPI2) % MPI2;
  
     }
-    const isSmallestAngleClockwise = function(ang1,ang2){
+    const isSmallestAngleClockwise = function (ang1,ang2){
         if(ang1 < 0){
             if( (ang2 < 0 && ang1> ang2) ||  (ang2 >= 0 && ang1 + MPI < ang2) ){
                 return false;        
@@ -99,7 +99,7 @@ groover.geom = (function (){
         }
         return true;
     }
-    const smallestAngleBetween = function(ang1,ang2){
+    const smallestAngleBetween = function (ang1,ang2){
         var cw = true; // clockwise
         var ang;
         if(ang1 < 0){
@@ -129,17 +129,17 @@ groover.geom = (function (){
     if(typeof GROOVER_GEOM_INCLUDE_MATH !== "undefined" && GROOVER_GEOM_INCLUDE_MATH === true){
         // some math extensions 
         Math.triPh = triPh;
-        Math.triCosPh = function(a,b,c){ // return the cosine of the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
+        Math.triCosPh = function (a,b,c){ // return the cosine of the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
             return (c * c - (a * a + b * b)) / (-2 * a * b);
         }
-        Math.triLenC = function(a,b,pheta){ // return the length of side C given the length of two sides a,b and the angle opisite the edge C
+        Math.triLenC = function (a,b,pheta){ // return the length of side C given the length of two sides a,b and the angle opisite the edge C
             return Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(pheta));
         }
-        Math.triLenC2 = function(a,b,pheta){ // return the length squared of side C given the length of two sides a,b and the angle opisite the edge C
+        Math.triLenC2 = function (a,b,pheta){ // return the length squared of side C given the length of two sides a,b and the angle opisite the edge C
             return a*a + b*b - 2*a*b*Math.cos(pheta);
         }
         Math.smallestAngleBetween = smallestAngleBetween;
-        Math.angleBetween = function(x,y,x1,y1){
+        Math.angleBetween = function (x,y,x1,y1){
             var l = Math.hypot(x,y);
             x /= l;
             y /= l;
@@ -156,7 +156,7 @@ groover.geom = (function (){
             }
             return Math.asin(x * y1 - y * x1);
         }
-        Math.unitDistOnLine = function(px,py,l1x,l1y,l2x,l2y){
+        Math.unitDistOnLine = function (px,py,l1x,l1y,l2x,l2y){
             var v1x,v1y,v2x,v2y,l;
             v1x = l2x - l1x;
             v1y = l2y - l1y;
@@ -166,7 +166,7 @@ groover.geom = (function (){
             return (v2x * v1x + v2y * v1y)/(l * l);
         }
         Math.unitDistOnVec = unitDistOnVec;
-        Math.dist2Line = function(px,py,l1x,l1y,l2x,l2y){
+        Math.dist2Line = function (px,py,l1x,l1y,l2x,l2y){
             var v1x,v1y,v2x,v2y,l,c;
             v1x = l2x - l1x;
             v1y = l2y - l1y;
@@ -182,82 +182,82 @@ groover.geom = (function (){
         Math.cylinder = {};
         Math.inertia = {};
         Math.inertia.moment = {};
-        Math.inertia.moment.hoopZ = function(radius,length,density){
+        Math.inertia.moment.hoopZ = function (radius,length,density){
             return MPI2 * length * density * Math.pow(radius,3);
         }
-        Math.inertia.moment.hoopX = function(radius,length,density){
+        Math.inertia.moment.hoopX = function (radius,length,density){
             return (1 / 2) * MPI2 * length * density * Math.pow(radius,3);
         }
         Math.inertia.moment.discZ = Math.inertia.moment.HoopX;
         Math.inertia.moment.cylinderZ = Math.inertia.moment.HoopX;
         Math.inertia.moment.cylinderShellZ = Math.inertia.moment.HoopZ;
-        Math.inertia.moment.discX = function(radius,length,density){
+        Math.inertia.moment.discX = function (radius,length,density){
             return (1 / 4) * MPI2 * length * density * Math.pow(radius,3);
         }
-        Math.inertia.moment.cylinderX = function(radius,length,density){
+        Math.inertia.moment.cylinderX = function (radius,length,density){
             return ((radius * MPI2 * length) / 12) * (3 * radius * radius + length * length);
         }
-        Math.inertia.moment.rod = function(radius,length,density){
+        Math.inertia.moment.rod = function (radius,length,density){
             return (1 / 12) * radius * MPI2 * Math.pow(length, 3) * density;
         }
-        Math.inertia.moment.tubeZ = function(radiusInside, radiusOutside, length, density){
+        Math.inertia.moment.tubeZ = function (radiusInside, radiusOutside, length, density){
            var t = (radiusOutside - radiusInside) / radiusOutside;
            var lp = MPI2 * length;
            return (radiusOutside * lp - radiusInside * lp) *  density * radiusOutside * radiusOutside *(1- t + (t * t) / 2);
         }
-        Math.inertia.moment.tubeX = function(radiusInside, radiusOutside, length, density){
+        Math.inertia.moment.tubeX = function (radiusInside, radiusOutside, length, density){
             var lp = MPI2 * length;
             return (1 / 12) * (radiusOutside * lp - radiusInside * lp) *  density * (3 * (radiusOutside * radiusOutside + radiusInside * radiusInside ) + length * length);
         }
-        Math.inertia.moment.sphere = function(radius,length,density){
+        Math.inertia.moment.sphere = function (radius,length,density){
             return (8 / 15)  * Math.pow(radius, 5) *  Math.PI * density;
         }
-        Math.inertia.moment.cuboidH = function(width, height, depth, density){
+        Math.inertia.moment.cuboidH = function (width, height, depth, density){
             return width * height * depth * density * (1 / 12) * (width * width + depth * depth);
         }
-        Math.inertia.moment.cuboidW = function(width, height, depth, density){
+        Math.inertia.moment.cuboidW = function (width, height, depth, density){
             return width * height * depth * density * (1 / 12) * (height * height + depth * depth);
         }
-        Math.inertia.moment.cuboidD = function(width, height, depth, density){
+        Math.inertia.moment.cuboidD = function (width, height, depth, density){
             return width * height * depth * density * (1 / 12) * (height * height + width * width);
         }
-        Math.inertia.moment.cube = function(size,density){
+        Math.inertia.moment.cube = function (size,density){
             return Math.pow(size, 6) * density * (1/ 6);
         }
-        Math.cylinder.area = function(radius, length){  // surface
+        Math.cylinder.area = function (radius, length){  // surface
             return radius * radius * Math.PI + radius * MPI2 * length;
         }
-        Math.cylinder.volume = function(radius, length){
+        Math.cylinder.volume = function (radius, length){
             return radius * MPI2 * length;
         }
-        Math.cylinder.radius = function(volume, length){
+        Math.cylinder.radius = function (volume, length){
             return volume / (MPI2 * length);
         }
-        Math.cylinder.length = function(radius, volume){
+        Math.cylinder.length = function (radius, volume){
             return volume / (MPI2 * radius);
         }
-        Math.circle.area = function(radius){
+        Math.circle.area = function (radius){
             return radius * radius * MPI2;
         }    
-        Math.circle.circumferance = function(radius){
+        Math.circle.circumferance = function (radius){
             return radius * MPI2;
         }
-        Math.circle.radiusFromArea = function(area){
+        Math.circle.radiusFromArea = function (area){
             return Math.sqrt(area / MPI2);
         }
-        Math.circle.radiusFromCircumferance = function(circumferance){
+        Math.circle.radiusFromCircumferance = function (circumferance){
             return circumferance / MPI2;
         }
-        Math.sphere.area = function(radius){
+        Math.sphere.area = function (radius){
             return radius * radius * 2 * MPI2;
         }
-        Math.sphere.radiusFromArea = function(area){
+        Math.sphere.radiusFromArea = function (area){
             return Math.sqrt(area / (2 * MPI2));
         }    
-        Math.sphere.volume = function(radius){
+        Math.sphere.volume = function (radius){
             return radius * radius * radius * (4/3) * Math.PI;
         }
-        Math.sphere.radiusFromVolume = function(volume){
+        Math.sphere.radiusFromVolume = function (volume){
             return Math.pow(volume / ((4/3) * Math.PI), 1 / 3);
         }
         
@@ -279,10 +279,10 @@ groover.geom = (function (){
         Math.dir = direction;
     }
     if(typeof Math.hypot !== "function"){ // polyfill for math hypot function.
-        Math.hypot = function(x, y){ return Math.sqrt(x * x + y * y);};
+        Math.hypot = function (x, y){ return Math.sqrt(x * x + y * y);};
     }
 
-    var solveBezier3 = function(A,B,C,D){ // solves the 3rd order (cubic) bezier first derivative. See Bezier functions for the derivative
+    var solveBezier3 = function (A,B,C,D){ // solves the 3rd order (cubic) bezier first derivative. See Bezier functions for the derivative
         // Warning this function uses the geom registers via closure
         // geom registers used a,b,c,a1,b1,u,u1
         // results in u and u1. Returns first result
@@ -300,7 +300,7 @@ groover.geom = (function (){
         u1 = (-b - b1) / a1;
         return u;
     }        
-    var solveBezier2 = function(A, B, C){// solves the 2nd order bezier first derivative. See Bezier functions for the derivative
+    var solveBezier2 = function (A, B, C){// solves the 2nd order bezier first derivative. See Bezier functions for the derivative
         // Warning this function uses the geom registers via closure
         // geom registers used a,u
         // results in u 
@@ -308,7 +308,7 @@ groover.geom = (function (){
         u = a / (a- (C - B));   
         return u;        
     }
-    var solveBezierA2 = function(A, B, C){ // solve the 2nd order bezier equation. Need to rename the above two functions
+    var solveBezierA2 = function (A, B, C){ // solve the 2nd order bezier equation. Need to rename the above two functions
         // 2nd order function a+2(-a+b)x+(a-2b+c)x^2
         a = (A - 2 * B + C);
         b = 2 * ( - A + B);
@@ -327,7 +327,7 @@ groover.geom = (function (){
         return u;
     
     }
-    var solveBezierA3 = function(A, B, C, D){  // There can be 3 roots, u,u1,u2 geom registers return the results;
+    var solveBezierA3 = function (A, B, C, D){  // There can be 3 roots, u,u1,u2 geom registers return the results;
         // Solves 3rd order a+(-2a+3b)t+(2a-6b+3c)t^2+(-a+3b-3c+d)t^3 Cardano method for finding roots
         // this function was derived from http://pomax.github.io/bezierinfo/#intersections cube root solver
         // Also see https://en.wikipedia.org/wiki/Cubic_function#Cardano.27s_method
@@ -529,29 +529,29 @@ groover.geom = (function (){
     
     
     var sharedFunctions = {
-        setLable : function(lable){
-            this.lableStr = lable;
+        setLabel(label){
+            this.labelStr = label;
             return this;
         },
-        getLable : function(){
-            return this.lableStr;
+        getLabel(){
+            return this.labelStr;
         },   
-        makeUnique : function(){
+        makeUnique(){
             this.id = UID;
             UID += 1;
             return this;
         },
-        copyFull : function(arg1,arg2){
+        copyFull(arg1,arg2){
             var newMe = this.copy(arg1,arg2);
             newMe.id = this.id;
-            newMe.lableStr = this.lableStr;
+            newMe.labelStr = this.labelStr;
             if(this.constructedWith !== undefined){
                 
                 
             }
             return newMe;
         },
-        asSimpleTyped : function(obj){ // returns the simple object representing this primitive including the type property
+        asSimpleTyped(obj){ // returns the simple object representing this primitive including the type property
             if(typeof this.asSimple === "function"){
                 obj = this.asSimple(obj);
             }else{
@@ -561,15 +561,15 @@ groover.geom = (function (){
             }
             obj.type = this.type;
             obj.id = this.id;
-            obj.lableStr = this.lableStr;
+            obj.labelStr = this.labelStr;
             return this;
         },
-        asJSON : function(){
+        asJSON(){
             var obj;
             obj = this.asSimpleTyped();
             return JSON.stringify(obj);
         },
-        getAllIdsAsArray : function(array){
+        getAllIdsAsArray(array){
             if(array === undefined){
                 array = [];
             }
@@ -586,26 +586,26 @@ groover.geom = (function (){
             }
             return array;
         },
-        /*hasConstructor : function(){
+        /*hasConstructor(){
             if(this.constructedWith !== undefined){
                 return true;
             }
             return false;
         },
-        addConstructor : function(construction){
+        addConstructor(construction){
             this.constructedWith = construction;
             construction.hasId = this.hasId.bind(this);
             construction.create = construction.create.bind(this);
             this.hasId = utilityFunctions.hasIdConstruction.bind(this);
             return this;
         },
-        recreate : function(){
+        recreate(){
             if(this.constructedWith !== undefined && typeof this.constructedWith.create === "function"){
                 this.constructedWith.create();
             }
             return this;
         },
-        removeConstructor : function(){
+        removeConstructor(){
             var cw = this.constructedWith;
             this.hasId = cw.hasId.bind(this);
             this.constructedWith = undefined;
@@ -614,7 +614,7 @@ groover.geom = (function (){
         
     }
     var sharedProperties = {
-        lableStr : undefined,
+		labelStr : undefined,
         id : undefined,
     }
     
@@ -672,10 +672,10 @@ groover.geom = (function (){
             v5 : v5,
             l1 : l1,
             array : rArray,   
-            getNamedRegList : function(){
+            getNamedRegList(){
                 return namedRegisters;
             },
-            get : function(name){
+            get(name){
                 if(namedRegisters[name] !== undefined){
                     return namedRegisters[name]();
                 }
@@ -761,15 +761,15 @@ groover.geom = (function (){
         safePrimitiveArray : true, // if true pushing a primitiveArray onto a primitiveArray will throw an error. If false then there is no restriction. This is to stop infinite recursion that can happen when you push a primitive array onto its self or create a cyclic reference 
         defaultPrecision : 4, // precision of toString numbers
         lineFeedDefault : "<br>", // toString linefeed default
-        setDefaultLineFeed : function(str){
+        setDefaultLineFeed(str){
             lineFeedDefault = str;
         },
-        setDefaultPrecision : function(value){
+        setDefaultPrecision(value){
             this.defaultPrecision = value;
         },
-        init : function(){
+        init(){
             var me = this;
-            this.objectNames.forEach(function(primitive){
+            this.objectNames.forEach(function (primitive){
                 var i;
                 var prim = me[primitive];
                 for(i in sharedFunctions){
@@ -793,7 +793,7 @@ groover.geom = (function (){
                 }
             });        
         },
-        isEmpty : function (obj){
+        isEmpty(obj){
             if(this.isPrimitive(obj)){
                 if(typeof obj.isEmpty === "function"){
                     return obj.isEmpty();
@@ -801,7 +801,7 @@ groover.geom = (function (){
             }
             return undefined;
         },
-        validatePrimitive : function(obj){
+        validatePrimitive(obj){
             if(typeof obj === "object"){
                 if(typeof obj.type === "string"){
                     if(this.primitiveTypes.indexOf(obj.type) > -1){
@@ -827,7 +827,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        isPrimitive : function (obj){
+        isPrimitive(obj){
             if(obj !== undefined && typeof obj.type === "string"){
                 if(this.primitiveTypes.indexOf(obj.type) > -1){
                     return true;
@@ -835,7 +835,7 @@ groover.geom = (function (){
             }        
             return false;
         },
-        isType : function(prim,type){
+        isType(prim,type){
             if(Array.isArray(type)){
                 if(type.indexOf(prim.type) >-1){
                     return true;
@@ -847,7 +847,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        createFromSimple : function(obj){ // creates a primitive from a simple obj representation of the primitive
+        createFromSimple(obj){ // creates a primitive from a simple obj representation of the primitive
             if(obj === undefined || obj.type === undefined){
                 throw new ReferanceError("Geom.createFromSimple can not create a primitive as the argument 'obj.type' is missing or undefined.");
             }else
@@ -859,17 +859,17 @@ groover.geom = (function (){
             }
             return undefined;
         },
-        getDetails : function(){ // helper function for documentation. Will not remain when done
+        getDetails(){ // helper function for documentation. Will not remain when done
             var newLine = "\r\n";
             function getComments(lines,currentObj){
                 var cLines = [];
-                lines.forEach(function(line){
+                lines.forEach(function (line){
                     if(line.indexOf("//") > -1){
                         var l = (line.split("//").pop().trim());
                         if(l !== ""){
                             l = l.replace( /\{a(.*?)\}/g, "requiered argument $1");
                             l = l.replace( /\{o(.*?)\}/g, "optional argument $1");
-                            s.objectNames.forEach(function(n){
+                            s.objectNames.forEach(function (n){
                                 l = l.replace(new RegExp("("+n+")","gi"),"[$1](#"+n.toLowerCase()+")");
                             })
                             l = l.replace( /(`this`)/g, "[this](#"+currentObj.toLowerCase()+")");
@@ -885,7 +885,7 @@ groover.geom = (function (){
             var str = "";
             var data = [];
              
-            this.objectNames.forEach(function(n){
+            this.objectNames.forEach(function (n){
                 var st,f,ii;
                 var desc = "## " + n + newLine;
                 var methods = "Functions."+newLine;
@@ -1145,19 +1145,19 @@ groover.geom = (function (){
     
     Empty.prototype = { // this look more and more like it is not needed. I will be removing all instances of this as I go. When and if possible I have removed all references then I will remove empty as a primitive type.
         type : "Empty",
-        copy : function(){  //Makes a copy of this
+        copy(){  //Makes a copy of this
             return new Empty();  // returns a new Empty 
         },
-        asBox : function(box){  // this is always empty and thus has no size. Will create a new box if {obox} is not supplied 
+        asBox(box){  // this is always empty and thus has no size. Will create a new box if {obox} is not supplied 
             if(box === undefined){
                 box = new Box();
             }
             return box; // Returns new box or the {obox}
         },
-        setAs : function(){ // does nothing.
+        setAs(){ // does nothing.
             return this; // returns this.
         },
-        isEmpty : function(){ // always returns true.
+        isEmpty(){ // always returns true.
             return true; // returns true.
         },
     },
@@ -1166,13 +1166,13 @@ groover.geom = (function (){
         type : "PrimitiveArray",
         length : 0,
         current : undefined,
-        toString : function(precision,lineFeed){  // returns a string representing this object
+        toString(precision,lineFeed){  // returns a string representing this object
                                 // the precision can also be changed. The default is 6;
             var str;                    
             if(lineFeed === undefined){
                 lineFeed = geom.lineFeedDefault;
             }                                
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";                                
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";                                
             var id = this.id === undefined ? "": "'"+this.id+"' ";                                
             if(this.isEmpty()){
                 return "PrimitiveArray : '"+l+"' id : "+id+" ( Empty )";
@@ -1181,19 +1181,19 @@ groover.geom = (function (){
                 precision = geom.defaultPrecision;
             }
             str = "PrimitiveArray : '"+l+"' id : "+id+" ("+ this.primitives.length+" primitives" + lineFeed
-            this.each(function(prim,i){
+            this.each(function (prim,i){
                 str += "index "+i+" : "+prim.toString(precision)+lineFeed;
             });
             str += ")";            
             return str;
         }, 
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
             return this.isIdInArray(id);
         },        
-        push : function(primitive){
+        push(primitive){
             if(primitive.type === "PrimitiveArray" && geom.safePrimitiveArray){
                 throw Error("Can not push a PrimitiveArray onto the PrimitiveArray.\nThis is to prevent infinite recursion. Use pushUnsafe if you are feeling lucky.");
             }
@@ -1201,7 +1201,7 @@ groover.geom = (function (){
             this.length = this.primitives.length; 
             return this;
         },
-        pushUnsafe : function(primitive){
+        pushUnsafe(primitive){
             if(primitive.type === "PrimitiveArray"){
                 console.log("Warning pushing PrimitiveArray onto the PrimitiveArray may create infinite loops.");
             }
@@ -1209,7 +1209,7 @@ groover.geom = (function (){
             this.length = this.primitives.length; 
             return this;
         },
-        pushI : function(primitive){
+        pushI(primitive){
             if(primitive.type === "PrimitiveArray" && geom.safePrimitiveArray){
                 throw Error("Can not pushI a PrimitiveArray onto the PrimitiveArray.\nThis is to prevent infinite recursion. Use pushIUnsafe if you are feeling lucky.");
             }
@@ -1217,7 +1217,7 @@ groover.geom = (function (){
             this.length = this.primitives.length; 
             return this.length - 1;
         },
-        pushIUnsafe : function(primitive){
+        pushIUnsafe(primitive){
             if(primitive.type === "PrimitiveArray"){
                 console.log("Warning pushing PrimitiveArray onto the PrimitiveArray may create infinite loops.");
             }
@@ -1225,42 +1225,42 @@ groover.geom = (function (){
             this.length = this.primitives.length; 
             return this.length - 1;
         },
-        clear : function(){  // removes all primitives from the list
+        clear(){  // removes all primitives from the list
             this.length = this.primitives.length = 0;
             return this;  // returns this
         },
-        reset : function(){  // I know a little crazzzzy clear,empty, and reset all doing the same but I have yet to decied which it will be and will keep empty, but reset or clear may go.
+        reset(){  // I know a little crazzzzy clear,empty, and reset all doing the same but I have yet to decied which it will be and will keep empty, but reset or clear may go.
             this.length = this.primitives.length = 0;
             return this; 
         },
-        empty : function(){ // removes all primitives from list
+        empty(){ // removes all primitives from list
             this.length = this.primitives.length = 0;
             return this;
         },        
-        isEmpty : function(){ // returns true if no objects in the array
+        isEmpty(){ // returns true if no objects in the array
             return this.primitives.length === 0;
         },
-        normalise : function(){  // set everything correctly. use after manually manipulating this object
+        normalise(){  // set everything correctly. use after manually manipulating this object
           this.length = this.primitives.length;  
           return this;
         },
-        transform : function(transform){
-            this.each(function(prim){
+        transform(transform){
+            this.each(function (prim){
                 transform["applyTo"+prim.type](prim);
             });
             return this;
         },
-        asSimple : function(obj){
+        asSimple(obj){
              if(obj === undefined){
                  obj = {};                 
              }
              obj.primitives = [];
-             this.each(function(prim){
+             this.each(function (prim){
                  obj.primitives.push(prim.asSimpleTyped());
              });
              return obj;
         },        
-        fromSimple : function(obj){
+        fromSimple(obj){
             var i,len;
             this.reset();
             if(obj.primitives === undefined || !Array.isArray(obj.primitives)){
@@ -1273,9 +1273,9 @@ groover.geom = (function (){
             this.normalise();
             return this;
         },
-        replace : function(id, prim){  // replaces vec with id == id with the supplied vec
+        replace(id, prim){  // replaces vec with id == id with the supplied vec
             if(id !== undefined){
-                this.each(function(p){
+                this.each(function (p){
                     if(p.replace !== undefined){
                         p.replace(id,prim);
                     }
@@ -1283,25 +1283,25 @@ groover.geom = (function (){
             }
             return this;
         },
-        asBox : function(box){
+        asBox(box){
             if(box === undefined){
                 box = new Box();
             }
-            this.each(function(prim){
+            this.each(function (prim){
                 prim.asBox(box);
             });
             return box;
         },            
-        asVecArray : function(vecArray, instance){
+        asVecArray(vecArray, instance){
             if(vecArray === undefined){
                 vecArray = new VecArray();
             }
-            this.each(function(prim){
+            this.each(function (prim){
                 prim.asVecArray(vecArray, instance);
             });
             return vecArray;
         },       
-        eachAs : function (type,callback,dir,start){  // iterates each primitive calling callback only if it of type type
+        eachAs(type,callback,dir,start){  // iterates each primitive calling callback only if it of type type
             var i;
             var l = this.primitives.length;      
             if(start === undefined || start === null){
@@ -1328,7 +1328,7 @@ groover.geom = (function (){
             }
             return this; // returns this
         },  
-        each : function (callback,dir,start){ 
+        each(callback,dir,start){ 
             var i;
             var l = this.primitives.length;      
             if(start === undefined || start === null){
@@ -1351,14 +1351,14 @@ groover.geom = (function (){
             }
             return this; // returns this
         },  
-        first : function(){
+        first(){
             if(this.length === 0){
                 return undefined;
             }
             this.current = 0;
             return this.primitives[this.current]; // returns Vec
         },
-        next : function(){
+        next(){
             if(this.length === 0){
                 return undefined;
             }
@@ -1373,7 +1373,7 @@ groover.geom = (function (){
             }
             return this.primitives[this.current];
         },
-        previouse : function(){
+        previouse(){
             if(this.length === 0){
                 return undefined;
             }
@@ -1391,14 +1391,14 @@ groover.geom = (function (){
             }
             return this.primitives[this.current];
         },        
-        last : function(){
+        last(){
             if(this.length === 0){
                 return undefined;
             }
             this.current = this.length -1;
             return this.primitives[this.length-1]; // returns Vec
         },
-        firstAs : function(type){
+        firstAs(type){
             if(this.length === 0){
                 return undefined;
             }
@@ -1412,7 +1412,7 @@ groover.geom = (function (){
             }
             return this.primitives[this.current]; // returns Vec
         },
-        nextAs : function(type){
+        nextAs(type){
             if(this.length === 0){
                 return undefined;
             }
@@ -1430,7 +1430,7 @@ groover.geom = (function (){
             }
             return this.primitives[this.current];
         },
-        previouseAs : function(type){
+        previouseAs(type){
             if(this.length === 0){
                 return undefined;
             }
@@ -1455,7 +1455,7 @@ groover.geom = (function (){
             }
             return this.primitives[this.current];
         },        
-        lastAs : function(type){
+        lastAs(type){
             if(this.length === 0){
                 return undefined;
             }
@@ -1469,9 +1469,9 @@ groover.geom = (function (){
             }
             return this.primitives[this.current];            
         },        
-        getById : function(id){ // returns first primitive to match the id, else returns undefined
+        getById(id){ // returns first primitive to match the id, else returns undefined
             var retP = undefined;
-            this.each(function(prim){
+            this.each(function (prim){
                 if(prim.id === id){
                     retP = prim;
                     return false;
@@ -1480,12 +1480,12 @@ groover.geom = (function (){
             return retP;
         
         },
-        getClosestIndexToVec : function(vec,type){
+        getClosestIndexToVec(vec,type){
             var dist = Infinity;
             var ind = -1;
             if(type !== undefined){
                 var types = [].concat(type);
-                this.each(function(prim,i){
+                this.each(function (prim,i){
                     if(types.indexOf(prim.type) > -1){
                         if(prim.distFrom !== undefined){
                             c = prim.distFrom(vec);
@@ -1498,7 +1498,7 @@ groover.geom = (function (){
                 });
                                 
             }else{
-                this.each(function(prim,i){
+                this.each(function (prim,i){
                     if(prim.distFrom !== undefined){
                         c = prim.distFrom(vec);
                         if(c < dist){
@@ -1512,7 +1512,7 @@ groover.geom = (function (){
             return ind;
             
         },
-        getClosestPrimitiveToVec : function(vec,type){ // returns the primitive with its path closest to vec.  Type is optional if given then will only match primitives of type
+        getClosestPrimitiveToVec(vec,type){ // returns the primitive with its path closest to vec.  Type is optional if given then will only match primitives of type
             var ind = this.getClosestIndexToVec(vec, type);
             if(ind !== -1){
                 return this.primitives[ind];
@@ -1520,7 +1520,7 @@ groover.geom = (function (){
             return undefined;
             
         },        
-        collectIdsAsPrimitiveArray : function(ids,primArray){ // returns a primitive array contains all primitives that have ids
+        collectIdsAsPrimitiveArray(ids,primArray){ // returns a primitive array contains all primitives that have ids
             var i;
             if(primArray === undefined){
                 primArray = new PrimitiveArray();
@@ -1528,7 +1528,7 @@ groover.geom = (function (){
             if(Array.isArray(ids)){
                 var me = this;
                 for(i = 0; i < ids.length; i ++){ 
-                    this.each(function(prim){
+                    this.each(function (prim){
                         if(prim.hasId(ids[i])){
                             if(!primArray.isIdInArray(prim.id,false,true)){
                                 primArray.push(prim);
@@ -1537,7 +1537,7 @@ groover.geom = (function (){
                     });                
                 }
             }else{
-                this.each(function(prim){
+                this.each(function (prim){
                     if(prim.hasId(ids)){
                         primArray.push(prim);
                     }
@@ -1545,16 +1545,16 @@ groover.geom = (function (){
             }
             return primArray;
         },
-        getAllIdsAsArray : function (array){ // returns an array of ids for the primitives in this. 
+        getAllIdsAsArray(array){ // returns an array of ids for the primitives in this. 
             if(array === undefined){
                 array = [];
             }
-            this.each(function(prim,i){
+            this.each(function (prim,i){
                 prim.getAllIdsAsArray(array);
             });
             return array;
         },
-        isIdInArray : function (id,all,shallow){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
+        isIdInArray(id,all,shallow){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
             // uses register c  will be the first id match or this.length if this function return false.
             // if id is an array and all === true then c will be the last index found
             // if shallow is true then only check each primitive's ID dont check it for other ids
@@ -1606,25 +1606,22 @@ groover.geom = (function (){
         type :"VecArray",
         current : undefined,
         length : 0,
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
             return this.isIdInArray(id);
         },
-        each : function (callback,dir,start){ // Itterates the vecs in this. The itterater can break if the {acallback} returns false. The {odir} if true itterates the vecs in the reverse direction. The {ostart} as Number is the index of the start of itteration.
+        each(callback,dir,start = 0){ // Itterates the vecs in this. The itterater can break if the {acallback} returns false. The {odir} if true itterates the vecs in the reverse direction. The {ostart} as Number is the index of the start of itteration.
                                  // if the {odir} is true then {ostart} if passed will be the number of vec from the end to start itteration at
                                  // The {acallback} in the form
                                  // ```JavaScript
-                                 // var callback = function(vec, i){
+                                 // var callback = function (vec, i){
                                  // return boolean    
                                  // }
                                  // ```
             var i;
             var l = this.vecs.length;      
-            if(start === undefined || start === null){
-                start = 0;
-            }
             if(dir){
                 l -= 1;
                 l -= start;
@@ -1642,10 +1639,10 @@ groover.geom = (function (){
             }
             return this; // returns this
         },
-        cull : function (callback){  // Itterate all vecs culling those vecs that the {acallback} returns false for.
+        cull(callback){  // Itterate all vecs culling those vecs that the {acallback} returns false for.
                                  // Callback {acallback} in the form
                                  // ```JavaScript
-                                 // var callback = function(vec, i){
+                                 // var callback = function (vec, i){
                                  // return boolean    
                                  // }
                                  // ```
@@ -1662,14 +1659,14 @@ groover.geom = (function (){
             this.length = this.vecs.length; 
             return this;  // returns this
         },
-        toString : function(precision, lineFeed){ // return a string representing this object. 
+        toString(precision, lineFeed){ // return a string representing this object. 
                                        // The {olineFeed} can insert a lineFeed after each vec. For example for console output add call with lineFeed = "\n". 
                                        // the {oprecision} can also be changed. The default is 6;
             var str;
             if(lineFeed === undefined){
                 lineFeed = geom.lineFeedDefault;
             }
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";
             if(this.isEmpty()){
                 return "VecArray: "+l+"( Empty )";
             }
@@ -1677,13 +1674,13 @@ groover.geom = (function (){
                 precision = geom.defaultPrecision;;
             }
             str = "VecArray : "+l+"("+ this.vecs.length+" vecs" + lineFeed
-            this.each(function(vec,i){
+            this.each(function (vec,i){
                 str += "index "+i+" : "+vec.toString(precision)+lineFeed;
             });
             str += ")";
             return str; // returns String
         },
-        lerp : function(from,dest,amount){
+        lerp(from,dest,amount){
             var i,len = Math.min(from.vecs.length, dest.vecs.length);
             var v = this.vecs;
             var d = dest.vecs;
@@ -1694,36 +1691,36 @@ groover.geom = (function (){
             }
             return this;
         },
-        clear : function(){  // removes all vecs from the list
+        clear(){  // removes all vecs from the list
             this.length = this.vecs.length = 0;
             return this;  // returns this
         },
-        reset : function(){  // I know a little crazzzzy clear,empty, and reset all doing the same but I have yet to decied which it will be and will keep empty, but reset or clear may go.
+        reset(){  // I know a little crazzzzy clear,empty, and reset all doing the same but I have yet to decied which it will be and will keep empty, but reset or clear may go.
             this.length = this.vecs.length = 0;
             return this; 
         },
-        empty : function(){ // removes all vecs from list
+        empty(){ // removes all vecs from list
             this.length = this.vecs.length = 0;
             return this;
         },        
-        isEmpty : function(){
+        isEmpty(){
             return this.vecs.length === 0;
         },
-        normalise : function(){  // set everything correctly. use after manualy manipulating this object
+        normalise(){  // set everything correctly. use after manualy manipulating this object
           this.length = this.vecs.length;  
           return this;
         },
-        asSimple : function(obj){
+        asSimple(obj){
              if(obj === undefined){
                  obj = {};                 
              }
              obj.vecs = [];
-             this.each(function(vec){
+             this.each(function (vec){
                  obj.vecs.push({x : vec.x, y : vec.y});
              });
              return obj;
         },        
-        fromSimple : function(obj){
+        fromSimple(obj){
             var i,len;
             this.reset();
             if(obj.vecs === undefined || !Array.isArray(obj.vecs)){
@@ -1736,7 +1733,7 @@ groover.geom = (function (){
             this.normalise();
             return this;
         },
-        setLength : function(len){  // sets the length of the vecs array. If greater than this.length then removes any extras and then creates new Vecs to make up the number
+        setLength(len){  // sets the length of the vecs array. If greater than this.length then removes any extras and then creates new Vecs to make up the number
             if(len < 0){
                 throw RangeError("VecArray.setLength : invalid length < 0.");
             }
@@ -1751,18 +1748,18 @@ groover.geom = (function (){
             }
             return this;
         },
-        reverse : function(){
+        reverse(){
             this.vecs.reverse();
             return this; // returns this
         },
-        remove : function(index){
+        remove(index){
             if(index >= 0 && index < this.vecs.length){
                 this.vecs.splice(index,1);
             }
             this.length = this.vecs.length; 
             return this;
         },
-        removeById : function(id){ // remove the vert with id. ID should be unique but I will assume that people will incorrectly use ids so to keep the structure consistant and not effect correct use (appart from cpu load) this function will look through all items. id can be a single number or an array of numbers
+        removeById(id){ // remove the vert with id. ID should be unique but I will assume that people will incorrectly use ids so to keep the structure consistant and not effect correct use (appart from cpu load) this function will look through all items. id can be a single number or an array of numbers
             if(this.vecs.length > 0){
                 if(Array.isArray(id)){
                     for(c = 0; c < this.vecs.length; c ++){ 
@@ -1783,7 +1780,7 @@ groover.geom = (function (){
             }
             return this;
         },        
-        isIdInArray : function (id,all){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
+        isIdInArray(id,all){ // id can be a number of string or array. if id is an array it is an array of ids and then will use optional argument `all` if true then this will return true if all ids are in this. If all is not true then will return true if any of the ids are in the this.
             // uses register c  will be the first id match or this.length if this function return false.
             // if id is an array and all === true then c will be the last index found
             var i,j;
@@ -1818,7 +1815,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        getVecById : function(id,index){ // returns the first vec that matches the Id, if not found return undefined. If index is pased then starts searching at index, else starts at the first item. 
+        getVecById(id,index){ // returns the first vec that matches the Id, if not found return undefined. If index is pased then starts searching at index, else starts at the first item. 
             if(index !== undefined){
                 c = Math.max(index,0);
             }else{
@@ -1834,28 +1831,32 @@ groover.geom = (function (){
             this.current = c;
             return undefined;
         },
-        getAllIdsAsArray : function (array){ // returns an array of ids for the primitives in this. 
+        getAllIdsAsArray(array){ // returns an array of ids for the primitives in this. 
             if(array === undefined){
                 array = [];
             }
-            this.each(function(vec){
+            this.each(function (vec){
                 vec.getAllIdsAsArray(array);
             });
             return array;
         },
-        getHash : function(){ // creates a 32bit hashID of the current state. Use this to determine if there has been a change
-            var i,len;
-            var hash = len = this.length;
-            for(i = 0; i < len; i ++){
-                hash += this.vecs[i].id;
-                hash += this.vecs[i].x + this.vecs[i].y;
+        getHash(){ // creates a 32bit hashID of the current state. Use this to determine if there has been a change
+            var i, v;
+            var hash = this.length;
+            for(i = 0; i < this.length; i ++){				
+				v = this.vecs[i];
+				if (!isNaN(v.id)) {
+					hash += v.id + v.x * v.x + v.y * v.y + Math.atan2(v.y, v.x) * 0xFFFF;
+				} else {
+					hash += v.x * v.x + v.y * v.y + Math.atan2(v.y, v.x) * 0xFFFF;
+				}
             }
             hash = Math.floor(hash % 0xFFFFFFFF);
             return hash;
         },
-        getById : function(id){ // returns first primitive to match the id, else returns undefined
+        getById(id){ // returns first primitive to match the id, else returns undefined
             var vec = undefined;
-            this.each(function(v){
+            this.each(function (v){
                 if(v.id === id){
                     vec = v;
                     return false;
@@ -1864,7 +1865,7 @@ groover.geom = (function (){
             return vec;
         
         },
-        copy : function (from, to){  // Creates a new VecArray with a copy of the vecs in this.
+        copy(from, to){  // Creates a new VecArray with a copy of the vecs in this.
                                      // if {ofrom} and {oto} are passed then create a copy of the points from {ofrom} to but not including {oto}.
             var to2, count;                                     
             var va = new VecArray();
@@ -1880,11 +1881,11 @@ groover.geom = (function (){
                 count = this.getCount();
                 to2 = to;
                 if(to > count){
-                    this.each(function(vec,ind){
+                    this.each(function (vec,ind){
                         va.push(vec.copy());
                     },false,from);
                     to -= count;
-                    this.each(function(vec,ind){
+                    this.each(function (vec,ind){
                         if(ind < to){
                             va.push(vec.copy());
                         }else{
@@ -1893,7 +1894,7 @@ groover.geom = (function (){
                     },false,0);
                     return va;  
                 }else{                    
-                    this.each(function(vec,ind){
+                    this.each(function (vec,ind){
                         if(ind < to){
                             va.push(vec.copy());
                         }else{
@@ -1903,93 +1904,94 @@ groover.geom = (function (){
                     return va;  
                 }
             }
-            this.each(function(vec){
+            this.each(function (vec){
                 va.push(vec.copy());
             });
             return va;  // returns new VecArray
         },
-        setAs :function (vecArray){  // sets the array of vecs to that of the {avecArray} will only set existing vecs in this Extra items in the {avecArray} are ignored. If the {avecArray} is smaller than this items then                         
-            this.each(function(vec,i){
+        setAs :function (vecArray){  // sets the array of vecs to that of the {vecArray} will only set existing vecs in this Extra items in the {avecArray} are ignored. If the {avecArray} is smaller than this items then                         
+            this.each(function (vec,i){
                 vec.x = vecArray.vecs[i].x;
                 vec.y = vecArray.vecs[i].y;
             });
             return this; // returns this
         },
-        isEmpty : function (){ // Returns whether this is empty (has items)
+        isEmpty(){ // Returns whether this is empty (has items)
             if(this.vecs.length === 0){
                 return true;  // returns true if there are one or more vecs in this
             }
             return false;  // returns false if there are no vecs in this
         },
-        push : function (vec){ // Push the {avec} onto the array of vecs
+        push(vec){ // Push the {vec} onto the array of vecs
             this.vecs[this.vecs.length] = vec;
             this.length = this.vecs.length;             
             return this;  // returns this
         },
-        pushI : function (vec){ // Push the {avec} onto the array of vecs returning the index of the vec
+        pushI(vec){ // Push the {vec} onto the array of vecs returning the index of the vec
             this.vecs[this.vecs.length] = vec;
             this.length = this.vecs.length;             
             return this.vecs.length-1;  // returns the index of the pushed vec
         },
-        append : function(vecArray){  // append the {avecArray} to the end of the list of vecs
-            var me = this;
-            vecArray.each(function(vec){  
-                me.push(vec);
-            })
+        append(vecArray){  // append the {vecArray} to the end of the list of vecs
+		    if(vecArray && vecArray.type === "VecArray"){
+				vecArray.each(vec => this.push(vec));
+			}else{
+				vecArray.forEach(vec => this.push(vec));
+			}
             this.length = this.vecs.length;             
             return this;  // returns this
         },
-        asBox : function(box){ // gets the bounding box that envelops all the vecs in the list. The {obox} is used or a new Box is created. Box may be irrational if there are no items in vecArray.
+        asBox(box){ // gets the bounding box that envelops all the vecs in the list. The {obox} is used or a new Box is created. Box may be irrational if there are no items in vecArray.
             if(box === undefined){
                 var box = new Box();
             }
-            this.each(function(vec){
+            this.each(function (vec){
                box.env(vec.x,vec.y);
             });
             return box; // returns the {obox} or a new box.
         },
-        mult : function (number){  // Multiply each vec in the list by the {anumber}
-            this.each(function(vec){
+        mult(number){  // Multiply each vec in the list by the {anumber}
+            this.each(function (vec){
                vec.mult(number);
             });
             return this; // returns this.
         },
-        add : function (vec){ // add the {avec} to each vec in the list
-            this.each(function(vec1){
+        add(vec){ // add the {avec} to each vec in the list
+            this.each(function (vec1){
                vec1.add(vec);
             });
             return this; // returns this
         },
-        sum : function (){ // returns a vec that is the sum of all vecs
+        sum(){ // returns a vec that is the sum of all vecs
             var vec1 = new Vec(0,0);
-            this.each(function(v){
+            this.each(function (v){
                vec1.add(v);
             });
             return vec1; // returns this
         },
-        mean : function(){
+        mean(){
             var count = this.getCount();
             if(count > 0){
                 return this.sum().div(count);
             }
             return new Empty();
         },
-        rotate : function(number){  // rotates each vec bu {anumber}
-            this.each(function(vec){
+        rotate(number){  // rotates each vec bu {anumber}
+            this.each(function (vec){
                vec.rotate(number); 
             });
             return this; //returns this.
         },
-        findClosestIndex : function(vec, limit, retangular){ // returns the index of the point closest to the {avec}{olimit} defines the threshold if defined. Points further away than {olimit} are igonred
-                                                             // For want of a better name retangular if true uses the largest x or y diferance to determin distance. This in effect makes selection of a point by a box of 2*lime size around the vec
+        findClosestIndex(vec, limit, rectangular){ // returns the index of the point closest to the {vec}{limit} defines the threshold if defined. Points further away than {limit} are ignored
+                                                             // For want of a better name rectangular if true uses the largest x or y difference to determine distance. This in effect makes selection of a point by a box of 2*lime size around the vec
             if(this.vecs.length === 0){
                 return -1;
             }
             var minDist = limit = undefined ? Infinity : limit;
             var index = -1;
             var dist = 0;
-            if(retangular){
-                this.each(function(vec1,ind){
+            if(rectangular){
+                this.each(function (vec1,ind){
                     dist = Math.max(Math.abs(vec1.x-vec.x),Math.abs(vec1.y-vec.y));
                     if(dist < minDist){
                         minDist = dist;
@@ -1997,8 +1999,10 @@ groover.geom = (function (){
                     }                
                 });
             }else{
-                this.each(function(vec1,ind){
-                    dist = vec.distTo(vec1);
+                this.each(function (vec1,ind){
+					v1.x = vec.x - vec1.x;
+					v1.y = vec.y - vec1.y;
+					dist = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
                     if(dist < minDist){
                         minDist = dist;
                         index = ind;
@@ -2007,17 +2011,17 @@ groover.geom = (function (){
             }
             return index;
         },
-        findClosest : function(vec,limit, retangular){ // returns the referance to the point closest to the {avec} {olimit} defines the threshold if defined. Points further away than {olimit} are igonred
+        findClosest(vec,limit = Infinity, rectangular = false){ // returns the reference to the point closest to the {vec} {limit} defines the threshold if defined. Points further away than {limit} are ignored
             if(this.vecs.length === 0){
                 return new Empty();
             }
-            var ind = this.findClosestIndex(vec,limit);
+            var ind = this.findClosestIndex(vec,limit, rectangular);
             if(ind === -1){
                 return new Empty();                
             }
             return this.vecs[ind];
         },
-        findInsideBox : function(box, vecArray, invVecArray){ // returns a vecArray containing points inside the box. Creates a new vecArray if not supplied or empties the supplied one and fills it. If invVecArray is given and is a VecArray then this is emptied and filled with the vecs that are outside the box
+        findInsideBox(box, vecArray, invVecArray){ // returns a vecArray containing points inside the box. Creates a new vecArray if not supplied or empties the supplied one and fills it. If invVecArray is given and is a VecArray then this is emptied and filled with the vecs that are outside the box
             if(vecArray === undefined){
                 vecArray = new VecArray();
             }
@@ -2050,24 +2054,24 @@ groover.geom = (function (){
             vecArray.normalise();   
             return vecArray;
         },
-        getLast : function(){ // returns the last vec on the list  .. here for legacy use this.last
+        getLast(){ // returns the last vec on the list  .. here for legacy use this.last
             return this.vecs[this.vecs.length-1]; // returns Vec
         },
-        last : function(){
+        last(){
             if(this.length === 0){
                 return undefined;
             }
             this.current = this.length -1;
             return this.vecs[this.length-1]; // returns Vec
         },
-        first : function(){
+        first(){
             if(this.length === 0){
                 return undefined;
             }
             this.current = 0;
             return this.vecs[this.current]; // returns Vec
         },
-        next : function(){
+        next(){
             if(this.length === 0){
                 return undefined;
             }
@@ -2082,7 +2086,7 @@ groover.geom = (function (){
             }
             return this.vecs[this.current];
         },
-        previouse : function(){
+        previouse(){
             if(this.length === 0){
                 return undefined;
             }
@@ -2100,16 +2104,16 @@ groover.geom = (function (){
             }
             return this.vecs[this.current];
         },
-        remaining : function(){ // for use with next, previous start methods
+        remaining(){ // for use with next, previous start methods
             if(this.current === undefined){
                 return this.length;
             }
             return this.length-this.current;
         },
-        getCount : function(){ 
+        getCount(){ 
             return this.vecs.length; // Returns the number of vecs in the list
         },
-        sumCross : function(){ // returns the sum of the cross product of all the vecs as if they are a set of lines. This includes the line that joins the last vec with the first.
+        sumCross(){ // returns the sum of the cross product of all the vecs as if they are a set of lines. This includes the line that joins the last vec with the first.
             var i,v1,v2;
             var l = this.vecs.length;
             if(l === 0){
@@ -2126,10 +2130,10 @@ groover.geom = (function (){
             }
             return xc - yc; // Returns Number as the summed cross product
         },
-        area : function(){ // gets the area of the polygon created by the set of points. I am using an old school method and do not know if the is a better way. The verts must be in counter clockwise order.
+        area(){ // gets the area of the polygon created by the set of points. I am using an old school method and do not know if the is a better way. The verts must be in counter clockwise order.
             return Math.abs(this.sumCross()/2); // Returns Number as the area
         },        
-        perimiter : function(){ // gets the length of the perimiter of the polygon created by the set of points.
+        perimiter(){ // gets the length of the perimiter of the polygon created by the set of points.
             var i,v1,v2;
             var l = this.vecs.length;
             if(l === 0){
@@ -2144,9 +2148,9 @@ groover.geom = (function (){
             }
             return len; // Returns Number as length
         },
-        indexOf : function(vec, start){ // finds the index of the first vec that is the same as {aVec}. If the {ostart} is passed then the search starts at that index
+        indexOf(vec, start){ // finds the index of the first vec that is the same as {aVec}. If the {ostart} is passed then the search starts at that index
             var index = -1;
-            this.each(function(vec1,i){
+            this.each(function (vec1,i){
                 if(vec.isSame(vec1)){
                     index = i;
                     return false; // break from each
@@ -2160,10 +2164,10 @@ groover.geom = (function (){
         p2 : undefined,
         p3 : undefined,
         type : "Triangle",
-        copy : function(){
+        copy(){
             return new Triangle(this.p1.copy(),this.p2.copy(),this.p3.copy());
         },
-        asBox : function(box){
+        asBox(box){
             if(box === undefined){
                 var box = new Box();
             }
@@ -2172,7 +2176,7 @@ groover.geom = (function (){
             box.env ( this.p3.x, this.p3.y);
             return box;            
         },
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
@@ -2181,7 +2185,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        isEmpty : function(){            
+        isEmpty(){            
             if(this._empty || this.p1 === undefined || this.p2 === undefined || this.p2 === undefined){
                 return true;
             }
@@ -2190,13 +2194,13 @@ groover.geom = (function (){
             }
             return false;
         },
-        empty : function(){ //
+        empty(){ //
             this.p1.x = this.p1.y = this.p2.x = this.p2.y = this.p3.x = this.p3.y = Infinity;
             return this;
         },
-        toString : function(precision){
+        toString(precision){
             var str;
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";
             if(this.isEmpty()){
                 return "Triangle: "+l+"( Empty )";
             }
@@ -2210,7 +2214,7 @@ groover.geom = (function (){
             str += ")";
             return str; // returns String
         },
-        getHash : function(){ // returns a unique hash value for the lines current state
+        getHash(){ // returns a unique hash value for the lines current state
             var hash = 0;
             if(!isNaN(this.id)){
                 hash += this.id;
@@ -2220,7 +2224,7 @@ groover.geom = (function (){
             hash += this.p3.getHash();
             return Math.round(hash  % 0xFFFFFFFF);
         },
-        replace : function(id, prim){  // replaces vec with id == id with the supplied vec
+        replace(id, prim){  // replaces vec with id == id with the supplied vec
             if(id !== undefined){
                 if(prim !== undefined && prim.type === "Vec"){
                     if(this.p1.id === id){
@@ -2236,17 +2240,17 @@ groover.geom = (function (){
             }
             return this;
         },
-        area : function(){
+        area(){
             return Math.abs( this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1) );
         },
-        perimiter: function(){
+        perimiter: function (){
             this.lengthAllQuick();            
             return a + b + c;
         },
-        semiperimiter : function(){
+        semiperimiter(){
             return this.perimiter / 2;
         },
-        distFrom : function(vec){  // distance from lines of the triangle
+        distFrom(vec){  // distance from lines of the triangle
             l1.p1.setAs(this.p1);
             l1.p2.setAs(this.p2);
             c1 = l1.distFrom(vec);
@@ -2258,7 +2262,7 @@ groover.geom = (function (){
             return Math.min(c1,l1.distFrom(vec));
             
         },
-        snapTo : function(xGrid, yGrid, rule){
+        snapTo(xGrid, yGrid, rule){
              if(xGrid === undefined){
                 xGrid = 1 ;
              }
@@ -2289,7 +2293,7 @@ groover.geom = (function (){
              this.p3.y = rule(this.p3.y / yGrid) * yGrid;
              return this;
         },
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
             this.p1.x = (dest.p1.x - from.p1.x) * amount + from.p1.x;
             this.p1.y = (dest.p1.y - from.p1.y) * amount + from.p1.y;
             this.p2.x = (dest.p2.x - from.p2.x) * amount + from.p2.x;
@@ -2298,7 +2302,7 @@ groover.geom = (function (){
             this.p3.y = (dest.p3.y - from.p3.y) * amount + from.p3.y;
             return this;
         },        
-        asVecArray : function(vecArray, instance){
+        asVecArray(vecArray, instance){
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -2309,7 +2313,7 @@ groover.geom = (function (){
             vecArray.push(this.p1.copy()).push(this.p2.copy()).push(this.p3.copy());
             return vecArray;
         },            
-        asLines : function(array){
+        asLines(array){
             if(array === undefined){
                 return [
                     new Line(this.p1.copy(),this.p2.copy()),
@@ -2347,7 +2351,7 @@ groover.geom = (function (){
                 
             return array;
         },
-        asBoundingCircle : function(circle){ // circle is bounding but not perfect. On the todos
+        asBoundingCircle(circle){ // circle is bounding but not perfect. On the todos
             if(circle === undefined){
                 circle = new Circle();
             }
@@ -2357,14 +2361,14 @@ groover.geom = (function (){
             circle.radius = a;
             return circle;
         },
-        asCircle : function(circle){
+        asCircle(circle){
             if(circle === undefined){
                 circle = new Circle();
             }
             circle.fromVec3(this.p1,this.p2,this.p3);
             return circle;
         },
-        asRectangle : function(sideIndex,retRect){ // returns a rectangle whos top is the sideIndex and whos height bound the triangle
+        asRectangle(sideIndex,retRect){ // returns a rectangle whos top is the sideIndex and whos height bound the triangle
             if(retRect === undefined){
                retRect = new Rectangle();
             }
@@ -2420,13 +2424,13 @@ groover.geom = (function (){
             retRect.aspect = b/a;
             return retRect;
         },
-        asArc : function(arc){
+        asArc(arc){
             if(arc === undefined){
                 arc = new Arc();
             }
             return arc.fromVec3(this.p1,this.p2,this.p3);
         },            
-        asInnerCircle : function(circle){
+        asInnerCircle(circle){
             if(circle === undefined){
                 circle = new Circle();
             }
@@ -2438,7 +2442,7 @@ groover.geom = (function (){
             circle.radius = l1.distFrom(circle.center);
             return circle;
         },
-        asSimple : function(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
+        asSimple(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
             if(obj === undefined){
                 obj = {};
             }
@@ -2450,7 +2454,7 @@ groover.geom = (function (){
             obj.y3 = this.p3.y;      
             return obj;
         },
-        fromSimple : function(obj){ // set this to the simple representation of the primitive. Any missing data will be added
+        fromSimple(obj){ // set this to the simple representation of the primitive. Any missing data will be added
             this.p1.x = obj.x1 === undefined ? 0 : obj.x1;
             this.p1.y = obj.y1 === undefined ? 0 : obj.y1;
             this.p2.x = obj.x2 === undefined ? 0 : obj.x2;
@@ -2459,14 +2463,14 @@ groover.geom = (function (){
             this.p3.y = obj.y3 === undefined ? 0 : obj.y3;      
             return this;        
         },
-        lines : function(){ // legacy Must remove when sure no dependencies exist
+        lines(){ // legacy Must remove when sure no dependencies exist
             return [
                 new Line(this.p1,this.p2),
                 new Line(this.p2,this.p3),
                 new Line(this.p3,this.p1)
             ]            
         },
-        angles : function(array){
+        angles(array){
             this.lengthAllQuick();
             if(array === undefined){
                 return [
@@ -2480,7 +2484,7 @@ groover.geom = (function (){
             array[2] = triPh(c,b,a);
             return array;       
         },
-        getSideBisectorAsLine : function(line, sideIndex){ // gets the unit line bisecting the side. line if supplied is the line to set, else creates a new line. sideIndex is the side 0 to 2 or the closest side index or 0
+        getSideBisectorAsLine(line, sideIndex){ // gets the unit line bisecting the side. line if supplied is the line to set, else creates a new line. sideIndex is the side 0 to 2 or the closest side index or 0
             if(line === undefined){
                 line = new Line();
             }
@@ -2515,7 +2519,7 @@ groover.geom = (function (){
             line.p2.y = v1.y + v3.x;
             return line;
         },                
-        getCornerBisectorAsLine : function(line, cornerIndex){ // gets the unit line bisecting the corner. line if supplied is the line to set, else creates a new line. cornerIndex is the corner 0 to 2 or the closest corner index or 0
+        getCornerBisectorAsLine(line, cornerIndex){ // gets the unit line bisecting the corner. line if supplied is the line to set, else creates a new line. cornerIndex is the corner 0 to 2 or the closest corner index or 0
             if(line === undefined){
                 line = new Line();
             }
@@ -2559,7 +2563,7 @@ groover.geom = (function (){
             line.p2.y = v1.y + Math.sin(c);
             return line;
         },
-        getSideBisectedAngleIntercept : function(retVec,cornerIndex){
+        getSideBisectedAngleIntercept(retVec,cornerIndex){
             this.getCornerBisectorAsLine(l1,cornerIndex);
             if(cornerIndex === undefined){
                 cornerIndex = 0;
@@ -2585,11 +2589,11 @@ groover.geom = (function (){
             }
             return l1.intercept(l2,retVec);
         },    
-        centerByBisectingAngles : function(retVec){
+        centerByBisectingAngles(retVec){
             this.getCornerBisectorAsLine(l1,0);
             return l1.intercept(this.getCornerBisectorAsLine(l2,1),retVec);
         },        
-        center : function(retVec){
+        center(retVec){
             v1.x = (this.p1.x + this.p2.x + this.p3.x ) / 3;
             v1.y = (this.p1.y + this.p2.y + this.p3.y ) / 3;
             if(retVec === undefined){
@@ -2599,10 +2603,10 @@ groover.geom = (function (){
             retVec.y = v1.y;
             return retVec;
         },
-        sumCross : function(){
+        sumCross(){
             return  this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1);
         },
-        isVecInside : function(vec){
+        isVecInside(vec){
             var x,y,x1,y1,c; // use the cross product of the vec and each line to find it the point is left off all lines
             v1.x = vec.x - this.p1.x;
             v1.y = vec.y - this.p1.y;
@@ -2627,13 +2631,13 @@ groover.geom = (function (){
             }
             return true;
         },
-        isLineInside : function(line){
+        isLineInside(line){
             if(!this.isVecInside(line.p1)){
                 return false;
             }
             return this.isVecInside(line.p2)
         },
-        isCircleInside : function(circle){ // return true is circle is inside triangle. Only valid for clockwise triangles
+        isCircleInside(circle){ // return true is circle is inside triangle. Only valid for clockwise triangles
             if(!this.isVecInside(circle.center)){
                 return false;
             }
@@ -2651,14 +2655,14 @@ groover.geom = (function (){
             }
             return true;
         },
-        isArcInside : function(arc){ // not finnished
+        isArcInside(arc){ // not finnished
             if(!this.isVecInside(arc.circle.center)){
                 return false;
             }
             
             return undefined;
         },
-        isRectangleInside : function(rectangle){
+        isRectangleInside(rectangle){
             if(!this.isVecInside(rectangle.top.p1)){
                 return false;
             }
@@ -2678,7 +2682,7 @@ groover.geom = (function (){
             }
             return true;
         },
-        isBoxInside : function(box){
+        isBoxInside(box){
             v1.x = box.left - this.p1.x;
             v1.y = box.top - this.p1.y;
             v2.x = this.p2.x-this.p1.x;
@@ -2748,7 +2752,7 @@ groover.geom = (function (){
             }               
             return true;
         },
-        isTriangleInside : function(triangle){
+        isTriangleInside(triangle){
             if(!this.isVecInside(triangle.p1)){
                 return false;
             }
@@ -2757,7 +2761,7 @@ groover.geom = (function (){
             }
             return this.isVecInside(triangle.p3)
         },
-        isLineTouching : function(line){
+        isLineTouching(line){
             if(this.isVecInside(line.p1) || this.isVecInside(line.p2)){
                 return true;
             }
@@ -2780,7 +2784,7 @@ groover.geom = (function (){
             }
             return false;            
         },
-        isCircleTouching : function(circle){ // returns true is the circle touches the triangle; currently only valid for clockwise triangles
+        isCircleTouching(circle){ // returns true is the circle touches the triangle; currently only valid for clockwise triangles
             if(this.isVecInside(circle.center)){ // is center inside
                 return true;
             }
@@ -2825,22 +2829,22 @@ groover.geom = (function (){
             }             
             return false;            
         },
-        isArcTouching : function(arc){
+        isArcTouching(arc){
             return undefined;            
         },
-        isBoxTouching : function(box){
+        isBoxTouching(box){
             return undefined;            
         },
-        isRectangleTouching : function(rectangle){
+        isRectangleTouching(rectangle){
             return undefined;            
         },
-        isTriangleTouching : function(triangle){
+        isTriangleTouching(triangle){
             return undefined;            
         },
-        isClockwise : function(){
+        isClockwise(){
             return  this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1)> 0 ? true : false;
         },
-        isRight : function(){ // returns true if this is a right triangle. This function uses EPSILON to filter out any floating point error.
+        isRight(){ // returns true if this is a right triangle. This function uses EPSILON to filter out any floating point error.
             this.lengthAllQuick2();
             if(c > a && c > b){
                 if(Math.abs(a + b - c) < EPSILON){
@@ -2862,10 +2866,10 @@ groover.geom = (function (){
             }                
             return false; // not a right triangle
         },
-        isOblique : function(){ // returns true if this triangle is Oblique. This function uses EPSILON to filter out any floating point error.
+        isOblique(){ // returns true if this triangle is Oblique. This function uses EPSILON to filter out any floating point error.
             return ! this.isRight();  
         },
-        isDegenerate : function(){
+        isDegenerate(){
             this.lengthAllQuick2();
             if(Math.abs(a) < EPSILON || Math.abs(b) < EPSILON || Math.abs(c) < EPSILON){ // degenerate right triangle
                  return true;
@@ -2887,7 +2891,7 @@ groover.geom = (function (){
             }
             return false;            
         },
-        isObtuse : function(){ // returns true if this is a obtuse triangle. Has a corner greater than 90deg. This function uses EPSILON to filter out any floating point error.
+        isObtuse(){ // returns true if this is a obtuse triangle. Has a corner greater than 90deg. This function uses EPSILON to filter out any floating point error.
             this.lengthAllQuick2();
             if(c > a && c > b){
                 if(c - (a + b) > EPSILON){
@@ -2906,7 +2910,7 @@ groover.geom = (function (){
             }            
             return false; // not a Obtuse triangle        
         },
-        isAcute : function(){ // returns true if this is a acute triangle. Has all corners less than 90deg. This function uses EPSILON to filter out any floating point error.
+        isAcute(){ // returns true if this is a acute triangle. Has all corners less than 90deg. This function uses EPSILON to filter out any floating point error.
             this.lengthAllQuick2();
             if(c > a && c > b){
                 if(a + b - c > EPSILON){
@@ -2925,31 +2929,31 @@ groover.geom = (function (){
             }            
             return false; // not a acute triangle        
         },
-        isEquilateral : function(){ // returns true is this is an equilateral triangle all angle and length are equal. This function uses EPSILON to filter out any floating point error.
+        isEquilateral(){ // returns true is this is an equilateral triangle all angle and length are equal. This function uses EPSILON to filter out any floating point error.
             this.lengthAllQuick2();        
             if(Math.abs(a - b) < EPSILON && Math.abs(b - c) < EPSILON && Math.abs(c - a) < EPSILON){
                 return true;
             }
             return false;
         },
-        isIsosceles : function(){ // returns true is this is an isosceles triangle two sides and two angles are equal. This function uses EPSILON to filter out any floating point error.
+        isIsosceles(){ // returns true is this is an isosceles triangle two sides and two angles are equal. This function uses EPSILON to filter out any floating point error.
             this.lengthAllQuick2();        
             if(Math.abs(a - b) < EPSILON || Math.abs(b - c) < EPSILON || Math.abs(c - a) < EPSILON){
                 return true;
             }
             return false;
         },
-        isScalene : function(){ // returns true is this is a scalene triangle all sides and all angles are not equal. This function uses EPSILON to filter out any floating point error.
+        isScalene(){ // returns true is this is a scalene triangle all sides and all angles are not equal. This function uses EPSILON to filter out any floating point error.
             this.lengthAllQuick2();        
             if(Math.abs(a - b) > EPSILON && Math.abs(b - c) > EPSILON && Math.abs(c - a) > EPSILON){
                 return true;
             }
             return false;
         },
-        description : function(){  // returns a simple text description of the triangle with any of the following words if applicable right,obtuse,acute,equilateral,isosceles,scalene,degenerate,oblique
+        description(){  // returns a simple text description of the triangle with any of the following words if applicable right,obtuse,acute,equilateral,isosceles,scalene,degenerate,oblique
             this.lengthAllQuick2();
             var tf = this.lengthAllQuick2;
-            this.lengthAllQuick2 = function(){}; // temp replace this function. MUST FIND OUT HOW THIS EFFECT OPTIMISATION on different browsers
+            this.lengthAllQuick2 = function (){}; // temp replace this function. MUST FIND OUT HOW THIS EFFECT OPTIMISATION on different browsers
             var name = [];
             this.isRight() ? name.push("right") : name.push("oblique");
             this.isDegenerate() ? name.push("degenerate") :"" ;
@@ -2961,9 +2965,9 @@ groover.geom = (function (){
             this.isEquilateral() ? name.push("Equilateral") :"";
             this.isClockwise() ? name.push("Clockwise") : name.push("Anti-clockwise");
             this.lengthAllQuick2 = tf;
-            var lable = this.lableStr !== undefined ? "'"+this.lableStr+"'" : "";
+            var label = this.labelStr !== undefined ? "'"+this.labelStr+"'" : "";
             var id = this.id !== undefined ? "id : "+this.id : "";
-            var desc =  "Triangle "+lable+" " + id + " properties : ["+name.join(",") + "] ";
+            var desc =  "Triangle "+label+" " + id + " properties : ["+name.join(",") + "] ";
             desc += "Area : " + this.area().toFixed(1) + " ";
             desc += "Perimiter : " + this.perimiter().toFixed(1) + " "; // this must be flowed by length as it uses the registers
             desc += "Lengths a : " + a.toFixed(1) + " b : " + b.toFixed(1) + " c : " + c.toFixed(1) + " ";
@@ -2971,14 +2975,14 @@ groover.geom = (function (){
             desc += "Angles A : " + (rArray[0] * MR2D).toFixed(1) + " B : " + (rArray[1] * MR2D).toFixed(1) + " C : " + (rArray[2] * MR2D).toFixed(1) + " ";
             return desc;
         },
-        isInside : function(primitive){ // returns true if this is inside the primitive primitive
+        isInside(primitive){ // returns true if this is inside the primitive primitive
             var call = this["is"+primitive.type+"Inside"];
             if(call !== undefined){
                 return call(primitive);
             }
             return false;
         },
-        sliceLineRemove : function(line,triArray){ // slices triangle with line removing anything right of the line
+        sliceLineRemove(line,triArray){ // slices triangle with line removing anything right of the line
             if(triArray === undefined){
                 triArray = [];
             }
@@ -3067,7 +3071,7 @@ groover.geom = (function (){
             }
             return triArray;
         },
-        sliceLine : function(line){
+        sliceLine(line){
             var l1 = new Line(this.p1,this.p2);
             var l2 = new Line(this.p2,this.p3);
             var l3 = new Line(this.p3,this.p1);
@@ -3135,12 +3139,12 @@ groover.geom = (function (){
             }
             return tris;
         },
-        slice : function(obj){
+        slice(obj){
             return undefined;
             
             
         },
-        unitDistOfClosestPoint : function(vec){ // returns the unit distance of the closest point on the line from the point vec
+        unitDistOfClosestPoint(vec){ // returns the unit distance of the closest point on the line from the point vec
             l1.p1.setAs(this.p1);
             l1.p2.setAs(this.p2);
             e = l1.distFrom(vec);
@@ -3165,7 +3169,7 @@ groover.geom = (function (){
             }
             return (a1 + b1 + c1 * u) / (a1 + b1 + c1);
         },
-        unitAlong : function ( unitDist , rVec){   // returns a point unitDist on the triangle. 1 unit is equal to the perimeter of the triangle
+        unitAlong( unitDist , rVec){   // returns a point unitDist on the triangle. 1 unit is equal to the perimeter of the triangle
             if(rVec === undefined){
                 rVec = new Vec();
             }
@@ -3191,7 +3195,7 @@ groover.geom = (function (){
             }
             return rVec;
         },
-        circumcenter : function(vec){ //returns the circumcenter as a vec of this triangle or an empty vec if the triangle is collinear. vec is optional and if supplied will be set to the cirumcenter else a new vec will be returned. This function uses Circle.fromVec3
+        circumcenter(vec){ //returns the circumcenter as a vec of this triangle or an empty vec if the triangle is collinear. vec is optional and if supplied will be set to the cirumcenter else a new vec will be returned. This function uses Circle.fromVec3
            // This function uses the registers b and v1
            // b is the circle that fits the three points on the triangle if any
            // v1 is the center
@@ -3207,7 +3211,7 @@ groover.geom = (function (){
            vec.y = v1.y;
            return vec;        
         },
-        meanCenter : function(vec){ // the center of mass (Though I could be wrong as I can not find this formula to confirm it to be but I need this and as I am at a loss as what to call it for now it is the mean center)
+        meanCenter(vec){ // the center of mass (Though I could be wrong as I can not find this formula to confirm it to be but I need this and as I am at a loss as what to call it for now it is the mean center)
             if(vec === undefined){
                 vec = new Vec();
             }
@@ -3215,10 +3219,10 @@ groover.geom = (function (){
             vec.y = (this.p1.y + this.p2.y + this.p3.y) / 3;
             return vec;
         },
-        isSimilar : function(triangle){// returns true if supplied triangle is a similar to this triangle. A similar triangle has the same ratio between the sides though the sides may be rotated within the point p1,p2,p3
+        isSimilar(triangle){// returns true if supplied triangle is a similar to this triangle. A similar triangle has the same ratio between the sides though the sides may be rotated within the point p1,p2,p3
             u = this.angleAll();
             u1 = triangle.angleAll();
-            c1 = function(a,b){return a-b;};
+            c1 = function (a,b){return a-b;};
             u.sort(c1);
             u1.sort(c1);
             if(Math.abs(u[0] - u1[0]) <= EPSILON && Math.abs(u[1] - u1[1]) <= EPSILON && Math.abs(u[2] - u1[2]) <= EPSILON){
@@ -3226,7 +3230,7 @@ groover.geom = (function (){
             }
             return false;        
         },
-        reverse : function(swap){ // if swap is supplied then swaps that point and the next. Defaults to 0 if not given. swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
+        reverse(swap){ // if swap is supplied then swaps that point and the next. Defaults to 0 if not given. swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
             if(swap === undefined || swap === 0){
                 v1.x  = this.p1.x;
                 v1.y  = this.p1.y;
@@ -3252,25 +3256,25 @@ groover.geom = (function (){
             }
             return this;
         },
-        makeClockwise : function(swap){ // ensures the triangle is clockwise. if swap is supplied then swaps that point and the next swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
+        makeClockwise(swap){ // ensures the triangle is clockwise. if swap is supplied then swaps that point and the next swap === 0 then swap p1,p2 swap === 1 swaps p2,p3 and swap === 3 swaps p3,p1
             if(this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1) < 0){
                 this.reverse(swap);
             }
             return this;
         },
-        lengthAllQuick2 : function(){ // sets registers a,b,c to the square length of the sides. Returns this;
+        lengthAllQuick2(){ // sets registers a,b,c to the square length of the sides. Returns this;
             a = Math.pow(this.p2.x - this.p1.x, 2) + Math.pow(this.p2.y - this.p1.y, 2);
             b = Math.pow(this.p3.x - this.p2.x, 2) + Math.pow(this.p3.y - this.p2.y, 2);
             c = Math.pow(this.p1.x - this.p3.x, 2) + Math.pow(this.p1.y - this.p3.y, 2);
             return this;
         },
-        lengthAllQuick : function(){ // sets registers a,b,c to the length of the sides. Returns this;
+        lengthAllQuick(){ // sets registers a,b,c to the length of the sides. Returns this;
             a = Math.hypot(this.p2.x - this.p1.x, this.p2.y - this.p1.y);
             b = Math.hypot(this.p3.x - this.p2.x, this.p3.y - this.p2.y);
             c = Math.hypot(this.p1.x - this.p3.x, this.p1.y - this.p3.y);
             return this;
         },
-        distFromAll : function(vec,array){ // returns the distance from all the points of a point at vec
+        distFromAll(vec,array){ // returns the distance from all the points of a point at vec
             if(array === undefined){
                 array = [];
             };
@@ -3279,7 +3283,7 @@ groover.geom = (function (){
             array[2] = Math.hypot(vec.x - this.p3.x, vec.y - this.p3.y);
             return array;
         },
-        lengthAll : function(array){ // returns an array containing the length of each side if array supplied the first three items are set
+        lengthAll(array){ // returns an array containing the length of each side if array supplied the first three items are set
             if(array === undefined){
                 array = [];
             }
@@ -3294,7 +3298,7 @@ groover.geom = (function (){
             array[2] = Math.hypot(v3.x,v3.y);
             return array;
         },
-        angleAll : function(array){ // returns an array containing the angles at each pount if array supplied the first three items are set
+        angleAll(array){ // returns an array containing the angles at each pount if array supplied the first three items are set
             if(array === undefined){
                 array = [];
             }
@@ -3304,7 +3308,7 @@ groover.geom = (function (){
             array[2] = triPh(b,c,a)
             return array;
         },      
-        longestLength : function(){ // returns the length of the longest side
+        longestLength(){ // returns the length of the longest side
             this.lengthAllQuick2();
             if(a >= c && a >= b){
                 return Math.sqrt(a);
@@ -3314,7 +3318,7 @@ groover.geom = (function (){
             }
             return Math.sqrt(b);
         },
-        shortestLength : function(){ // returns the length of the shortest side
+        shortestLength(){ // returns the length of the shortest side
             this.lengthAllQuick2();
             if(a >= c && a >= b){
                 return Math.sqrt(a);
@@ -3324,7 +3328,7 @@ groover.geom = (function (){
             }
             return Math.sqrt(b);
         },
-        inflate : function(amount){ // only currently for for clockwise triangles need to use a different approach to correctly miter and should be quicker
+        inflate(amount){ // only currently for for clockwise triangles need to use a different approach to correctly miter and should be quicker
             // create vectors for each side
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
@@ -3377,7 +3381,7 @@ groover.geom = (function (){
             // all done
             return this;
         },
-        setAs: function(triangle){
+        setAs: function (triangle){
             this.p1.x = triangle.p1.x;
             this.p1.y = triangle.p1.y;
             this.p2.x = triangle.p2.x;
@@ -3386,7 +3390,7 @@ groover.geom = (function (){
             this.p3.y = triangle.p3.y;
             return this;
         },
-        scale : function(scale){
+        scale(scale){
             this.p1.x *= scale;
             this.p1.y *= scale;
             this.p2.x *= scale;
@@ -3395,7 +3399,7 @@ groover.geom = (function (){
             this.p3.y *= scale;
             return this; // returns this
         },
-        translate : function(vec){
+        translate(vec){
             this.p1.x += vec.x;
             this.p1.y += vec.y;
             this.p2.x += vec.x;
@@ -3404,7 +3408,7 @@ groover.geom = (function (){
             this.p3.y += vec.y;
             return this; // returns this
         },
-        rotate : function(rotation){
+        rotate(rotation){
             var dx = Math.cos(rotation);
             var dy = Math.sin(rotation);
             var x = this.p1.x;
@@ -3421,7 +3425,7 @@ groover.geom = (function (){
             this.p3.y = x * dy + y * dx;
             return this; // returns this
         },
-        transform : function(transform){
+        transform(transform){
             transform.applyToTriangle(this)
             return this; // returns this
         },
@@ -3432,10 +3436,10 @@ groover.geom = (function (){
         _leng : null,  // optimising result for length  
         _dir : null,  // optimising result for direction  
         type : "Vec",
-        copy : function(){  // Creates a copy of this
+        copy(){  // Creates a copy of this
             return new Vec(this.x,this.y);  // returns a new `this`
         },
-        asSimple : function(obj){ // returns the vec as a simple object with left,right,bottom,top,width,height
+        asSimple(obj){ // returns the vec as a simple object with left,right,bottom,top,width,height
             if(obj === undefined){
                 obj = {};
             }
@@ -3443,14 +3447,14 @@ groover.geom = (function (){
             obj.y = this.y;
             return obj;
         },    
-        fromSimple : function(obj){ // set this to the simple representation of the primitive. Any missing data will be added
+        fromSimple(obj){ // set this to the simple representation of the primitive. Any missing data will be added
             this.x = obj.x === undefined ? 1 : obj.x;
             this.y = obj.y === undefined ? 0 : obj.y;    
             return this;        
         },        
-        toString : function(precision){  // returns a string representing this object
+        toString(precision){  // returns a string representing this object
                                 // the precision can also be changed. The default is 6;
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";                                
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";                                
             var id = this.id === undefined ? "": "'"+this.id+"' ";                                
             if(this.isEmpty()){
                 return "Vec : '"+l+"' id : "+id+" ( Empty )";
@@ -3460,13 +3464,13 @@ groover.geom = (function (){
             }
             return "Vec: '"+l+"' id : "+id+" ("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
         },        
-        getHash : function(){ // creates a 32bit hashID of the current state. Use this to determine if there has been a change
+        getHash(){ // creates a 32bit hashID of the current state. Use this to determine if there has been a change
             if(!isNaN(this.id)){
                 return Math.floor((this.id+this.x*this.x + this.y * this.y + Math.atan2(this.y,this.x)) % 0xFFFFFFFF);
             }
             return Math.floor((this.x*this.x + this.y * this.y + Math.atan2(this.y,this.x)) % 0xFFFFFFFF);
         },
-        setAs : function(vec,num){  // Sets this vec to the values in the {avec} or if two args then assumed to be numbers x and y
+        setAs(vec,num){  // Sets this vec to the values in the {avec} or if two args then assumed to be numbers x and y
             if(num === undefined){
                 this.x = vec.x;
                 this.y = vec.y;
@@ -3476,13 +3480,13 @@ groover.geom = (function (){
             }
             return this;  // Returns the existing this
         }, 
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
             return false;
         },
-        getAllIdsAsArray : function(array){ // returns an array with this id 
+        getAllIdsAsArray(array){ // returns an array with this id 
             if(array === undefined){
                 array = [];
             }
@@ -3491,7 +3495,7 @@ groover.geom = (function (){
             }
             return array;
         },  
-        asVecArray : function(vecArray, instance){ // returns a vec array containing a copy of this. If instance is true then the reference to this is added 
+        asVecArray(vecArray, instance){ // returns a vec array containing a copy of this. If instance is true then the reference to this is added 
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -3502,14 +3506,14 @@ groover.geom = (function (){
             vecArray.push(this.copy());
             return vecArray;
         }, 
-        asBox : function(box){  // returns the bounding box that envelops this vec
+        asBox(box){  // returns the bounding box that envelops this vec
             if(box === undefined){
                 var box = new Box();  // {obox} is created if not supplied
             }
             box.env (this.x, this.y);
             return box;  // returns box
         },
-        isEmpty : function (){  // returns true if undefined or infinite
+        isEmpty(){  // returns true if undefined or infinite
             if(this.x === undefined || this.y === undefined || 
                 this.x === Infinity || this.y === Infinity || 
                 this.x === -Infinity || this.y === -Infinity ||
@@ -3518,196 +3522,196 @@ groover.geom = (function (){
             }
             return false;  
         },
-        isZero : function(){
+        isZero(){
             if(this.x === 0 && this.y === 0){
                 return true;
             }
             return false;
         },
-        empty : function(){
+        empty(){
             this.y = this.x = Infinity;
             return this;
         },
-        isSame : function(vec){ // Returns true if the {avec} is the same as this
+        isSame(vec){ // Returns true if the {avec} is the same as this
             if(vec.x === this.x && vec.y === this.y){
                 return true;
             }
             return false; // returns boolean            
         },
-        isSameE : function(vec){ // Returns true if the {avec} is the same as this. Uses EPSILON 
+        isSameE(vec){ // Returns true if the {avec} is the same as this. Uses EPSILON 
             if(Math.hypot(vec.x-this.x,vec.y-this.y) < EPSILON){
                 return true;
             }
             return false; // returns boolean            
         },
-        lerp : function(from,dest,amount){
+        lerp(from,dest,amount){
             this.x = (dest.x-from.x) * amount + from.x;
             this.y = (dest.y-from.y) * amount + from.y;
             return this;
         },
-        vectorToPolar : function(){ // converts the this to a polar vector. Warning there is no flag to indicate this is a pokar. It is up to the API code to track what the vec represents
+        vectorToPolar(){ // converts the this to a polar vector. Warning there is no flag to indicate this is a pokar. It is up to the API code to track what the vec represents
             v1.x = this.x;
             v1.y = this.y;
             this.x = Math.hypot(v1.y,v1.x);
             this.y = Math.atan2(v1.y,v1.x);            
             return this;
         },
-        polarToVector : function(){ // converts from polar to a vector
+        polarToVector(){ // converts from polar to a vector
             v1.x = this.x;
             v1.y = this.y;
             this.x = Math.cos(v1.y) * v1.x;
             this.y = Math.sin(v1.y) * v1.x;            
             return this;            
         },
-        add : function(vec){ // adds {avec} to this
+        add(vec){ // adds {avec} to this
             this.x += vec.x;
             this.y += vec.y;
             return this;    // returns this
         },
-        sub : function(vec){  // subtracts {avec} from this
+        sub(vec){  // subtracts {avec} from this
             this.x -= vec.x;
             this.y -= vec.y;
             return this; // returns this
         },
-        mult : function(number){
+        mult(number){
             this.x *= number;
             this.y *= number;
             return this; // returns this
         },
-        div : function(number){
+        div(number){
             this.x /= number;
             this.y /= number;
             return this; // returns this
         },
-        rev : function () {
+        rev() {
             this.x = - this.x;
             this.y = - this.y;
             return this; // returns this
         },
-        r90 : function(){
+        r90(){
             var x = this.x;
             this.x = - this.y;
             this.y = x;
             return this; // returns this
         },
-        rN90 : function(){
+        rN90(){
             var x = this.x;
             this.x = this.y;
             this.y = -x;
             return this; // returns this
         },
-        r180 : function(){
+        r180(){
             this.x = - this.x;
             this.y = - this.y;
             return this; // returns this
         },
-        fromPolar : function(dir, distance){ // set the vec from polar coordinates
+        fromPolar(dir, distance){ // set the vec from polar coordinates
             this.x = Math.cos(dir) * distance;
             this.y = Math.sin(dir) * distance;
             return this;
         },
-        addPolar : function(dir, distance){ // adds polar coords to the vec
+        addPolar(dir, distance){ // adds polar coords to the vec
             this.x += Math.cos(dir) * distance;
             this.y += Math.sin(dir) * distance;
             return this;
         },
-        half : function(){
+        half(){
             this.x /= 2;
             this.y /= 2;
             return this; // returns this
         },
-        setLeng : function(number){  // Sets the length (magnitude) of this vec to the {anumber}.
+        setLeng(number){  // Sets the length (magnitude) of this vec to the {anumber}.
             var l = Math.hypot(this.x,this.y);
             this.x = (this.x / l) * number;
             this.y = (this.y / l) * number;
             this._leng = number;
             return this; // returns this
         },
-        setDir : function(number){ // Sets the direction of this by {anumber} in radians. This function does not cahnge the magnitude of this vec.
+        setDir(number){ // Sets the direction of this by {anumber} in radians. This function does not cahnge the magnitude of this vec.
             this._leng  = this.leng();
             this.x = Math.cos(number) * this._leng;
             this.y = Math.sin(number) * this._leng;
             return this;  // returns this
         },
-        rotate : function(number){ // Rotates this by {anumber}
+        rotate(number){ // Rotates this by {anumber}
             this._leng = Math.hypot(this.x,this.y);
             this._dir = (number += Math.atan2(this.y,this.x));
             this.x = Math.cos(number) * this._leng;
             this.y = Math.sin(number) * this._leng;
             return this;  // returns this
         },
-        magnitude : function(){
+        magnitude(){
             return Math.hypot(this.x,this.y);  // returns the magnitude of this as a Number
         },
-        leng : function(){
+        leng(){
             return Math.hypot(this.x,this.y);  // returns the length (magnitude) of this as a Number
         },
-        leng2 : function(){
+        leng2(){
             return this.x*this.x + this.y * this.y; // returns the length squared of this
         },
-        dir : function(){
+        dir(){
             return Math.atan2(this.y,this.x);  // returns the direction of this in radians.
         },
-        mid : function(vec){ // sets the vector to the mid point
+        mid(vec){ // sets the vector to the mid point
             this.x /= 2;
             this.y /= 2;
             return this;
         },
-        norm : function(){ // normalises this to be a unit length.
+        norm(){ // normalises this to be a unit length.
             u = Math.hypot(this.x,this.y);
             this.x /= u;
             this.y /= u;
             return this; // returns this 
         },
-        dot : function(vec){  // get the dot product of this and {avec}
+        dot(vec){  // get the dot product of this and {avec}
             return this.x * vec.x + this.y * vec.y; // returns number
         },
-        dotUnit : function(vec){  // returns the dot product of this and vec divided by the magnitude of this
+        dotUnit(vec){  // returns the dot product of this and vec divided by the magnitude of this
             return (this.x * vec.x + this.y * vec.y) / (this.x * this.x + this.y * this.y);
         },
-        cross : function(vec){ // get the cross product of this and the {avec}
+        cross(vec){ // get the cross product of this and the {avec}
             return this.x * vec.y - this.y * vec.x; // returns number
         },
-        crossUnit : function(vec){  // returns the dot product of this and vec divided by the magnitude of this
+        crossUnit(vec){  // returns the dot product of this and vec divided by the magnitude of this
             return (this.x * vec.y - this.y * vec.x) / (this.x * this.x + this.y * this.y);
         },
-        dotNorm : function(vec){ // get the dot product of the normalised this and {avec}          
+        dotNorm(vec){ // get the dot product of the normalised this and {avec}          
             a = Math.hypot(this.x,this.y);
             b = Math.hypot(vec.x,vec.y);
             return (this.x / a) * (vec.x / b) + (this.y / a) * (vec.y / b);
         },
-        crossNorm : function(vec){ // get the cross product of the normalised this and the {avec}       
+        crossNorm(vec){ // get the cross product of the normalised this and the {avec}       
             a = Math.hypot(this.x,this.y);
             b = Math.hypot(vec.x,vec.y);
             return (this.x / a) * (vec.y / b) - (this.y / a) * (vec.x / b);
         },
-        angleBetween : function(vec){ // get the angle between this and the {avec}          
+        angleBetween(vec){ // get the angle between this and the {avec}          
             a = Math.hypot(this.x, this.y);
             b = Math.hypot(vec.x, vec.y);
             return Math.asin((this.x / a) * (vec.y / b) - (this.y / a) * (vec.x / b)); // returns number as radians
         },
-        distFrom : function(vec){ // get the distance from this to the vec
+        distFrom(vec){ // get the distance from this to the vec
             return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
         },
-        distTo : function(vec){ // get the distance from this to the vec
+        distTo(vec){ // get the distance from this to the vec
             return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
         },   
-        distAlongNorm : function(vec){ // similar to Line.distFrom buut this assumes that the vec is the line and the argument vec is the point
+        distAlongNorm(vec){ // similar to Line.distFrom buut this assumes that the vec is the line and the argument vec is the point
             u = (vec.x * this.x + vec.y * this.y)/(this.y * this.y + this.x * this.x);
             return Math.hypot(this.x * u - vec.x, this.y * u - vec.y);
         },
-        angleTo : function(vec){  // Get the direction from this to the vec
+        angleTo(vec){  // Get the direction from this to the vec
             return Math.atan2(vec.y - this.y,vec.x-this.x); // returns number as radians
         },
-        scale : function(scale){
+        scale(scale){
             this.x *= scale;
             this.y *= scale;
         },
-        translate : function(vec){
+        translate(vec){
             this.x += vec.x;
             this.y += vec.y;
         },
-        transform : function(transform){
+        transform(transform){
             vx = this.x * transform.xAxis.x + this.y * transform.yAxis.x + transform.origin.x;
             this.y = this.x * transform.xAxis.y + this.y * transform.yAxis.y + transform.origin.y;
             this.x = vx;
@@ -3720,17 +3724,17 @@ groover.geom = (function (){
         end : 0,
         direction : undefined, // defaults to undefined which is the same as false and means clockwise, if true makes the are anticlockwise. This is an late addition and thus makes all of arc a little obsolete but for rendering this is needed.
         type : "Arc",
-        copy : function(){
+        copy(){
             return new Arc(this.circle.copy(), this.start, this.end, this.direction);
         },
-        setAs : function (arc){
+        setAs(arc){
             this.circle.setAs(arc.circle);
             this.start = arc.start;
             this.end = arc.end;
             this.direction = arc.direction;
             return this;         // returns this.    
         },
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
@@ -3739,19 +3743,19 @@ groover.geom = (function (){
             }
             return false;
         },
-        /*getAllIdsAsArray : function(array){
-            if(array === undefined){
-                array = [];
-            }
-            if(array.indexOf(this.id)=== -1){
-                array.push(this.id);
-            }
-            if(array.indexOf(this.circle.center.id)=== -1){
-                array.push(this.circle.center.id);
-            }
-            return array;
-        },  */
-        distFrom : function(vec){ // returns the distance from the vec of the arc
+        // getAllIdsAsArray(array){
+            // if(array === undefined){
+                // array = [];
+            // }
+            // if(array.indexOf(this.id)=== -1){
+                // array.push(this.id);
+            // }
+            // if(array.indexOf(this.circle.center.id)=== -1){
+                // array.push(this.circle.center.id);
+            // }
+            // return array;
+        // },  
+        distFrom(vec){ // returns the distance from the vec of the arc
             a1 = this.circle.center.angleTo(vec);
             a1 = ((a1 % MPI2) + MPI2) % MPI2;
             if(this.direction === true){
@@ -3771,7 +3775,7 @@ groover.geom = (function (){
             return Math.min(c1, this.endAsVec(v1).distFrom(vec));
             
         },
-        asBox : function(box){
+        asBox(box){
             if(box === undefined){
                 var box = new Box();
             }
@@ -3797,7 +3801,7 @@ groover.geom = (function (){
             }
             return box;
         },
-        asVecArray : function(vecArray, instance){
+        asVecArray(vecArray, instance){
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -3808,7 +3812,7 @@ groover.geom = (function (){
             vecArray.push(this.circle.center.copy());
             return vecArray;
         },          
-        isEmpty : function(){
+        isEmpty(){
             if(this.start === this.end || 
                     this.start === Infinity || this.end === Infinity || 
                     this.start === -Infinity || this.end === -Infinity || 
@@ -3819,18 +3823,18 @@ groover.geom = (function (){
             }
             return false;
         },
-        empty : function(){
+        empty(){
             this.start = Infinity;
             this.end = Infinity;
         },
-        isZero : function(){
+        isZero(){
             if(this.start === this.end){
                 return true;
             }
             return false;
         },
-        toString : function(precision){
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";  
+        toString(precision){
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";  
             var id = this.id === undefined ? "": "'"+this.id+"' ";
             if(this.isEmpty()){
                 return "Arc : '"+l+"' id : "+id+" ( Empty )";
@@ -3846,7 +3850,7 @@ groover.geom = (function (){
             return str;
             
         },
-        getHash : function(){ // returns a unique hash value for the lines current state
+        getHash(){ // returns a unique hash value for the lines current state
             var hash = 0;
             if(!isNaN(this.id)){
                 hash += this.id;
@@ -3854,7 +3858,7 @@ groover.geom = (function (){
             hash += this.circle.getHash() + this.start * this.start + this.end * this.end + (this.direction ? 13 : 17);
             return Math.round(hash  % 0xFFFFFFFF);
         },
-        replace : function(id, prim){  // replaces vec with id == id with the supplied vec
+        replace(id, prim){  // replaces vec with id == id with the supplied vec
             if(id !== undefined){
                 if(prim !== undefined){
                     if(prim.type === "Vec"){
@@ -3871,10 +3875,10 @@ groover.geom = (function (){
             }
             return this;
         },
-        asCircle : function(){
+        asCircle(){
             return this.circle.copy();
         },
-        asTriangles : function(sides,sector,array){
+        asTriangles(sides,sector,array){
             sides = sides === undefined || sides === null ? 8 : Math.max(4,Math.floor(sides));
             var steps = (this.end - this.start)/sides;
             var i,cx,cy,x,y,xx,yy,c,a,px,py,r;
@@ -3914,7 +3918,7 @@ groover.geom = (function (){
 
             
         },    
-        asSimple : function(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
+        asSimple(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
             if(obj === undefined){
                 obj = {};
             }
@@ -3926,7 +3930,7 @@ groover.geom = (function (){
             obj.direction = this.direction;
             return obj;
         },
-        fromSimple : function(obj){ // set this to the simple representation of the primitive. Any missing data will be added
+        fromSimple(obj){ // set this to the simple representation of the primitive. Any missing data will be added
             this.circle.center.x = obj.x === undefined ? 0 : obj.x;
             this.circle.center.y = obj.y === undefined ? 0 : obj.y;
             this.circle.center.radius = obj.radius === undefined ? 0 : obj.radius;
@@ -3935,7 +3939,7 @@ groover.geom = (function (){
             this.direction = obj.direction === undefined ? false : obj.direction;      
             return this;        
         },        
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
             this.circle.center.x = (dest.circle.center.x - from.circle.center.x) * amount + from.circle.center.x;
             this.circle.center.y = (dest.circle.center.y - from.circle.center.y) * amount + from.circle.center.y;
             this.circle.radius = (dest.circle.radius - from.circle.radius) * amount + from.circle.radius;
@@ -3943,7 +3947,7 @@ groover.geom = (function (){
             this.end = (dest.end - from.end) * amount + from.end;
             return this;
         },         
-        sweap : function (){
+        sweap(){
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
             if( s > e){
@@ -3951,7 +3955,7 @@ groover.geom = (function (){
             }
             return (e-s);
         },
-        arcLength : function (){  // returns the arc length of this arc
+        arcLength(){  // returns the arc length of this arc
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
             if( s > e){
@@ -3959,7 +3963,7 @@ groover.geom = (function (){
             }
             return (e-s); // returns a number
         },
-        fromCircleIntercept : function(circle){
+        fromCircleIntercept(circle){
             var pa = this.circle.intercept(circle);
             if(pa.vecs.length > 0){
                 this.fromPoints(pa.vecs[0],pa.vecs[1]);
@@ -3969,7 +3973,7 @@ groover.geom = (function (){
             }
             return this; // returns this.
         },
-        areaOfSector : function (){
+        areaOfSector(){
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
             if( s > e){
@@ -3977,7 +3981,7 @@ groover.geom = (function (){
             }
             return this.circle.radius * this.circle.radius * (e-s);
         },
-        areaOfSegment : function (){
+        areaOfSegment(){
             var swap = false;
             var s  = ((this.start % MPI2) + MPI2) % MPI2;
             var e = ((this.end % MPI2) + MPI2) % MPI2;            
@@ -3998,7 +4002,7 @@ groover.geom = (function (){
                 return  p - c * d; // area is Pie area - triangle *2
             }
         },
-        normaliseDirection : function () { // set direction flag if arc is anti clockwise
+        normaliseDirection() { // set direction flag if arc is anti clockwise
             this.direction = false;
             v1.x = Math.cos(this.start);
             v1.y = Math.sin(this.start);
@@ -4011,7 +4015,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        fromVec3 : function (vec1, vec2, vec3){ // creates an arc that fits the three vectors if posible If points are on a line then an empty arc is returned
+        fromVec3(vec1, vec2, vec3){ // creates an arc that fits the three vectors if posible If points are on a line then an empty arc is returned
             // This function uses Geom registers v1
             // v1 is the center of the circle if return is not empty 
             this.circle.fromVec3(vec1, vec2, vec3);
@@ -4040,10 +4044,10 @@ groover.geom = (function (){
             }
             return this;
         },
-        fromTriangle : function (triangle){// positions and sets radius to fit all 3 points of the triangle if posible. If not returns empty circle
+        fromTriangle(triangle){// positions and sets radius to fit all 3 points of the triangle if posible. If not returns empty circle
             return this.fromVec3(triangle.p1,triangle.p2,triangle.p3);
         },    
-        fromTangentAt : function (where, tangentVec){ // fits the arc so that it has the tangent at start or end depending on arg where. The start and end points are not move only the circle center and radius are moved to fit
+        fromTangentAt(where, tangentVec){ // fits the arc so that it has the tangent at start or end depending on arg where. The start and end points are not move only the circle center and radius are moved to fit
             a = Math.hypot(v1.x = tangentVec.x,v1.y = tangentVec.y);
 
             v1.x /= a;
@@ -4078,14 +4082,14 @@ groover.geom = (function (){
             }
            // return this.normaliseDirection();
         },        
-        fitToCircles : function(cir1,cir2,rule){ // fits this arc to the two circle 
+        fitToCircles(cir1,cir2,rule){ // fits this arc to the two circle 
             this.circle.fitToCircles(cir1,cir2,rule);
             if(!this.circle.isEmpty()){
                 this.startFromVec(cir1.center).endFromVec(cir2.center);
             }
             return this;
         },
-        swap : function(direction){ // start and end points, or is direction is true then swaps the direction between clockwise and anti clockwise
+        swap(direction){ // start and end points, or is direction is true then swaps the direction between clockwise and anti clockwise
             if(direction){
                 this.direction = ! this.direction;
                 return this;
@@ -4095,7 +4099,7 @@ groover.geom = (function (){
             this.end = c;
             return this; // returns this.
         },        
-        fromPoints : function(p1,p2,p3){
+        fromPoints(p1,p2,p3){
             if(p3 === undefined){
                 this.start = this.circle.angleOfPoint(p1);
                 this.end = this.circle.angleOfPoint(p2);
@@ -4108,35 +4112,35 @@ groover.geom = (function (){
             this.end = Math.max(a1,a2,a3);
             return this;
         },
-        setRadius : function (number){ // set the radius of this to the {anumber}
+        setRadius(number){ // set the radius of this to the {anumber}
             this.circle.radius = number;
             return this; // returns this.
         },
-        addToRadius : function ( number ){
+        addToRadius( number ){
             this.circle.radius += number;
             return this; // returns this.            
         },
-        multiplyRadius : function ( number ){
+        multiplyRadius( number ){
             this.circle.radius *= number;
             return this; // returns this.            
         },
-        setCenter : function (vec){  // sets the center of this to the {avec}
+        setCenter(vec){  // sets the center of this to the {avec}
             this.circle.center.x = vec.x;
             this.circle.center.y = vec.y;
             return this; // returns this.
         },
-        setCircle : function (circle){  // set this.circle to the {acircle}
+        setCircle(circle){  // set this.circle to the {acircle}
             this.circle.center.x = circle.center.x;
             this.circle.center.y = circle.center.y;
             this.circle.radius = circle.radius;
             return this; // returns this.
         },
-        normalise : function(){ // Changes the start and end angle to within the range 0 - Math.PI * 2
+        normalise(){ // Changes the start and end angle to within the range 0 - Math.PI * 2
             this.start = ((this.start % MPI2) + MPI2) % MPI2;
             this.end = ((this.end % MPI2) + MPI2) % MPI2;
             return this; // returns this.
         },
-        towards : function(vec){ // Changes the arc if needed to bend towards the {avec}
+        towards(vec){ // Changes the arc if needed to bend towards the {avec}
             a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
             b = ((this.start % MPI2) + MPI2) % MPI2;
             e = ((this.end % MPI2) + MPI2) % MPI2;
@@ -4155,7 +4159,7 @@ groover.geom = (function (){
             this.end = c;
             return this; // returns this.
         },
-        away : function(vec){ // Changes the arc if needed to bend away from the {avec}
+        away(vec){ // Changes the arc if needed to bend away from the {avec}
             a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
             b = ((this.start % MPI2) + MPI2) % MPI2;
             e = ((this.end % MPI2) + MPI2) % MPI2;
@@ -4174,7 +4178,7 @@ groover.geom = (function (){
             this.end = c;
             return this; // returns this.
         },    
-        endsAsVec : function(vecArray, vecEnd) {  // if vecArray is array then vecEnd is ignored if vecArray is a vec then vecEnd nust be included or only start vec is returned
+        endsAsVec(vecArray, vecEnd) {  // if vecArray is array then vecEnd is ignored if vecArray is a vec then vecEnd must be included or only start vec is returned
             if(vecArray === undefined){
                 vecArray = new VecArray();
             }
@@ -4191,7 +4195,7 @@ groover.geom = (function (){
             }
             return  vecArray;    
         },
-        startAsVec : function(vec) { 
+        startAsVec(vec) { 
             c = this.start;
             if(vec === undefined){
                 return new Vec(this.circle.center.x + Math.cos(c) * this.circle.radius,this.circle.center.y + Math.sin(c) * this.circle.radius);;
@@ -4200,7 +4204,7 @@ groover.geom = (function (){
             vec.y = this.circle.center.y + Math.sin(c) * this.circle.radius;
             return vec;
         },
-        endAsVec : function(vec) { 
+        endAsVec(vec) { 
             c = this.end;
             if(vec === undefined){
                 return new Vec(this.circle.center.x + Math.cos(c) * this.circle.radius,this.circle.center.y + Math.sin(c) * this.circle.radius);
@@ -4209,11 +4213,11 @@ groover.geom = (function (){
             vec.y = this.circle.center.y + Math.sin(c) * this.circle.radius;
             return vec
         },
-        unitPosAsVec : function(unit,vec){ // legacy  dont use
+        unitPosAsVec(unit,vec){ // legacy  dont use
             console.warning("Geom.Arc.unitPosAsVec has depreciated use unitAlong instead.");
             return this.unitAlong(unit, vec);
         },
-        unitAlong : function(unit,vec){
+        unitAlong(unit,vec){
             this.normalise();
 
             if(this.direction){
@@ -4236,39 +4240,39 @@ groover.geom = (function (){
             vec.y = this.circle.center.y + Math.sin(c) * this.circle.radius;
             return vec
         },
-        unitDistOfClosestPoint : function(vec) { // returns the unit distance on the perimeter for the point closest to ve
+        unitDistOfClosestPoint(vec) { // returns the unit distance on the perimeter for the point closest to ve
             this.normalise();
             u = direction(vec.x - this.circle.center.x, vec.y - this.circle.center.y);
             u = (u - this.start) / (this.end - this.start);
             return u;
         },        
-        tangentAtStart : function(retLine){  // returns a line of the tangent at the start of the arc
+        tangentAtStart(retLine){  // returns a line of the tangent at the start of the arc
             retLine = this.circle.tangentAtAngle(this.start,retLine);
             if(this.direction){
                 return retLine.reverse();
             }
             return retLine
         },
-        tangentAtEnd : function(retLine){ // returns a line that starts at the end of this arc along the tangent at end
+        tangentAtEnd(retLine){ // returns a line that starts at the end of this arc along the tangent at end
             retLine = this.circle.tangentAtAngle(this.end,retLine);
             if(this.direction){
                 return retLine.reverse();
             }
             return retLine            
         },
-        startFromVec : function(vec){ // sets the start as the angle from this arcs center to the pooint described by vec
+        startFromVec(vec){ // sets the start as the angle from this arcs center to the pooint described by vec
             this.start = Math.atan2(vec.y - this.circle.center.y,vec.x - this.circle.center.x);
             return this;
         },
-        endFromVec : function(vec){ // sets the start as the angle from this arcs center to the pooint described by  vec
+        endFromVec(vec){ // sets the start as the angle from this arcs center to the pooint described by  vec
             this.end = Math.atan2(vec.y - this.circle.center.y,vec.x - this.circle.center.x);
             return this;
         },
-        endsFromVecs : function(vec1, vec2){ // sets the start and end angle to be one the line from the center to the two vecs vec1,vec2
+        endsFromVecs(vec1, vec2){ // sets the start and end angle to be on the line from the center to the two vecs vec1,vec2
             this.startFromVec(vec1).endFromVec(vec2);
             return this;
         },
-        sweapLeng : function(){
+        sweapLeng(){
             a = ((this.start % MPI2) + MPI2) % MPI2;
             e = ((this.end % MPI2) + MPI2) % MPI2;
             if(a > e){
@@ -4276,17 +4280,17 @@ groover.geom = (function (){
             }            
             return Math.abs(e - a) * this.circle.radius;
         },
-        setCircumference : function(leng){ 
+        setCircumference(leng){ 
             this.end = this.start  + (leng / (this.circle.radius ));
             return this; // returns this.
         },
-        cordLeng : function(){
+        cordLeng(){
             return Math.hypot(
                 (this.circle.center.x + Math.cos(this.start) * this.circle.radius) - (this.circle.center.x + Math.cos(this.end) * this.circle.radius),
                 (this.circle.center.y + Math.sin(this.start) * this.circle.radius) - (this.circle.center.y + Math.sin(this.end) * this.circle.radius)
             );
         },
-        cordAsLine : function(retLine){
+        cordAsLine(retLine){
             if(retLine === undefined){
                 if(this.start === this.end){
                     return new Empty();
@@ -4306,15 +4310,15 @@ groover.geom = (function (){
             return retLine;
 
         },
-        clockwise : function(){
+        clockwise(){
             this.direction = false;
             return this;
         },
-        anticlockwise : function(){
+        anticlockwise(){
             this.direction = true;
             return this;
         },
-        great : function(){
+        great(){
             b = ((this.start % MPI2) + MPI2) % MPI2;
             e = ((this.end % MPI2) + MPI2) % MPI2;
             if(b > e){
@@ -4336,31 +4340,102 @@ groover.geom = (function (){
             }
             return this; // returns this.
         },
-        minor : function(){
+        minor(){
             this.great();
             a = this.start;
             this.start = this.end;
             this.end = a;
             return this; // returns this.
         },
-        isPointOn : function(p){
+        isPointOn(p){
             a = this.circle.angleOfPoint(p1);
-            if(a >= this.start && a <= this.end){
-                return true;
-            }
+            if(a >= this.start && a <= this.end) { return true }
             return false;
-            
         },
-        fromTangentsToPoint : function(vec){
+        fromTangentsToPoint(vec){
             var tp = this.circle.tangentsPointsForPoint(vec);
-            if(tp.vecs.length === 0){
-                return this;
-            }
+            if(tp.vecs.length === 0) { return this }
             this.fromPoints(tp.vecs[0],tp.vecs[1]);
-            
             return this;    // returns this.
         },
-        fitCornerConstrain : function(line1,line2,cornerUnknown,constraint,data){ // set Circle.fitCornerConstrain for full details as this function calls that function
+		fitCircleToLine(arcCircle,line,left = true){  // {arcCircle} is moved to fit the corner made by the intercept of the {line} and this circle if possible. if left === true then circle is fitted to the left else to the right.
+			var circle = arcCircle.circle ? arcCircle.circle : arcCircle;
+			a = line.distFromPointDir(this.circle.center); // Uses registers from this call v1 is line as vec, v3 is point on line closest to circle center line._leng is length of line
+
+			b = this.circle.radius + circle.radius;
+			if(left){
+				c = circle.radius - a;
+				a1 = Math.sqrt(b * b - c * c);
+				v1.x /= line._leng;
+				v1.y /= line._leng;
+				v3.x += a1 * v1.x;
+				v3.y += a1 * v1.y;
+				circle.center.x = v3.x - circle.radius * v1.y;				
+				circle.center.y = v3.y + circle.radius * v1.x;
+				this.start =  ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
+				if(arcCircle.circle){
+					arcCircle.end = ((Math.atan2(-v1.x,v1.y) % MPI2) + MPI2) % MPI2;
+					arcCircle.start = (((this.start  + Math.PI) % MPI2) + MPI2) % MPI2;
+				}
+				
+				
+			}else{
+				c = a + circle.radius;
+				a1 = Math.sqrt(b * b - c * c);
+				v1.x /= line._leng;
+				v1.y /= line._leng;
+				v3.x += a1 * v1.x;
+				v3.y += a1 * v1.y;					
+				circle.center.x = v3.x + circle.radius * v1.y;				
+				circle.center.y = v3.y - circle.radius * v1.x;
+				this.end = ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
+				if(arcCircle.circle){
+					arcCircle.start = ((Math.atan2(v1.x,-v1.y) % MPI2) + MPI2) % MPI2;
+					arcCircle.end = (((this.end  + Math.PI) % MPI2) + MPI2) % MPI2;
+				}
+			}
+
+			return this;
+		},		
+		getTangentsToCircle(arcCircle,retLineR,retLineL){ // Sets the lines and end points to the tangent joining the two circles that make the arcs
+			var circle = arcCircle.circle ? arcCircle.circle : arcCircle;
+			v1.x = circle.center.x - this.circle.center.x; 
+			v1.y = circle.center.y - this.circle.center.y; 
+			u = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+			if(u < Math.max(circle.radius,this.circle.radius) - Math.min(circle.radius,this.circle.radius)){
+				return this;
+			}
+			u1 = this.circle.radius - circle.radius;
+			a = Math.asin(u1/u);
+			a1 = Math.atan2(v1.y,v1.x); // direction to circle
+			b = a1-(Math.PI / 2) + a;  // direction to tangent point left
+			c = a1+(Math.PI / 2) - a;  // direction to tangent point right
+            b = ((b % MPI2) + MPI2) % MPI2;			
+            c = ((c % MPI2) + MPI2) % MPI2;			
+			if(retLineR){
+				v2.x = Math.cos(c);
+				v2.y = Math.sin(c);
+				retLineR.p1.x = this.circle.center.x + v2.x * this.circle.radius;
+				retLineR.p1.y = this.circle.center.y + v2.y * this.circle.radius;
+				retLineR.p2.x = circle.center.x + v2.x * circle.radius;
+				retLineR.p2.y = circle.center.y + v2.y * circle.radius;
+				this.start = c;
+				if(arcCircle.end) { arcCircle.end = c } 
+			}
+			if(retLineL){
+				v3.x = Math.cos(b);
+				v3.y = Math.sin(b);
+				retLineL.p1.x = circle.center.x + v3.x * circle.radius;
+				retLineL.p1.y = circle.center.y + v3.y * circle.radius;
+				retLineL.p2.x = this.circle.center.x + v3.x * this.circle.radius;
+				retLineL.p2.y = this.circle.center.y + v3.y * this.circle.radius;
+				this.end = b;
+				if(arcCircle.start) { arcCircle.start = b } 
+			}
+			return this;
+			
+		},		
+        fitCornerConstrain(line1,line2,cornerUnknown,constraint,data){ // set Circle.fitCornerConstrain for full details as this function calls that function
             this.circle.fitCornerConstrain(line1,line2,cornerUnknown,constraint,data);
             if(this.circle.center.x !== Infinity){ // if the solution is found        
                 v4.x = v3.x + v1.x * c1; // contact point on line1
@@ -4381,7 +4456,7 @@ groover.geom = (function (){
             }            
             return this;
         },
-        fitCorner : function(line1,line2,cornerUnknown){ // set Circle.fitCorner for full details as this function calls that function
+        fitCorner(line1,line2,cornerUnknown){ // set Circle.fitCorner for full details as this function calls that function
             // This uses Geom.registers v1,v2,v3,v4,v5,a,b,c1,c
             // v1,v2,v3 if cornerUnknown is true may be invalid if return circle is empty, all other cases they will be valid
             // v1 is the vector of line1 in the directio away from the corner
@@ -4407,20 +4482,20 @@ groover.geom = (function (){
             }
             return this; // returns this.
         },
-        scale : function(scale){
+        scale(scale){
             this.circle.radius * scale;
             return this; // returns this
         },
-        translate : function(vec){
+        translate(vec){
             this.circle.center.translate(vec);
             return this; // returns this
         },
-        rotate : function(rotation){
+        rotate(rotation){
             this.start += rotation;
             this.end += rotation;
             return this; // returns this
         },
-        transform : function(transform){ // this is just a stub for now and does not transfor the arc
+        transform(transform){ // this is just a stub for now and does not transfor the arc
             return this; // returns this
         },
     }
@@ -4428,16 +4503,16 @@ groover.geom = (function (){
         center : undefined,
         radius : 0,
         type : "Circle",
-        copy : function(){
+        copy(){
             return new Circle(this.center.copy(),this.radius)
         },
-        setAs : function (circle){  // Sets this circle to the argument {acircle}.
+        setAs(circle){  // Sets this circle to the argument {circle}.
                                     // Return `this`
             this.center.setAs(circle.center);
             this.radius = circle.radius;
             return this;
         },
-        asVecArray : function(vecArray, instance){
+        asVecArray(vecArray, instance){
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -4448,7 +4523,7 @@ groover.geom = (function (){
             vecArray.push(this.center.copy());
             return vecArray;
         },  
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
@@ -4457,7 +4532,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        asBox : function(box){     // Returns the bounding box 
+        asBox(box){     // Returns the bounding box 
                                    // {abox} is option
                                    // Returns `Box`
             if(box === undefined){
@@ -4467,8 +4542,8 @@ groover.geom = (function (){
             box.env (this.center.x + this.radius,this.center.y + this.radius);
             return box;
         },
-        toString : function (precision){
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";   
+        toString(precision){
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";   
             var id = this.id === undefined ? "": "'"+this.id+"' ";
             if(this.isEmpty()){
                 return "Circle: '"+l+"' id : "+id+" ( Empty )";
@@ -4478,7 +4553,7 @@ groover.geom = (function (){
             }
             return "Circle: '"+l+"' id : "+id+" Center ("+this.center.toString(precision)+") Radius "+this.radius.toFixed(precision);
         },
-        asSimple : function(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
+        asSimple(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
             if(obj === undefined){
                 obj = {};
             }
@@ -4487,13 +4562,13 @@ groover.geom = (function (){
             obj.radius = this.circle.center.radius;
             return obj;
         },
-        fromSimple : function(obj){
+        fromSimple(obj){
             this.center.x = obj.x === undefined ? 0 : obj.x;
             this.center.y = obj.y === undefined ? 0 : obj.y;
             this.radius = obj.radius === undefined ? 1 : obj.radius;
             return this;
         },
-        getHash : function(){ // returns a unquie hash value for the lines current state
+        getHash(){ // returns a unquie hash value for the lines current state
             var hash = 0;
             if(!isNaN(this.id)){
                 hash += this.id;
@@ -4501,7 +4576,7 @@ groover.geom = (function (){
             hash += this.center.getHash() + this.radius;
             return Math.round(hash  % 0xFFFFFFFF);
         },
-        replace : function(id, prim){  // replaces vec with id == id with the supplied vec
+        replace(id, prim){  // replaces vec with id == id with the supplied vec
             if(id !== undefined){
                 if(prim !== undefined){
                     if(prim.type === "Vec"){
@@ -4513,7 +4588,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        asTriangles : function(sides,array){
+        asTriangles(sides,array){
             sides = sides === undefined || sides === null ? 8 : Math.max(4,Math.floor(sides));
             var steps = MPI2/sides;
             var i,cx,cy,x,y,xx,yy,c,a;
@@ -4542,13 +4617,13 @@ groover.geom = (function (){
             }
             return array;  
         },
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
             this.center.x = (dest.center.x - from.center.x) * amount + from.center.x;
             this.center.y = (dest.center.y - from.center.y) * amount + from.center.y;
             this.radius = (dest.radius - from.radius) * amount + from.radius;
             return this;
         },        
-        isEmpty : function(){  // returns true for empty circle
+        isEmpty(){  // returns true for empty circle
             if( this.center.x === Infinity || // many cases see a divid by zero the result will have both x and y as Infinity. This assumes this empty circle is more common than a radius === infinity. It also alows better performance and conveniance by having the function Circle.empty set this.center.x to infinity rather than radius which many times is requiered to be preserved despite the circle center being unknown
                     this.radius === 0 ||                    
                     this.radius === Infinity || 
@@ -4560,33 +4635,33 @@ groover.geom = (function (){
             }
             return false;
         },
-        empty : function(){
+        empty(){
             this.center.x = Infinity;
             return this;
         },
-        setRadius : function (r){
+        setRadius(r){
             this.radius = r;
             return this;
         },
-        addToRadius : function ( number ){
+        addToRadius( number ){
             this.radius += number;
             return this; // returns this.            
         },
-        multiplyRadius : function ( number ){
+        multiplyRadius( number ){
             this.radius *= number;
             return this; // returns this.            
         },        
-        circumference : function(){
+        circumference(){
             return this.radius * Math.PI * 2;
         },
-        area : function(){
+        area(){
             return this.radius * this.radius * Math.PI * 2;
         },
-        fromLine : function (line){
+        fromLine(line){
             this.fromVec2(line.p1,line.p2);
             return this
         },
-        fromVec2 : function (vec1, vec2, method){
+        fromVec2(vec1, vec2, method){
             if(method === "radius"){
                 this.center.x = vec1.x;
                 this.center.y = vec1.y;
@@ -4598,7 +4673,7 @@ groover.geom = (function (){
             this.radius = Math.hypot(vec1.x - vec2.x,vec1.y - vec2.y)/2;
             return this;
         },
-        fromVec3 : function (vec1, vec2, vec3){ // positions and sets radius to fit all 3 points if posible. If not returns empty circle
+        fromVec3(vec1, vec2, vec3){ // positions and sets radius to fit all 3 points if possible. If not returns empty circle
             // This function uses Geom registers v1,c,c1u
             // v1 is the center of the circle if not empty
             // Code Notes
@@ -4624,28 +4699,28 @@ groover.geom = (function (){
             this.radius = Math.hypot(vec1.x - (this.center.x = v1.x), vec1.y - (this.center.y = v1.y));
             return this;
         },
-        fromArea : function(area){
+        fromArea(area){
             this.radius = Math.sqrt(area / (Math.PI * 2));
         },
-        fromTriangle : function (triangle){// positions and sets radius to fit all 3 points of the triangle if posible. If not returns empty circle
+        fromTriangle(triangle){// positions and sets radius to fit all 3 points of the triangle if possible. If not returns empty circle
             return this.fromVec3(triangle.p1,triangle.p2,triangle.p3);
         },
-        fromCircumference  : function(leng){
+        fromCircumference (leng){
             this.radius = leng / (Math.PI * 2);
         },
-        isTouching : function(circle){ // returns true if this circle is in contact with circle false if not
+        isTouching(circle){ // returns true if this circle is in contact with circle false if not
             if(this.center.copy().sub(circle.center).leng() > this.radius + circle.radius){
                 return false;
             }
             return true;
         },
-        isTouchingLine : function(line){ // returns true is this circle is in contact with the line false if not
+        isTouchingLine(line){ // returns true is this circle is in contact with the line false if not
             if(line.distFrom(this.center) > this.radius){
                 return false
             }
             return true;
         },
-        isRectangleInside : function(rectangle){ // return true if rectangle is inside the circle false if not
+        isRectangleInside(rectangle){ // return true if rectangle is inside the circle false if not
             // This function uses V1 and v2
             // Only if this function can v1 and v2 be considered valid
             // v1 is the bottom lefy corner of the rectangle only if true returned
@@ -4665,23 +4740,23 @@ groover.geom = (function (){
             }
             return false;
         },
-        isCircleInside : function(circle){ // returns true is circle is inside this circle
+        isCircleInside(circle){ // returns true is circle is inside this circle
             return (Math.hypot(this.center.x - circle.center.x,this.center.y - circle.center.y)-this.radius + circle.radius < 0);
         },
-        isLineInside : function(line){ // returns true is the line segment line is inside the circle
+        isLineInside(line){ // returns true is the line segment line is inside the circle
             // using the ? is a little quicker then returning the contional result as ? will return if the first point fails while the conditional method always does both tests
             return (
                 Math.hypot(this.center.x - line.p1.x,this.center.y - line.p1.y) < this.radius &&
                 Math.hypot(this.center.x - line.p2.x,this.center.y - line.p2.y) < this.radius ) ? true : false;
             
         },
-        isVecInside : function(vec){
+        isVecInside(vec){
             return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y) < this.radius;
         },        
-        isPointInside : function(vec){
+        isPointInside(vec){
             return  Math.hypot(this.center.x - vec.x,this.center.y - vec.y) < this.radius;
         },
-        unitAlong : function ( unitDist , rVec){ // returns a Vec unitDist around the circle. 1 unit is 360 starting from 0 deg
+        unitAlong( unitDist , rVec){ // returns a Vec unitDist around the circle. 1 unit is 360 starting from 0 deg
             var c = MPI2 * unitDist;
             if(rVec === undefined){
                 return new Vec(
@@ -4693,13 +4768,13 @@ groover.geom = (function (){
             rVec.y = this.center.y +  Math.sin(c) * this.radius;
             return rVec;
         },
-        unitDistOfClosestPoint : function(vec) { // returns the unit distance on the perimeter for the point closest to ve
+        unitDistOfClosestPoint(vec) { // returns the unit distance on the perimeter for the point closest to ve
             return direction(vec.x - this.center.x, vec.y - this.center.y) / MPI2;
         },
-        distFrom : function(vec){ // returns the distance from the circle circumference to the point vec
+        distFrom(vec){ // returns the distance from the circle circumference to the point vec
             return  Math.abs(Math.hypot(this.center.x - vec.x,this.center.y - vec.y) - this.radius);
         },
-        fitToCircles : function(circle1, circle2, rule){ // fits this circle so that it touches circle1 and circle2 using the rules in rule
+        fitToCircles(circle1, circle2, rule){ // fits this circle so that it touches circle1 and circle2 using the rules in rule
             // rule = "left"  will fit this circle to the left of the line from circle1 to circle 2
             // rule = "limit" will limit the circle to not cross the line between circle1 and circle 2
             // rule = "grow" if included will grow the radius of to fit if needed
@@ -4761,13 +4836,13 @@ groover.geom = (function (){
             this.center.y = circle1.center.y + v3.y;
             return this;
         },
-        closestPoint : function(vec,retVec){  // legacy calls closestPointToVec
+        closestPoint(vec,retVec){  // legacy calls closestPointToVec
             return this.closestPointToVec(vec,retVec);
         },
-        closestPointToLine : function(line,retVec){ // only valid if the line is not touching the circle
+        closestPointToLine(line,retVec){ // only valid if the line is not touching the circle
             return this.closestPointToVec(line.closestPoint(this.center,va),retVec);
         },
-        closestPointToVec : function(vec,retVec){ // returns the closest point on the circle to the point vec
+        closestPointToVec(vec,retVec){ // returns the closest point on the circle to the point vec
             v1.x = vec.x - this.center.x;
             v1.y = vec.y - this.center.y;
             var u = this.radius / Math.hypot(v1.x,v1.y);
@@ -4778,7 +4853,7 @@ groover.geom = (function (){
             retVec.y = this.center.y + (v1.y *= u);
             return  retVec;
         },
-        clipLine : function(line,retLine){ // returns a new line that is clipped to inside the circle.
+        clipLine(line,retLine){ // returns a new line that is clipped to inside the circle.
             // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
             // If no intercepts are found then an empty line is returned. Use Line.isEmpty to determin if a line is empty
             // If one or more intercepts are found then the line is returned in the same direction as the input line.
@@ -4846,9 +4921,9 @@ groover.geom = (function (){
             
         
         },
-        interceptLineSeg : function(line, retLine){ // Finds if they exist the intercepts of a line segment and this circle
+        interceptLineSeg(line, retLine){ // Finds if they exist the intercepts of a line segment and this circle
             // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
-            // If no intercepts are found then an empty line is returned. Use Line.isEmpty to determin if a line is empty
+            // If no intercepts are found then an empty line is returned. Use Line.isEmpty to determine if a line is empty
             // If one or more intercepts are found then the line is returned in the same direction as the input line.
             // The returned line may have zero length 
             
@@ -4877,7 +4952,7 @@ groover.geom = (function (){
             }else{
                 v3.x = (b - d) / c;
                 v3.y = (b + d) / c;
-                // Add second point first incase the line being set is the same line pased as first argument
+                // Add second point first incase the line being set is the same line passed as first argument
                 if(v3.y <= 1 && v3.y >= 0){  
                     retLine.p2.x = line.p1.x + v1.x * v3.y;
                     retLine.p2.y = line.p1.y + v1.y * v3.y;
@@ -4894,7 +4969,7 @@ groover.geom = (function (){
             }
             return retLine.empty();
         },
-        interceptLine : function(line, retLine){// find the points if any where this circle intercepts the line
+        interceptLine(line, retLine){// find the points if any where this circle intercepts the line
             // returns a line. If retLine is given then that line is set with the result and returned. If retLine is not given then a new Line is created.
             // If no intercepts are found then an empty line is returned. Use Line.isEmpty to determin if a line is empty
             // If intercepts are found then the line is returned in the same direction as the input line.
@@ -4926,7 +5001,7 @@ groover.geom = (function (){
             }
             return retLine.empty();
         },
-        interceptLineSelect : function(line,which,limit, retVec){// find a point if any where the line intercets the circle. which indicates which point, limit tells what to do when intercept is outside the line seg
+        interceptLineSelect(line,which,limit, retVec){// find a point if any where the line intercepts the circle. which indicates which point, limit tells what to do when intercept is outside the line seg
             // which === 0 [defualt] means the closest point from the start (for limit 0,1) and end (for limit -1)
             // which === 1 means the furerest point from the line start  (for limit 0,1) and end (for limit -1)
             // limit === 0 [defualt] means only points on the line segment
@@ -5044,7 +5119,7 @@ groover.geom = (function (){
             }
             return retVec.empty();
         },
-        intercept : function(circle){ // find the points if any where this circle and circle intercept
+        intercept(circle){ // find the points if any where this circle and circle intercept
             var va = new VecArray();
             var l = circle.center.copy().sub(this.center);
             var d = l.leng();
@@ -5063,7 +5138,7 @@ groover.geom = (function (){
 
             return va
         },
-        tangentLineAtVec : function(vec,retLine ){
+        tangentLineAtVec(vec,retLine ){
             this.closestPointToVec(vec,va);
             if(retLine === undefined){
                 return new Line(va.copy(),new Vec(va.x - v1.y,va.y + v1.x));                
@@ -5074,7 +5149,7 @@ groover.geom = (function (){
             retLine.p2.y = va.y + v1.x;
             return retLine;
         },
-        tangentAtAngle : function(angle,retLine){
+        tangentAtAngle(angle,retLine){
             c = this.start;
             if(retLine === undefined){
                 retLine = new Line();
@@ -5085,22 +5160,71 @@ groover.geom = (function (){
             retLine.p2.y = retLine.p1.y + Math.cos(angle) * this.radius;
             return retLine;
         },            
-        angleOfPoint : function(p){
-            return p.copy().sub(this.center).dir();
+        angleOfPoint(p){
+			v1.x = p.x - this.center.x;
+			v1.y = p.y - this.center.y;
+			return Math.atan2(v1.y,v1.x);
         },
-        tangentsPointsForPoint : function(vec){  // finds where on the circle the tangents are for the point vec. Invalid if point is inside the circle
+        tangentsPointsForPoint(vec){  // finds where on the circle the tangents are for the point vec. Invalid if point is inside the circle
             var va = new VecArray();
             var d = this.center.distFrom(vec);
-            if(d <= this.radius){  // point is inside so no tangents exist
-                return va;  
-            }
+            if(d <= this.radius){  return va }   // point is inside so no tangents exist
             var a = Math.acos(this.radius / d);
             var a1 = this.center.angleTo(vec);
             return va
                 .push(new Vec(undefined,a1-a).mult(this.radius).add(this.center))
                 .push(new Vec(undefined,a1+a).mult(this.radius).add(this.center))
         },
-        reflectLine : function(line){ // WTF sorry will fix in time
+		getTangentsToCircle(circle,retLineR,retLineL){ // sets the lines {retLineR} and {retLineL} to the tangent lines joining this circle to {circle}. Will only set {retLineR} or {retLineL} if given
+			v1.x = circle.center.x - this.center.x; 
+			v1.y = circle.center.y - this.center.y; 
+			u = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+			a = Infinity; // flags no result
+			if(u < Math.max(circle.radius,this.radius) - Math.min(circle.radius,this.radius)) { return this }
+			u1 = this.radius - circle.radius;
+			a = Math.asin(u1/u);
+			a1 = Math.atan2(v1.y,v1.x); // direction to circle
+			b = a1-(Math.PI / 2) + a;  // direction to tangent point left
+			c = a1+(Math.PI / 2) - a;  // direction to tangent point right
+			if(retLineR){
+				v2.x = Math.cos(c);
+				v2.y = Math.sin(c);
+				retLineR.p1.x = this.center.x + v2.x * this.radius;
+				retLineR.p1.y = this.center.y + v2.y * this.radius;
+				retLineR.p2.x = circle.center.x + v2.x * circle.radius;
+				retLineR.p2.y = circle.center.y + v2.y * circle.radius;
+			}
+			if(retLineL){
+				v3.x = Math.cos(b);
+				v3.y = Math.sin(b);
+				retLineL.p1.x = circle.center.x + v3.x * circle.radius;
+				retLineL.p1.y = circle.center.y + v3.y * circle.radius;
+				retLineL.p2.x = this.center.x + v3.x * this.radius;
+				retLineL.p2.y = this.center.y + v3.y * this.radius;
+			}
+			return this;
+		},
+		fitCircleToLine(circle,line,left = true){  // {circle} is moved to fit the corner made by the intercept of the {line} and this circle if possible. if left === true then circle is fitted to the left else to the right.
+			a = line.distFromPointDir(this.center); // Uses registers from this call v1 is line as vec, v3 is point on line closest to circle center line._leng is length of line
+			b = this.radius + circle.radius;
+			if(left){
+				c = circle.radius - a;
+				a1 = Math.sqrt(b * b - c * c);
+				v1.x /= line._leng;
+				v1.y /= line._leng;
+				circle.center.x = v3.x + a1 * v1.x - circle.radius * v1.y;				
+				circle.center.y = v3.y + a1 * v1.y + circle.radius * v1.x;
+			}else{
+				c = a + circle.radius;
+				a1 = Math.sqrt(b * b - c * c);
+				v1.x /= line._leng;
+				v1.y /= line._leng;
+				circle.center.x = v3.x + a1 * v1.x + circle.radius * v1.y;				
+				circle.center.y = v3.y + a1 * v1.y - circle.radius * v1.x;
+			}
+			return this;
+		},
+        reflectLine(line){ // WTF sorry will fix in time
             var va = new VecArray();
             var pa = this.interceptLine(line);
             if(pa.vecs.length > 0){
@@ -5112,18 +5236,7 @@ groover.geom = (function (){
             }
             return va;
         },
-        /*refractLine : function(line,n1,n2){
-            var p = this.lineIntercept(line);
-            if(p.length > 0){
-                return [
-                    this.tangentAtPoint(p[0]).refractLine(line,n1,n2),
-                    this.tangentAtPoint(p[1]).refractLine(line,n1,n2)
-                ]
-                
-            }
-            return [];
-        },*/
-        fitCornerConstrain : function(line1,line2,cornerUnknown,constraint,data){ // fits the corner with constraints
+        fitCornerConstrain(line1,line2,cornerUnknown,constraint,data){ // fits the corner with constraints
             // set this.fitCorner for details
             // constraint is optional and of not defined returns the same as fitCorner
             // constraint is a command string, 
@@ -5187,7 +5300,7 @@ groover.geom = (function (){
             return this;
             
         },
-        fitCorner : function(line1,line2,cornerUnknown){ // fits this circle, keeping its radius to the corner made by the two lines where the end of l1 is the start of line2
+        fitCorner(line1,line2,cornerUnknown){ // fits this circle, keeping its radius to the corner made by the two lines where the end of l1 is the start of line2
                                             // it is made to fit so that the lines become tagents at the ponits of contact
                                             // The optional argument. cornerUnknown if set true means that it is unknown which point is the corner
                                             // thus this function will find it for you. If cornerUnknown and no points are within EPSILON to each other then this can not resolve the problem and will return this as an empty circle;
@@ -5282,18 +5395,18 @@ groover.geom = (function (){
             this.center.y = v3.y + v2.y * c1 + v2.x * a;
             return this;
         },    
-        scale : function(scale){
+        scale(scale){
             this.radius * scale;
             return this; // returns this
         },
-        translate : function(vec){
+        translate(vec){
             this.center.translate(vec);
             return this; // returns this
         },
-        rotate : function(rotation){
+        rotate(rotation){
             return this; // returns this
         },
-        transform : function(transform){
+        transform(transform){
             return this; // returns this
         },         
     }
@@ -5303,24 +5416,24 @@ groover.geom = (function (){
         type : "Line",      
         _leng : null,
         _dir : null,        
-        copy : function(){
+        copy(){
             return new Line(this.p1.copy(),this.p2.copy());
         },
-        setAs : function(line){
+        setAs(line){
             this.p1.x = line.p1.x;
             this.p1.y = line.p1.y;
             this.p2.x = line.p2.x;
             this.p2.y = line.p2.y;
             return this;
         },
-        setEnds : function(vec1, vec2){
+        setEnds(vec1, vec2){
             this.p1.x = vec1.x;
             this.p1.y = vec1.y;
             this.p2.x = vec2.x;
             this.p2.y = vec2.y;
             return this;
         },
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
@@ -5329,7 +5442,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        /*getAllIdsAsArray : function(array){
+        /*getAllIdsAsArray(array){
             if(array === undefined){
                 array = [];
             }
@@ -5344,7 +5457,7 @@ groover.geom = (function (){
             }
             return array;
         },*/
-        asSimple : function(obj){ // returns the vec as a simple object x1,y1,x2,y2 are ends, length and direction
+        asSimple(obj){ // returns the vec as a simple object x1,y1,x2,y2 are ends, length and direction
             if(obj === undefined){
                 obj = {};
             }
@@ -5354,14 +5467,14 @@ groover.geom = (function (){
             obj.y2 = this.p2.y;
             return obj;
         },    
-        fromSimple : function(obj){
+        fromSimple(obj){
             this.p1.x = obj.x1 === undefined ? 0 : obj.x1;
             this.p1.y = obj.y1 === undefined ? 0 : obj.y1;
             this.p2.x = obj.x2 === undefined ? 1 : obj.x2;
             this.p2.y = obj.y2 === undefined ? 0 : obj.y2;
             return this;
         },        
-        isEmpty : function(){ // line is empty if either points are undefined or the length is 0 or any point has Infinity or any point has NaN
+        isEmpty(){ // line is empty if either points are undefined or the length is 0 or any point has Infinity or any point has NaN
             var t;
             if(this.p1 === undefined ||  this.p2 === undefined || 
                     this.p1.x === undefined || this.p1.y === undefined || this.p2.x === undefined || this.p2.y === undefined ||
@@ -5372,18 +5485,18 @@ groover.geom = (function (){
             }
             return false;
         },
-        empty : function (){
+        empty(){
             this.p1.x = this.p1.y = this.p2.x = this.p2.y = Infinity;
             return this;
         },
-        isZero : function(){ // returns true if the line has no length
+        isZero(){ // returns true if the line has no length
             if(this.p1.x === this.p2.x && this.p1.y === this.p2.y){
                 return true;
             } 
             return false;
         },
-        toString : function (precision){
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+        toString(precision){
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";
             var id = this.id === undefined ? "": "'"+this.id+"' ";
             if(this.isEmpty()){
                 return "Line: '"+l+"' id : "+id+" ( Empty )";
@@ -5393,7 +5506,7 @@ groover.geom = (function (){
             }
             return "Line: '"+l+"' id : "+id+" ( "+this.p1.toString(precision)+", "+this.p2.toString(precision)+" )";
         },
-        getHash : function(){ // returns a unquie hash value for the lines current state
+        getHash(){ // returns a unquie hash value for the lines current state
             var hash = 0;
             if(!isNaN(this.id)){
                 hash += this.id;
@@ -5402,7 +5515,7 @@ groover.geom = (function (){
             hash += this.p2.getHash();
             return Math.round(hash  % 0xFFFFFFFF);
         },
-        replace : function(id, prim){  // replaces vec with id == id with the supplied vec
+        replace(id, prim){  // replaces vec with id == id with the supplied vec
             if(id !== undefined){
                 if(prim !== undefined && prim.type === "Vec"){
                     if(this.p1.id === id){
@@ -5415,23 +5528,23 @@ groover.geom = (function (){
             }
             return this;
         },
-        swap : function(){
+        swap(){
             u1 = this.p1;
             this.p1 = this.p2;
             this.p2 = u1;
             return this;  // returns this
         },
-        reverse : function(){ // changes the direction of the line by swapping the end points
+        reverse(){ // changes the direction of the line by swapping the end points
             return this.swap(); // returns this.
         },
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
             this.p1.x = (dest.p1.x - from.p1.x) * amount + from.p1.x;
             this.p1.y = (dest.p1.y - from.p1.y) * amount + from.p1.y;
             this.p2.x = (dest.p2.x - from.p2.x) * amount + from.p2.x;
             this.p2.y = (dest.p2.y - from.p2.y) * amount + from.p2.y;
             return this;
         },
-        asVec : function(vec){  // creates a new vec or uses the supplied ref vec to return the vector representation of line
+        asVec(vec){  // creates a new vec or uses the supplied ref vec to return the vector representation of line
             if(vec === undefined){
                 return new Vec(this.p1,this.p2);
             }
@@ -5439,7 +5552,7 @@ groover.geom = (function (){
             vec.y = this.p2.y - this.p1.y;
             return vec;
         },
-        asVecArray : function(vecArray, instance){
+        asVecArray(vecArray, instance){
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -5450,7 +5563,7 @@ groover.geom = (function (){
             vecArray.push(this.p1.copy()).push(this.p2.copy());
             return vecArray;
         },  
-        asBox : function(box){
+        asBox(box){
             if(box === undefined){
                 var box = new Box();
             }
@@ -5458,7 +5571,7 @@ groover.geom = (function (){
             box.env ( this.p2.x, this.p2.y);
             return box;
         },
-        asCircle : function(circle){ // creates a circle the bounds this line/ {ocircle) if supplied is set to the circle else a new circle is created
+        asCircle(circle){ // creates a circle the bounds this line/ {ocircle) if supplied is set to the circle else a new circle is created
             if(circle === undefined){
                 circle = new Circle();
             }
@@ -5467,7 +5580,7 @@ groover.geom = (function (){
             circle.radius = Math.hypot(this.p2.x - this.p1.x, this.p2.y - this.p1.y) / 2;
             return circle;            
         },
-        asRectangle : function(height,rect){ // creates a rectangle with the center aligned to this line and width equal to the length of this line and the aspect set to give the requested height
+        asRectangle(height,rect){ // creates a rectangle with the center aligned to this line and width equal to the length of this line and the aspect set to give the requested height
             if(rect === undefined){
                 rect = new Rectangle();
             }
@@ -5484,13 +5597,13 @@ groover.geom = (function (){
             return rect;           
 
         },
-        isVecLeft : function(vec){ // Is the {avec} to the left of this line.Left is left of screen when looking at it and the line moves down.
+        isVecLeft(vec){ // Is the {avec} to the left of this line.Left is left of screen when looking at it and the line moves down.
             if((this.p2.x - this.p1.x) * (vec.y - this.p1.y) - (this.p2.y - this.p1.y) * (vec.x - this.p1.x) <= 0){
                 return true;
             }
             return false;
         },
-        isLineLeft : function(line){ // Is the {aline} to the left of this line.  Left is left of screen when looking at it and the line moves down.
+        isLineLeft(line){ // Is the {aline} to the left of this line.  Left is left of screen when looking at it and the line moves down.
             v1.x = this.p2.x - (vx = this.p1.x);
             v1.y = this.p2.y - (vy = this.p1.y);
             v2.x = line.p1.x - vx;
@@ -5504,7 +5617,7 @@ groover.geom = (function (){
             }
             return false; // returns boolean 
         },
-        isCircleLeft : function(circle){ // is the circle {acircle} left of this line. Left is left of screen when line moves from top to bottom
+        isCircleLeft(circle){ // is the circle {acircle} left of this line. Left is left of screen when line moves from top to bottom
             if(this.isVecLeft(circle.center)){
                 if(this.distFrom(circle.center) > circle.radius){
                     return true;
@@ -5512,7 +5625,7 @@ groover.geom = (function (){
             }
             return false; // returns boolean 
         },
-        isVecWithinSeg : function(vec){ // returns true if the vec is within the line segment.
+        isVecWithinSeg(vec){ // returns true if the vec is within the line segment.
             a = Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
             b = Math.hypot(vec.y - this.p1.y, vec.x - this.p1.x);
             c = Math.hypot(vec.y - this.p2.y, vec.x - this.p2.x);
@@ -5521,7 +5634,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        isVecOnSeg : function(vec, threshold){ // returns true if the vec is within the line segment. [threshold] is optional if not given then geom EPSILON is used
+        isVecOnSeg(vec, threshold){ // returns true if the vec is within the line segment. [threshold] is optional if not given then geom EPSILON is used
             if(threshold === undefined){
                 threshold = EPSILON;
             }
@@ -5533,7 +5646,7 @@ groover.geom = (function (){
             }
             return false;
         },        
-        isLineOnLine : function(line,threshold){ // returns true if the line is on this line
+        isLineOnLine(line,threshold){ // returns true if the line is on this line
             if(threshold === undefined){
                 threshold = EPSILON;
             }
@@ -5557,7 +5670,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        isLineParallelToLine : function(line,threshold){ // returns true if the line is parallel to this line
+        isLineParallelToLine(line,threshold){ // returns true if the line is parallel to this line
             if(threshold === undefined){
                 threshold = EPSILON;
             }
@@ -5573,7 +5686,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        isLineOnSeg : function(line,threshold){ // returns true if the line starts or ends on this line seg and is parallel to this line seg
+        isLineOnSeg(line,threshold){ // returns true if the line starts or ends on this line seg and is parallel to this line seg
             if(threshold === undefined){
                 threshold = EPSILON;
             }
@@ -5610,7 +5723,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        isLineInSeg : function(line,threshold){ // returns true if the line starts and ends on this line seg and is parallel to this line seg
+        isLineInSeg(line,threshold){ // returns true if the line starts and ends on this line seg and is parallel to this line seg
             if(threshold === undefined){
                 threshold = EPSILON;
             }
@@ -5641,16 +5754,16 @@ groover.geom = (function (){
             }
             return false;
         },        
-        leng : function(){
+        leng(){
             return Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
         },
-        leng2 : function(){ // length squared
+        leng2(){ // length squared
             return Math.pow(this.p2.x-this.p1.x,2) + Math.pow(this.p2.y-this.p1.y,2);
         },
-        dir : function(){ // returns direction in radians in the range -pi to pi
+        dir(){ // returns direction in radians in the range -pi to pi
             return Math.atan2(this.p2.y-this.p1.y,this.p2.x-this.p1.x);
         },
-        norm : function(rVec){ // returns the line normal (perpendicular to the line) as a vec
+        norm(rVec){ // returns the line normal (perpendicular to the line) as a vec
             if(rVec === undefined){
                 rVec = new Vec();
             }
@@ -5662,10 +5775,10 @@ groover.geom = (function (){
             return rVec;
             
         },
-        normDir : function(){ // returns the line normal as a direction in radians in the range -pi to pi
+        normDir(){ // returns the line normal as a direction in radians in the range -pi to pi
             return Math.atan2(-(this.p2.x - this.p1.x),(this.p2.y - this.p1.y)) ;
         },
-        extend : function(percentage){  // grows or shrinks the line towards or away from its center
+        extend(percentage){  // grows or shrinks the line towards or away from its center
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             var l = (Math.hypot(v1.x,v1.y) * 2) / percentage;
@@ -5677,7 +5790,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this; // returns this.
         },
-        setLeng : function(len){
+        setLeng(len){
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             var l = Math.hypot(v1.x,v1.y);
@@ -5685,7 +5798,7 @@ groover.geom = (function (){
             this.p2.y = this.p1.y + v1.y * len / l;
             return this; // returns this.
         },
-        setDir : function(num){
+        setDir(num){
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             var l = Math.hypot(v1.x,v1,y);
@@ -5695,27 +5808,27 @@ groover.geom = (function (){
             this.p2.y = this.p1.y + v1.y;
             return this; // returns this.
         },
-        cross : function(){
+        cross(){
             return this.p1.x * this.p2.y - this.p1.y * this.p2.x;            
         },
-        crossBack : function(){
+        crossBack(){
             return this.p2.x * this.p1.y - this.p2.y * this.p1.x;            
         },
-        mult : function(num){
+        mult(num){
             this.p1.x *= num;
             this.p1.y *= num;
             this.p2.x *= num;
             this.p2.y *= num;
             return this; // returns this.
         },
-        add : function(vec){
+        add(vec){
             this.p1.x += vec.x;
             this.p1.y += vec.y;
             this.p2.x += vec.x;
             this.p2.y += vec.y;
             return this; // returns this.
         },
-        midPoint : function(rVec){  // returns the vec as mid point of line
+        midPoint(rVec){  // returns the vec as mid point of line
             if(rVec === undefined){
                 return new Vec((this.p1.x + this.p2.x)/2,(this.p1.y + this.p2.y)/2);                
             }
@@ -5723,7 +5836,7 @@ groover.geom = (function (){
             rVec.y = (this.p1.y + this.p2.y)/2;
             return rVec;            
         },
-        unitAlong : function ( unitDist , rVec){ // returns a Vec unitDist (0 is start 1 is end) along the line 
+        unitAlong( unitDist , rVec){ // returns a Vec unitDist (0 is start 1 is end) along the line 
             if(rVec === undefined){
                 return new Vec(
                     (this.p2.x - this.p1.x) * unitDist + this.p1.x,
@@ -5734,7 +5847,7 @@ groover.geom = (function (){
             rVec.y = (this.p2.y - this.p1.y) * unitDist + this.p1.y;
             return rVec;
         },
-        distanceAlong : function ( dist, rVec) { // Depreciated Use distAlong
+        distanceAlong( dist, rVec) { // Depreciated Use distAlong
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             var l = dist / Math.hypot(v1.x,v1.y);
@@ -5748,7 +5861,7 @@ groover.geom = (function (){
             rVec.y = v1.y * l + this.p1.y;
             return rVec;
         },
-        distAlong : function ( dist, rVec) { // returns a Vec that is dist along the line 0 = start and line length is the end
+        distAlong( dist, rVec) { // returns a Vec that is dist along the line 0 = start and line length is the end
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             var l = dist / Math.hypot(v1.x,v1.y);
@@ -5762,16 +5875,28 @@ groover.geom = (function (){
             rVec.y = v1.y * l + this.p1.y;
             return rVec;
         },
-        angleBetween : function (line){        
+        angleBetween(line){     // returns angle between two lines in radians. To the right positive  0 to PI and to the left 0 to - PI. The angle is of the 2 vectors from p1 to p2 of each line. They do not have to be at the same location
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             v2.x = line.p2.x - line.p1.x;
             v2.y = line.p2.y - line.p1.y;
             a = Math.hypot(v1.x,v1.y);
             b = Math.hypot(v2.x,v2.y);
-            return Math.asin ((v1.x / a) * (v2.y / b) - (v1.y / a) * (v2.x / b));
+            v1.x /= a;
+            v1.y /= a;
+            v2.x /= b;
+            v2.y /= b;
+            c = Math.asin (v1.x * v2.y - v1.y * v2.x);
+            d = -v1.y * v2.y - v1.x * v2.x;
+            if(d > 0){
+                if(c > 0){
+                    return Math.PI - c;
+                }
+                return -Math.PI - c;
+            }
+            return c;
         },
-        angleFromNormal : function (line){       
+        angleFromNormal(line){       
             v1.x = -(this.p2.y - this.p1.y);
             v1.y = this.p2.x - this.p1.x;
             v2.x = line.p2.x - line.p1.x;
@@ -5781,7 +5906,7 @@ groover.geom = (function (){
             b = Math.hypot(v2.x,v2.y);
             return Math.asin ((v1.x / a) * (v2.y / b) - (v1.y / a) * (v2.x / b));
         },
-        setTransformToLine :function(ctx){            
+        setTransformToLine :function (ctx){            
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             this._leng = d = Math.hypot(v1.y,v1.x);
@@ -5790,7 +5915,7 @@ groover.geom = (function (){
             ctx.setTransform(v1.x, v1.y, -v1.y, v1.x, this.p1.x, this.p1.y)
             return this;  
         },
-        sliceOffEnd : function ( line ){
+        sliceOffEnd( line ){
             this.intercept(line,va);
             u = this.getUnitDistOfPoint(va);
             if(u > 0 && u < 1){
@@ -5802,7 +5927,7 @@ groover.geom = (function (){
             }
             return this;  // returns this.
         },
-        sliceOffStart : function ( line ){
+        sliceOffStart( line ){
             this.intercept(line,va);
             u = this.getUnitDistOfPoint(va);
             if(u > 0 && u < 1){
@@ -5814,7 +5939,7 @@ groover.geom = (function (){
             }
             return this; // returns this.
         },
-        sliceToPoints : function (p1,p2){
+        sliceToPoints(p1,p2){
             var pp1 = this.closestPoint(p1);
             var pp2 = this.closestPoint(p2);
             u = this.getUnitDistOfPoint(pp1);
@@ -5840,7 +5965,7 @@ groover.geom = (function (){
             return this; // returns this.
                 
         },
-        intercept : function(line,rVec){  // find the point of intercept between this line and line
+        intercept(line,rVec){  // find the point of intercept between this line and line
             // this function uses V1,V2,V3,V4.y where
             // v1 is the vector of this line
             // v2 is the vector of line
@@ -5867,7 +5992,7 @@ groover.geom = (function (){
             }
             return rVec;
         },
-        interceptSeg : function(line,rVec){ // find the point of intercept between this line segment  and line
+        interceptSeg(line,rVec){ // find the point of intercept between this line segment  and line
             // this function uses V1,V2,V3,V4.y where
             // v1 is the vector of this line, 
             // v2 is the vector of line
@@ -5898,7 +6023,7 @@ groover.geom = (function (){
             }
             return rVec;      
         },
-        interceptSegs : function(line,rVec){ // find the point of intercept between this line segment and and the line as a line segment
+        interceptSegs(line,rVec){ // find the point of intercept between this line segment and and the line as a line segment
             // this function uses V1,V2,V3,V4 where
             // v1 is the vector of this line
             // v2 is the vector of line
@@ -5935,7 +6060,7 @@ groover.geom = (function (){
             return rVec;
 
         },
-        isLineSegsIntercepting : function(line){ // Returns true if the line intercepts this line segment
+        isLineSegsIntercepting(line){ // Returns true if the line intercepts this line segment
             // this function uses V1,V2,V3,V4 where
             // v1 is the vector of this line
             // v2 is the vector of line
@@ -5966,7 +6091,7 @@ groover.geom = (function (){
             v4.x = undefined;
             return false;  
         },       
-        distFrom : function(point){   // returns the distance from the line segment a point is
+        distFrom(point){   // returns the distance from the line segment a point is
             // this function uses v1, v2, v3, u is the closest point and sets this._leng
             // v1 is the vector of this line
             // v2 is the vector from this line start to point
@@ -5988,7 +6113,7 @@ groover.geom = (function (){
                 Math.hypot(this.p1.x - point.x, this.p1.y - point.y)
             );
         },         
-        distFromPoint : function(point){   // returns the distance from the line a point is
+        distFromPoint(point){   // returns the distance from the line a point is
             // this function uses v1, v2, v3, u is the closest point and sets this._leng
             // v1 is the vector of this line
             // v2 is the vector from this line start to point
@@ -6005,14 +6130,21 @@ groover.geom = (function (){
             v3.y = this.p1.y + v1.y * u;
             return Math.hypot(v3.y - point.y, v3.x - point.x);
         },        
-        distFromDir : function(point){ // same as distFrom but adds a sign to indicate if the line is left (negative) or right (positive)
+        distFromDir(point){ // same as distFrom but adds a sign to indicate if the line is left (negative) or right (positive)
             // this call fromDist Refer to that function for calc vars used.
-            var d = this.distFrom(point);
+            d = this.distFrom(point);
             // WARNING this depends on vars set in distFrom
             c = v1.x * v2.y - v1.y * v2.x;
             return c < 0 ? -d : d;
         },
-        lineTo : function(p, rLine){  // returns the line from vec p to the closest point on the line
+        distFromPointDir(point){ // same as distFromPoiny but adds a sign to indicate if the line is left (negative) or right (positive)
+            // this call fromDist Refer to that function for calc vars used.
+            d = this.distFromPoint(point);
+            // WARNING this depends on vars set in distFrom
+            c = v1.x * v2.y - v1.y * v2.x;
+            return c < 0 ? -d : d;
+        },
+        lineTo(p, rLine){  // returns the line from vec p to the closest point on the line
             var l;
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
@@ -6035,7 +6167,7 @@ groover.geom = (function (){
             rLine.p2.y = v1.y * l + this.p1.y;
             return rLine;
         },
-        getDistOfPoint : function(vec){ // returns the distance of a point on the line from the start. If the point is not on the line then the distance is the distance with the line roated to align to the point.
+        getDistOfPoint(vec){ // returns the distance of a point on the line from the start. If the point is not on the line then the distance is the distance with the line roated to align to the point.
                                         // Use getDistOfPointSafe if the distance needs to be without the rotation. Ie the cosine(angle between point and line) * distance to point
             var l = Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
             var la = Math.hypot(vec.y - this.p1.y, vec.x - this.p1.x);
@@ -6045,7 +6177,7 @@ groover.geom = (function (){
             }
             return -la;
         },
-        getUnitDistOfPoint : function(vec){ // returns the unit distance of a point on the line from the start. If the point is not on the line then the distance is the distance with the line rotated to align to the point.
+        getUnitDistOfPoint(vec){ // returns the unit distance of a point on the line from the start. If the point is not on the line then the distance is the distance with the line rotated to align to the point.
                                         // Use getDistOfPointSafe if the distance needs to be without the rotation. Ie the cosine(angle between point and line) * distance to point
             var l = Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
             var la = Math.hypot(vec.y - this.p1.y, vec.x - this.p1.x) / l;
@@ -6055,7 +6187,7 @@ groover.geom = (function (){
             }
             return -la;
         },
-        getDistOfPointSafe : function(vec){ // returns the unit distance of a point on the line from the start. 
+        getDistOfPointSafe(vec){ // returns the unit distance of a point on the line from the start. 
             this.closestPoint(vec,v3);
             // WARNING uses results and optimisations vars from closestPoint
             var la = Math.hypot(v3.y - this.p1.y, v3.x - this.p1.x);
@@ -6065,7 +6197,7 @@ groover.geom = (function (){
             }
             return -la;
         },
-        getUnitDistOfPointSafe : function(vec){ // returns the unit distance of a point on the line from the start. 
+        getUnitDistOfPointSafe(vec){ // returns the unit distance of a point on the line from the start. 
             this.closestPoint(vec,v3);
             // WARNING uses results and optimisations vars from closestPoint
             var la = Math.hypot(v3.y - this.p1.y, v3.x - this.p1.x) / this._leng;
@@ -6075,14 +6207,14 @@ groover.geom = (function (){
             }
             return -la;
         },    
-        unitDistOfClosestPoint : function(vec){ // returns the unit distance of the closest point on the line from the point vec
+        unitDistOfClosestPoint(vec){ // returns the unit distance of the closest point on the line from the point vec
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             v2.x = vec.x - this.p1.x;
             v2.y = vec.y - this.p1.y;
             return (v2.x * v1.x + v2.y * v1.y) / (v1.y * v1.y + v1.x * v1.x);
         },
-        closestPoint : function(vec, rVec){ // returns the point on the line that is closest to the point vec
+        closestPoint(vec, rVec){ // returns the point on the line that is closest to the point vec
             var l;
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
@@ -6102,7 +6234,7 @@ groover.geom = (function (){
             return rVec;
 
         },
-        /*refractLine : function(line,n1,n2){ // error in logic. do not use
+        /*refractLine(line,n1,n2){ // error in logic. do not use
             n1 = 1.2
             var p1 = this.intercept(line);
             var l  = Math.hypot(line.p2.y-line.p1.y,line.p2.x-line.p1.x);
@@ -6111,13 +6243,13 @@ groover.geom = (function (){
             var a2 = Math.asin((n1 * a1)/n2);
             return new Line(p1,new Vec(null,a-MPI+a2).mult(l).add(p1));
         },*/
-        reflect : function(l){  // Depreciated use reflectAsVec
+        reflect(l){  // Depreciated use reflectAsVec
             this.asVec(v2);
             l.asVec(v1);
             var len = v1.dot(v2.norm())*2;
             return v2.mult(len).sub(v1)
         },
-        reflectAsVec : function(line,retVec){  // returns a vector... 
+        reflectAsVec(line,retVec){  // returns a vector... 
             if(retVec === undefined){
                 retVec = new Vec();
             }
@@ -6130,7 +6262,7 @@ groover.geom = (function (){
             retVec.y = v2.y * len - v1.y;
             return retVec;
         },
-        reflectLine : function(line, retLine){   // reflects line from this returning the new line. retLine if given is set to the reflected line
+        reflectLine(line, retLine){   // reflects line from this returning the new line. retLine if given is set to the reflected line
             if(retLine === undefined){
                 v5 = this.intercept(line,v5);
                 return new Line(v5.copy(),v5.copy().add(this.reflectAsVec(line,v4)));
@@ -6144,7 +6276,7 @@ groover.geom = (function (){
             retLine.p2.y = v5.y + v4.y;
             return retLine;
         },
-        getNormalAsLine : function(retLine){ // returns a unit line perpendicular and to the right from the midpoint
+        getNormalAsLine(retLine){ // returns a unit line perpendicular and to the right from the midpoint
             if(retLine === undefined){
                 retLine = new Line();
             }
@@ -6159,7 +6291,7 @@ groover.geom = (function (){
             retLine.p2.y += v1.x;
             return retLine;
         },
-        mirrorLine : function(line){
+        mirrorLine(line){
             var p1 = this.closestPoint(line.p1);
             var p2 = this.closestPoint(line.p2);
             
@@ -6169,7 +6301,7 @@ groover.geom = (function (){
             p2.y -=  (line.p2.y - p2.y);
             return new Line(p1,p2);
         },
-        setStartEndUnit : function(start,end){ // this function moves the end points to start and end keeping the direction. start and end are in unit lengths where 0 is the start and 1 is the end call this function with 0,1 makes not change 1,0 reverses the line
+        setStartEndUnit(start,end){ // this function moves the end points to start and end keeping the direction. start and end are in unit lengths where 0 is the start and 1 is the end call this function with 0,1 makes not change 1,0 reverses the line
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;        
             this.p2.x = this.p1.x + v1.x * end; 
@@ -6178,38 +6310,38 @@ groover.geom = (function (){
             this.p1.y += v1.y * start; 
             return this;
         },
-        centerOnStart : function(){ // moves the line back so that it is centered on its start
+        centerOnStart(){ // moves the line back so that it is centered on its start
             // this function uses Geom registers v1
             // v1 is the vector of this line          
             this.p2.x = (this.p1.x += (v1.x = this.p2.x - this.p1.x)/2) + v1.x;
             this.p2.y = (this.p1.x += (v1.y = this.p2.y - this.p1.y)/2) + v1.y;
             return this; // returns this.
         },
-        centerOnEnd : function(){ // moves the line forward so that it is centered where its end is now
+        centerOnEnd(){ // moves the line forward so that it is centered where its end is now
             // this function uses Geom registers v1
             // v1 is the vector of this line  
             this.p1.x = (this.p2.x += (v1.x = this.p1.x - this.p2.x)/2) + v1.x;
             this.p1.y = (this.p2.x += (v1.y = this.p1.y - this.p2.y)/2) + v1.y;
             return this; // returns this.
         },
-        centerOnVec : function(vec){ // moves the line  so that it is centered on vec
+        centerOnVec(vec){ // moves the line  so that it is centered on vec
             // this function uses Geom registers v1
             // v1 is the vector of this line  
             this.p1.x = (this.p2.x = vec.x + (v1.x = this.p1.x - this.p2.x)/2) - v1.x;
             this.p1.y = (this.p2.x = vec.y + (v1.y = this.p1.y - this.p2.y)/2) - v1.y;
             return this; // returns this.
         },
-        rotate180OnStart : function(){
+        rotate180OnStart(){
             this.p2.x = this.p1.x - (this.p2.x - this.p1.x);
             this.p2.y = this.p1.y - (this.p2.y - this.p1.y);
             return this;            
         },
-        rotate180OnEnd : function(){
+        rotate180OnEnd(){
             this.p1.x = this.p2.x + (this.p2.x - this.p1.x);
             this.p1.y = this.p2.y + (this.p2.y - this.p1.y);
             return this;            
         },
-        rotate90OnCenter : function(){ // rotates 90 deg clockwise on the center
+        rotate90OnCenter(){ // rotates 90 deg clockwise on the center
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             v2.x = this.p1.x + v1.x / 2;
@@ -6218,20 +6350,20 @@ groover.geom = (function (){
             this.p2.y = (this.p1.y = v2.y - v1.x / 2) + v1.x;
             return this;            
         },
-        rotate90OnStart : function(){ // rotates 90 deg clockwise on its start point
+        rotate90OnStart(){ // rotates 90 deg clockwise on its start point
             v1.x = this.p2.x - this.p1.x;
             this.p2.x = this.p1.x - (this.p2.y - this.p1.y);
             this.p2.y = this.p1.y + v1.x;
             return this;                        
         },
-        rotate90OnEnd : function(){ // rotates 90 deg clockwise on its end point
+        rotate90OnEnd(){ // rotates 90 deg clockwise on its end point
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             this.p1.x = this.p2.x + v1.y;
             this.p1.y = this.p2.y - v1.x;
             return this;                        
         },
-        rotate90OnUnit : function(unit){ // rotates 90 deg clockwise on the unit dist from start
+        rotate90OnUnit(unit){ // rotates 90 deg clockwise on the unit dist from start
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             v2.x = this.p1.x + v1.x * unit;
@@ -6240,7 +6372,7 @@ groover.geom = (function (){
             this.p2.y = (this.p1.y = v2.y - v1.x * unit) + v1.x;
             return this;            
         },        
-        rotateOnStart : function(rotation){  // rotates line around start
+        rotateOnStart(rotation){  // rotates line around start
             v2.x = Math.cos(rotation);
             v2.y = Math.sin(rotation);
             v1.x = this.p2.x - this.p1.x;
@@ -6249,7 +6381,7 @@ groover.geom = (function (){
             this.p2.y = this.p1.y + v1.x * v2.y + v1.y * v2.x;
             return this;
         },
-        rotateOnEnd : function(rotation){  // rotates lines around end
+        rotateOnEnd(rotation){  // rotates lines around end
             v2.x = Math.cos(rotation);
             v2.y = Math.sin(rotation);
             v1.x = this.p2.x - this.p1.x;
@@ -6258,7 +6390,7 @@ groover.geom = (function (){
             this.p1.y = this.p2.y - v1.x * v2.y + v1.y * v2.x;
             return this;
         },
-        rotateOnCenter : function(rotation){ // rotates line around center
+        rotateOnCenter(rotation){ // rotates line around center
             v2.x = Math.cos(rotation) * 0.5;
             v2.y = Math.sin(rotation) * 0.5;
             v3.x = (this.p2.x + this.p1.x) * 0.5;
@@ -6271,7 +6403,7 @@ groover.geom = (function (){
             this.p2.y = v3.y + v1.x * v2.y + v1.y * v2.x;
             return this;
         },
-        rotateOnUnit : function(rotation,unit){ // rotates line around unit dist from start point
+        rotateOnUnit(rotation,unit){ // rotates line around unit dist from start point
             v4.x = (v2.x = Math.cos(rotation)) * unit;
             v4.y = (v2.y = Math.sin(rotation)) * unit;
             v1.x = this.p2.x - this.p1.x;
@@ -6286,7 +6418,7 @@ groover.geom = (function (){
             this.p2.y = v3.y + v1.x * v2.y + v1.y * v2.x;
             return this;
         },
-        rotateOnDist : function(rotation,dist){ // rotates line around dist from start point
+        rotateOnDist(rotation,dist){ // rotates line around dist from start point
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
             d = dist / Math.sqrt(v1.x * v1.x + v1.y * v1.y);
@@ -6302,7 +6434,7 @@ groover.geom = (function (){
             this.p2.y = v3.y + v1.x * v2.y + v1.y * v2.x;
             return this;
         },        
-        slide : function(distance){ // moves the line segment backwards (- distance) or forward (+distance)        
+        slide(distance){ // moves the line segment backwards (- distance) or forward (+distance)        
             // this function uses Geom registers v1
             // v1 is the vector of the distance moved;
             if(distance === 0){ // to avoid infinite move
@@ -6318,7 +6450,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this;
         },
-        slideUnit : function(unitDistance){ // moves the line segment a unit distance backwards (- distance) or forward (+distance). The unit is the lines length, thus to move the line half its length forward pass a value of 0.5
+        slideUnit(unitDistance){ // moves the line segment a unit distance backwards (- distance) or forward (+distance). The unit is the lines length, thus to move the line half its length forward pass a value of 0.5
             // this function uses Geom registers v1
             // v1 is the vector of the distance moved;
             v1.x = (this.p2.x - this.p1.x) * unitDistance;
@@ -6329,7 +6461,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this;
         },
-        offset : function( distance ){ // moves the line along its normal (to the lines right) by distance
+        offset( distance ){ // moves the line along its normal (to the lines right) by distance
             // this function uses Geom registers v1, v2
             // v1 is the vector of the distance moved;
             // v2.x is scaled normal distance to move
@@ -6346,7 +6478,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this;
         },
-        offsetUnit : function( unitDistance ){ // moves the line along its normal (to the lines right) by unitDistance. A unit is the length of the line
+        offsetUnit( unitDistance ){ // moves the line along its normal (to the lines right) by unitDistance. A unit is the length of the line
             // this function uses Geom registers v1
             // v1 is the vector of the distance moved;
             v1.y = (this.p2.x - this.p1.x) * unitDist;
@@ -6357,7 +6489,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this;
         },
-        midLine : function(l1){ // this is bad must find a better way
+        midLine(l1){ // this is bad must find a better way
             var len;
             var p = this.intercept(l1);
             var v1 = l1.asVec().setLeng(len = this.leng());
@@ -6369,21 +6501,21 @@ groover.geom = (function (){
             return new Line(p, p.copy().add(v3.sub(p).setLeng(len)));
             
         },
-        scale : function(scale){
+        scale(scale){
             this.p1.x *= scale;
             this.p1.y *= scale;
             this.p2.x *= scale;
             this.p2.y *= scale;
             return this; // returns this
         },
-        translate : function(vec){
+        translate(vec){
             this.p1.x += vec.x;
             this.p1.y += vec.y;
             this.p2.x += vec.x;
             this.p2.y += vec.y;
             return this; // returns this
         },
-        rotate : function(rotation){ // rotate line around origin
+        rotate(rotation){ // rotate line around origin
             v1.x = Math.cos(rotation);
             v1.y = Math.sin(rotation);
             v2.x = this.p1.x;
@@ -6396,7 +6528,7 @@ groover.geom = (function (){
             this.p2.y = v2.x * v1.y + v2.y * v1.x;
             return this; // returns this
         },
-        transform : function(transform){
+        transform(transform){
             return this; // returns this
         },
     }
@@ -6406,15 +6538,15 @@ groover.geom = (function (){
         type : "Rectangle",
         _width : 0,
         _height : 0,
-        copy : function () {
+        copy() {
             return new Rectangle(this.top.copy(),this.aspect);
         },
-        setAs : function(rectange){
+        setAs(rectange){
             this.top.setAs(rectange.top);
             this.aspect = rectange.aspect;
             return this; // returns this.
         },
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
@@ -6423,15 +6555,15 @@ groover.geom = (function (){
             }
             return false;
         },
-        isEmpty : function(){
+        isEmpty(){
             if(this.aspect <= 0 || this.aspect === Infinity || this.aspect === -Infinity || isNaN(this.aspect) || this.top === undefined || this.top.isEmpty()){
                 return true;
             }
             return false;
         },
-        toString : function(precision){
+        toString(precision){
             var str;
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";
             if(this.isEmpty()){
                 return "Rectangle : "+l+"( Empty )";
             }
@@ -6444,11 +6576,11 @@ groover.geom = (function (){
             str += ")";
             return str; // returns String
         },        
-        empty : function(){
+        empty(){
             this.aspect = Infinity;
             return this;
         },
-        replace : function(id, prim){  // replaces vec with id == id with the supplied vec
+        replace(id, prim){  // replaces vec with id == id with the supplied vec
             if(id !== undefined){
                 if(prim !== undefined){
                     if(prim.type === "Vec"){
@@ -6468,13 +6600,13 @@ groover.geom = (function (){
             }
             return this;
         },
-        width : function (){
+        width(){
             return  Math.hypot(this.top.p2.y - this.top.p1.y, this.top.p2.x - this.top.p1.x);
         },
-        height : function () {
+        height() {
             return Math.hypot(this.top.p2.y-this.top.p1.y,this.top.p2.x-this.top.p1.x) * this.aspect;
         },
-        setWidth : function (num){
+        setWidth(num){
             v1.x = this.top.p2.x - this.top.p1.x;
             v1.y = this.top.p2.y - this.top.p1.y;
             var l = Math.hypot(v1.x,v1,y);
@@ -6483,7 +6615,7 @@ groover.geom = (function (){
             this.aspect = (l * this.aspect) / num;
             return this;
         },
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
             this.top.p1.x = (dest.top.p1.x-from.top.p1.x) * amount + from.top.p1.x;
             this.top.p1.y = (dest.top.p1.y-from.top.p1.y) * amount + from.top.p1.y;
             this.top.p2.x = (dest.top.p2.x-from.top.p2.x) * amount + from.top.p2.x;
@@ -6491,11 +6623,11 @@ groover.geom = (function (){
             this.aspect = (dest.aspect - from.aspect) * amount + from.aspect;
             return this;            
         },
-        setHeight : function (num){
+        setHeight(num){
             this.aspect = num / Math.hypot(this.top.p2.y-this.top.p1.y,this.top.p2.x-this.top.p1.x)
             return this;
         },
-        topLine : function(line){
+        topLine(line){
             if(line === undefined){
                 return this.top.copy();
             }
@@ -6505,7 +6637,7 @@ groover.geom = (function (){
             line.p2.y = this.top.p2.y;
             return line;
         },
-        leftLine : function(line){
+        leftLine(line){
             if(line === undefined){
                 line = new Line();
             }
@@ -6515,7 +6647,7 @@ groover.geom = (function (){
             line.p1.y = line.p2.y + (this.top.p2.x - this.top.p1.x) * this.aspect;
             return line;
         },
-        rightLine : function(line){
+        rightLine(line){
             if(line === undefined){
                 line = new Line();
             }
@@ -6525,7 +6657,7 @@ groover.geom = (function (){
             line.p2.y = line.p1.y + (this.top.p2.x - this.top.p1.x) * this.aspect;
             return line;
         },
-        bottomLine : function(line){
+        bottomLine(line){
             if(line === undefined){
                 line = new Line();
             }
@@ -6535,7 +6667,7 @@ groover.geom = (function (){
             line.p2.y = line.p1.y - v1.y;            
             return line;
         },
-        heightVec : function(vec){ // returns the vector from top to bottom. If vec is undefined a new vec is created else the supplied vec is used
+        heightVec(vec){ // returns the vector from top to bottom. If vec is undefined a new vec is created else the supplied vec is used
             if(vec === undefined){
                 vec = new Vec();
             }
@@ -6543,7 +6675,7 @@ groover.geom = (function (){
             vec.y = (this.top.p2.x - this.top.p1.x) * this.aspect;
             return vec;
         },     
-        corners : function (vecArray) { // returns an vec array containing the corners from top left top right bottom roght bottom left. If vecArray is passed then the first 4 vecs are set to the new points
+        corners(vecArray) { // returns an vec array containing the corners from top left top right bottom roght bottom left. If vecArray is passed then the first 4 vecs are set to the new points
             // this function uses the Geom registers v1
             // v1 is the vector representing the side (height) from top to bottom
             if(vecArray === undefined){
@@ -6565,7 +6697,7 @@ groover.geom = (function (){
             c[3].y += v1.y;
             return vecArray;
         },
-        asVecArray : function(vecArray, instance){
+        asVecArray(vecArray, instance){
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -6577,7 +6709,7 @@ groover.geom = (function (){
             vecArray.push(this.top.p1.copy()).push(this.top.p2.copy());
             return vecArray;
         },  
-        asBox : function(box){
+        asBox(box){
             if(box === undefined){
                 var box = new Box();
             }
@@ -6588,7 +6720,7 @@ groover.geom = (function (){
             box.env ( this.top.p2.x + v.x, this.top.p2.y + v.y);
             return box;
         },
-        asCircle : function(circle){ // returns a bounding circle
+        asCircle(circle){ // returns a bounding circle
             var l;
             if(circle === undefined){
                 circle = new Circle();
@@ -6603,7 +6735,7 @@ groover.geom = (function (){
             circle.radius = Math.hypot(l,l * this.aspect);
             return circle;            
         },
-        asInnerCircle : function(circle){  // returns the largest circle that can fit inside
+        asInnerCircle(circle){  // returns the largest circle that can fit inside
             var l;
             if(circle === undefined){
                 circle = new Circle();
@@ -6618,7 +6750,7 @@ groover.geom = (function (){
             circle.radius = Math.min(l,l * this.aspect);
             return circle;            
         },
-        asTriangles : function(diagonal,array){ // if diagonal is false then the triangles meet at the line from top right to bottom left, else its top left to bottom right
+        asTriangles(diagonal,array){ // if diagonal is false then the triangles meet at the line from top right to bottom left, else its top left to bottom right
             var newP = false; // flag to indicate if points need to be copied
             var c = this.corners();
             if(array === undefined){
@@ -6665,7 +6797,7 @@ groover.geom = (function (){
             }
             return array;
         },
-        asSimple : function(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
+        asSimple(obj){ // returns a object or adds to obj the current state of this primitive. The obj will not contain the prototype chain of this primitive
             if(obj === undefined){
                 obj = {};
             }
@@ -6676,7 +6808,7 @@ groover.geom = (function (){
             obj.aspect = this.aspect;
             return obj;
         },
-        fromSimple : function(obj){
+        fromSimple(obj){
             this.top.p1.x = obj.x1 === undefined ? 0 : obj.x1;
             this.top.p1.y = obj.y1 === undefined ? 0 : obj.y1;
             this.top.p2.x = obj.x2 === undefined ? 1 : obj.x2;
@@ -6684,7 +6816,7 @@ groover.geom = (function (){
             this.aspect = obj.aspect === undefined ? 1 : obj.aspect;
             return this;
         },        
-        slice : function (x, y, rect){
+        slice(x, y, rect){
                 // uses v1,v2,v3,v4
             var lw,lh;
             if(rect === undefined){
@@ -6728,7 +6860,7 @@ groover.geom = (function (){
             return rect;
                      
         },
-        asArc : function(where,radius,arc){
+        asArc(where,radius,arc){
             var lw,lh,a,r,b,l;
             where = where.toLowerCase();
             if(arc === undefined){
@@ -6830,11 +6962,11 @@ groover.geom = (function (){
             return arc;
             
         },
-        area : function () {
+        area() {
             var l = Math.hypot(this.top.p2.y - this.top.p1.y, this.top.p2.x - this.top.p1.x);
             return l * l * this.aspect;
         },
-        inflate : function(units){ // Increases or decreases the rectange size keeping the same center so that all sides are moved units in or out. For rectangles that have a aspect !== 1 the aspect will change
+        inflate(units){ // Increases or decreases the rectange size keeping the same center so that all sides are moved units in or out. For rectangles that have a aspect !== 1 the aspect will change
             var w,h,ww,hh;
             h = (w = Math.hypot(v1.y = this.top.p2.y - this.top.p1.y, v1.x = this.top.p2.x - this.top.p1.x)) * this.aspect;
             v1.x /= w;
@@ -6849,12 +6981,12 @@ groover.geom = (function (){
             return this;
             
         },
-        heightFromArea : function (area){
+        heightFromArea(area){
             var l = Math.hypot(this.top.p2.y - this.top.p1.y, this.top.p2.x - this.top.p1.x);
             this.aspect  = (area / l) / l;
             return this; // returns this.
         },
-        widthFromArea : function (area){
+        widthFromArea(area){
             var l = Math.hypot(v1.y = this.top.p2.y - this.top.p1.y, v1.x = this.top.p2.x - this.top.p1.x) ;            
             var la = l * this.aspect;
             this.aspect = la / (lb =  area / la);            
@@ -6862,15 +6994,15 @@ groover.geom = (function (){
             this.top.p2.y = this.top.p1.y + v1.y * (l);
             return this; // returns this.
         },
-        perimiter : function() {
+        perimiter() {
             var l = Math.hypot(this.top.p2.y-this.top.p1.y,this.top.p2.x-this.top.p1.x);
             return l * 2 + l* this.aspect * 2;
         },
-        diagonalLength : function () {
+        diagonalLength() {
             var l = Math.hypot(this.top.p2.y-this.top.p1.y,this.top.p2.x-this.top.p1.x);
             return Math.hypot(l,l* this.aspect);
         },
-        center : function (vec) {
+        center(vec) {
             if(vec === undefined){
                 vec = this.top.p1.copy();
             }else{
@@ -6883,7 +7015,7 @@ groover.geom = (function (){
             vec.y += v1.x * this.aspect;
             return vec;
         },
-        setCenter : function(vec){ // moves rectangle to place its center at vec
+        setCenter(vec){ // moves rectangle to place its center at vec
             v1.x = this.top.p2.x - this.top.p1.x;
             v1.y = this.top.p2.y - this.top.p1.y;
             v2.x = (-v1.y * this.aspect + v1.x)/2;
@@ -6894,7 +7026,7 @@ groover.geom = (function (){
             this.top.p2.y += v1.y;
             return this;
         },
-        diagonalLine : function (line){            
+        diagonalLine(line){            
             if(line === undefined){
                 line = new Line();
             }
@@ -6904,7 +7036,7 @@ groover.geom = (function (){
             line.p2.x = this.top.p2.x - (this.top.p2.y - this.top.p1.y) * this.aspect;
             return line;   
         },
-        setDiagonalLine : function (line){   
+        setDiagonalLine(line){   
             // I do not like this solution as it seams a little to long. Need to find a better method
             var len = Math.hypot(v1.y = line.p2.y - line.p1.y, v1.x = line.p2.x - line.p1.x);
             v1.x /= len;
@@ -6923,7 +7055,7 @@ groover.geom = (function (){
             this.top.p2.y = line.p1.y + v3.y;
             return this;   
         },
-        bottomRight : function (vec) {
+        bottomRight(vec) {
             if(vec === undefined){
                 vec = this.top.p2.copy();
             }else{
@@ -6935,7 +7067,7 @@ groover.geom = (function (){
             
             return vec;
         }, 
-        setBottomRight : function(vec){ // moves rectangle to place its Bottom Right at vec
+        setBottomRight(vec){ // moves rectangle to place its Bottom Right at vec
             v1.x = this.top.p2.x - this.top.p1.x;
             v1.y = this.top.p2.y - this.top.p1.y;
             v2.x = (-v1.y * this.aspect + v1.x);
@@ -6946,7 +7078,7 @@ groover.geom = (function (){
             this.top.p2.y += v1.y;
             return this;
         },
-        setTopRight : function(vec){ // moves rectangle to place its Bottom Right at vec
+        setTopRight(vec){ // moves rectangle to place its Bottom Right at vec
             v1.x = this.top.p2.x - this.top.p1.x;
             v1.y = this.top.p2.y - this.top.p1.y;
             this.top.p2.x = this.top.p1.x = vec.x;
@@ -6955,7 +7087,7 @@ groover.geom = (function (){
             this.top.p2.y += v1.y;
             return this;
         },
-        isRectangleTouching : function(rectangle){
+        isRectangleTouching(rectangle){
             if(! this.asCircle().touching(rectangle.asCircle())){
                 return false;
             }
@@ -6994,7 +7126,7 @@ groover.geom = (function (){
             }
             return false;            
         },
-        isRectangleInside : function (rectangle){ // there is room for more optimisation.
+        isRectangleInside(rectangle){ // there is room for more optimisation.
             var x1,y1,x2,y2,x3,y3,x4,y4;
             v1.x = x2 = this.top.p2.x - this.top.p1.x;
             v1.y = y2 = this.top.p2.y - this.top.p1.y;
@@ -7044,7 +7176,7 @@ groover.geom = (function (){
             }                        
             return true;                        
         },
-        isBoxInside : function(box){ // Needs improvment
+        isBoxInside(box){ // Needs improvment
             var x1,y1,x2,y2,x3,y3,x4,y4,x5,t1,t2,a1,a2;
             x2 = this.top.p2.x - this.top.p1.x;
             y2 = this.top.p2.y - this.top.p1.y;
@@ -7078,7 +7210,7 @@ groover.geom = (function (){
             }            
             return true;         
         },
-        isCircleInside : function (circle){  // need improvement
+        isCircleInside(circle){  // need improvement
             var x,y,x1,y1,x2,y2,l,l1
             // get top as vec
             x2 = this.top.p2.x - this.top.p1.x;
@@ -7117,7 +7249,7 @@ groover.geom = (function (){
             return true;
             
         },
-        isCircleTouching : function (circle){
+        isCircleTouching(circle){
             // get center
             vc.x = this.top.p1.x + (v1.x = (this.top.p2.x - this.top.p1.x) / 2);
             vc.y = this.top.p1.y + (v1.y = (this.top.p2.y - this.top.p1.y) / 2);
@@ -7141,7 +7273,7 @@ groover.geom = (function (){
             }
             return true;
         },
-        isPointInside : function (vec){
+        isPointInside(vec){
             var x1,y1,x2,y2;
             // get vec relative to top left
             x1 = vec.x - this.top.p1.x
@@ -7161,7 +7293,7 @@ groover.geom = (function (){
             return true;
 
         },
-        isLineInside : function (line){
+        isLineInside(line){
             var x1,y1,x2,y2,x,y;
              // get top as vec
             x2 = this.top.p2.x - this.top.p1.x;
@@ -7198,7 +7330,7 @@ groover.geom = (function (){
             return true;            
 
         },
-        isLineTouching : function(line){
+        isLineTouching(line){
              var rll,rlb,rlr;
             if(this.top.isLineSegIntercepting(line)){
                 return true;
@@ -7215,7 +7347,7 @@ groover.geom = (function (){
             return this.isLineInside(line);
             
         },
-        setTransform :function(ctx){   // temp location of this function
+        setTransform :function (ctx){   // temp location of this function
             if(ctx === undefined || ctx === null){
                 if(typeof this.getCTX === "function"){
                     ctx = this.getCTX()
@@ -7227,7 +7359,7 @@ groover.geom = (function (){
             ctx.setTransform(xa.x, xa.y, -xa.y * this.aspect, xa.x * this.aspect, this.top.p1.x, this.top.p1.y);
             return this;  // returns this.
         },    
-        setTransformArea : function (ctx, width, height){ // temp location of this function
+        setTransformArea(ctx, width, height){ // temp location of this function
             if(ctx === undefined || ctx === null){
                 if(typeof this.getCTX === "function"){
                     ctx = this.getCTX()
@@ -7240,7 +7372,7 @@ groover.geom = (function (){
             ctx.setTransform(xa.x, xa.y, -ya.y, ya.x, this.top.p1.x, this.top.p1.y);
             return this;  // returns this.
         },
-        interceptingLineSeg : function (line, retLineSeg){ // returns the line segment that intercepts therectange
+        interceptingLineSeg(line, retLineSeg){ // returns the line segment that intercepts therectange
             var l,radius, dist, l1, vx,vy,cx,cy,foundStart, done; 
             
             // get center of rect  (cx,cy), top as vec (v1) and side as vec (v3)
@@ -7419,7 +7551,7 @@ groover.geom = (function (){
             return retLineSeg;
             
         },
-        pointAt : function(point,vec){  // point is a relative unit coordinate on the rectangle
+        pointAt(point,vec){  // point is a relative unit coordinate on the rectangle
                                     // uses v1,v2
             if(vec === undefined){
                 vec = new Vec(this.top.p1);
@@ -7433,7 +7565,7 @@ groover.geom = (function (){
             vec.y += v1.y * point.x + v2.y;
             return vec;
         },
-        localPoint : function(vec,rVec){ // returns a vec that is the unit coordinates on the rectangle
+        localPoint(vec,rVec){ // returns a vec that is the unit coordinates on the rectangle
             var dy = this.top.distFromDir(vec);
             var dx = this.leftLine().distFromDir(vec);
             u = this.top.leng();
@@ -7445,7 +7577,7 @@ groover.geom = (function (){
             rVec.y = dy / u1;
             return rVec;
         },
-        scaleToFitIn : function(obj){
+        scaleToFitIn(obj){
             if(obj.type === "rectangel"){
                 return this;
             }
@@ -7456,21 +7588,21 @@ groover.geom = (function (){
                 return this;
             }
         },
-        scale : function(scale){
+        scale(scale){
             this.top.p1.x *= scale;
             this.top.p1.y *= scale;
             this.top.p2.x *= scale;
             this.top.p2.y *= scale;
             return this; // returns this
         },
-        translate : function(vec){
+        translate(vec){
             this.top.p1.x += vec.x;
             this.top.p1.y += vec.y;
             this.top.p2.x += vec.x;
             this.top.p2.y += vec.y;
             return this; // returns this
         },
-        rotate : function(rotation){
+        rotate(rotation){
             var dx = Math.cos(rotation);
             var dy = Math.sin(rotation);
             var x = this.top.p1.x;
@@ -7483,7 +7615,7 @@ groover.geom = (function (){
             this.top.p2.y = x * dy + y * dx;                 
             return this; // returns this
         },
-        transform : function(transform){
+        transform(transform){
             return this; // returns this
         },
     }
@@ -7493,17 +7625,17 @@ groover.geom = (function (){
         left : 0,
         right : 0,
         type : "Box",
-        copy : function (){
+        copy(){
             return new Box (this.left,this.top,this.right,this.bottom);
         },
-        setAs : function(box){
+        setAs(box){
             this.top = box.top;
             this.left = box.left;
             this.right = box.right;
             this.bottom = box.bottom;
             return this; // returns this.
         },      
-        asBox : function(box){
+        asBox(box){
             if(box === undefined){
                 var box = new Box();
             }
@@ -7511,7 +7643,7 @@ groover.geom = (function (){
             box.env(this.right,this.bottom);
             return box;
         },   
-        asSimple : function(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
+        asSimple(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
             if(obj === undefined){
                 obj = {};
             }
@@ -7523,43 +7655,43 @@ groover.geom = (function (){
             obj.bottom = this.bottom;
             return obj;
         },
-        fromSimple : function(obj){
+        fromSimple(obj){
              this.top = obj.top === undefined ? 0 : obj.top;
              this.right = obj.right === undefined ? 0 : obj.right;
              this.bottom = obj.bottom === undefined ? 0 : obj.bottom;
              this.left = obj.left === undefined ? 0 : obj.left;
              return this;            
         },        
-        asVecArray : function(vecArray){ // nothing to add to the vecArray
+        asVecArray(vecArray){ // nothing to add to the vecArray
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
             return vecArray;
         },          
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
             return false;
         },
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
            this.top = (dest.top - from.top) * amount + from.top;  
            this.right = (dest.right - from.right) * amount + from.right;  
            this.left = (dest.left - from.left) * amount + from.left;  
            this.bottom = (dest.bottom - from.bottom) * amount + from.bottom;  
            return this;
         },
-        isVecInside : function(vec){
+        isVecInside(vec){
             if(vec.x >= this.left && vec.x <= this.right && vec.y >= this.top && vec.y <= this.bottom){
                 return true;
             }
             return false;
         },
-        isVecArrayInside : function(vecArray){
+        isVecArrayInside(vecArray){
             var inside = true;
             var me = this;
             
-            vec.each(function(vec){
+            vec.each(function (vec){
                 if(!me.isVecInside(vec)){
                     inside = false;
                     return false;  // break from itteration
@@ -7567,14 +7699,14 @@ groover.geom = (function (){
             });
             return inside;
         },
-        isLineInside : function(line){
+        isLineInside(line){
             return (this.isVecInside(line.p1) && this.isVecInside(line.p2));
             return false;
         },
-        isRectangleInside : function(rectange){
+        isRectangleInside(rectange){
             return this.isVectArrayInside(rectangle.getCorners());
         },
-        isCircleInside : function(circle){
+        isCircleInside(circle){
             var vec = circle.center;
             var r = circle.radius;
             if(vec.x >= this.left + r && vec.x <= this.right - r && vec.y >= this.top + r && vec.y <= this.bottom - r){
@@ -7582,13 +7714,13 @@ groover.geom = (function (){
             }
             return false;
         },
-        isBoxInside : function(box){
+        isBoxInside(box){
             if(box.left >= this.left && box.right <= this.right && box.top >= this.top && box.bottom <= this.bottom){
                 return true;
             }
             return false;           
         },
-        isBoxTouching : function(box){ // returns true if this box is touching the given box. Warning both boxes are normalised
+        isBoxTouching(box){ // returns true if this box is touching the given box. Warning both boxes are normalised
             this.normalise();
             box.normalise();
             if(this.top > box.bottom || this.bottom < box.top || this.left > box.right || this.right < box.left){
@@ -7596,7 +7728,7 @@ groover.geom = (function (){
             }
             return true;            
         },
-        isBoxOverlapping : function(box){ // returns true if boxes overlap. This is different from touching as boxes can touch yet not over lap
+        isBoxOverlapping(box){ // returns true if boxes overlap. This is different from touching as boxes can touch yet not over lap
             this.normalise();
             box.normalise();
             if(this.top >= box.bottom || this.bottom <= box.top || this.left >= box.right || this.right <= box.left){
@@ -7605,29 +7737,29 @@ groover.geom = (function (){
             return true;            
         
         },
-        isLineTouching : function(Line){ // stub
+        isLineTouching(Line){ // stub
             return undefined;
         },
-        isArcTouching : function(arc){ // stub
+        isArcTouching(arc){ // stub
             return undefined;
         },
-        isRectangleTouching : function(Rectange){ // stub
+        isRectangleTouching(Rectange){ // stub
             return undefined;
         },
-        isTriangleTouching : function(Triangle){ // stub
+        isTriangleTouching(Triangle){ // stub
             return undefined;
         },
-        isBezierTouching : function(bezier){ // stub
+        isBezierTouching(bezier){ // stub
             return undefined;
         },
-        isInside : function(primitive){
+        isInside(primitive){
             var call = this["is"+primitive.type+"Inside"];
             if(call !== undefined){
                 return call(primitive);
             }
             return false;
         },
-        isEmpty : function(){
+        isEmpty(){
             if(this.top >= this.bottom || this.left >= this.right){
                 return true;
             }
@@ -7636,12 +7768,12 @@ groover.geom = (function (){
             }
             return false;
         },
-        empty : function(){
+        empty(){
             return this.irrate();
         },
-        toString : function(precision){
+        toString(precision){
             var str;
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";
             if(this.isEmpty()){
                 return "Box : "+l+"( Empty )";
             }
@@ -7656,29 +7788,29 @@ groover.geom = (function (){
             str += ")";
             return str; // returns String
         },   
-        add : function(vec){
+        add(vec){
             this.top += vec.y;
             this.bottom += vec.y;
             this.left += vec.x;
             this.right += vec.x;
             return this;
         },   
-        pad : function(amount){  // pads the box by amount. Amount can be negative.The box may be irrate meaningless as a result of negative amount
+        pad(amount){  // pads the box by amount. Amount can be negative.The box may be irrate meaningless as a result of negative amount
             this.top -= amount;
             this.bottom += amount;
             this.left -= amount;
             this.right += amount;
             return this;
         },        
-        padWidth : function(amount){ // pads the box width by amount, negative values shrink the box
+        padWidth(amount){ // pads the box width by amount, negative values shrink the box
             this.left -= amount;
             this.right += amount;
         },
-        padHeight : function(amount){ // pads the box height by amount, negative values shrink the box
+        padHeight(amount){ // pads the box height by amount, negative values shrink the box
             this.top -= amount;
             this.bottom += amount;
         },
-        min : function(width, height){ // pads the box if height and/or width is under the min
+        min(width, height){ // pads the box if height and/or width is under the min
             if((a = this.right - this.left) < width){
                 a = (width - a) / 2;
                 this.left -= a;
@@ -7690,7 +7822,7 @@ groover.geom = (function (){
                 this.bottom += b;
             }  
         },
-        asRectangle : function (retRect) {  // returns a rectangle. If retRect is supplied then sets that else creates a new rectangle
+        asRectangle(retRect) {  // returns a rectangle. If retRect is supplied then sets that else creates a new rectangle
             a = (this.bottom- this.top)  / (this.right- this.left);
             if(retRect === undefined){
                 return new Rectangle ( new Line( new Vec(this.left,this.top),new Vec(this.right,this.top)), a)
@@ -7701,7 +7833,7 @@ groover.geom = (function (){
             retRect.aspect = a;
             return retRect;
         },
-        center : function(vec){ // returns the center as a vec. If vec supplied then use that, else creates a new vec
+        center(vec){ // returns the center as a vec. If vec supplied then use that, else creates a new vec
             if(vec === undefined){
                 vec = new Vec();
             }
@@ -7710,7 +7842,7 @@ groover.geom = (function (){
             return vec;
             
         },
-        normalise : function (){ // ensures that all values are correct
+        normalise(){ // ensures that all values are correct
             a = this.top < this.bottom ? this.top : this.bottom; // quicker than using Math.min
             b = this.top >= this.bottom ? this.top : this.bottom; // quicker than using Math.max
             c = this.left < this.right ? this.left : this.right; // quicker than using Math.min
@@ -7721,27 +7853,27 @@ groover.geom = (function (){
             this.right = d;
             return this; // returns this.
         },
-        max : function () { // max the box Infinitely large
+        max(){ // max the box Infinitely large
             this.top = -Infinity;
             this.bottom = Infinity;
             this.left = -Infinity;
             this.right = Infinity;
             return this; // returns this.
         },
-        width : function(){  // returns the width of the box
+        width(){  // returns the width of the box
             return this.right-this.left;
         },
-        height : function(){ // returns the height of the box
+        height(){ // returns the height of the box
             return this.bottom - this.top;
         },
-        irrate : function () {
+        irrate(){
             this.top = Infinity;
             this.bottom = -Infinity;
             this.left = Infinity;
             this.right = -Infinity;
             return this; // returns this.
         },
-        env : function ( x, y){
+        env(x, y){
             if(y !== undefined && y !== null){
                 this.top = Math.min(y,this.top);
                 this.bottom = Math.max(y,this.bottom);
@@ -7752,14 +7884,14 @@ groover.geom = (function (){
             }
             return this; // returns this.
         },
-        envBox : function (box){
+        envBox(box){
             this.top = Math.min(box.top,this.top);
             this.bottom = Math.max(box.bottom,this.bottom);
             this.left = Math.min(box.left,this.left);
             this.right = Math.max(box.right,this.right);
             return this; // returns this.
         },
-        envelop : function (obj){
+        envelop(obj){
             if(geomInfo.isPrimitive(obj)){
                 this.envBox(obj.asBox());
             }
@@ -7786,10 +7918,10 @@ groover.geom = (function (){
         //======================================================================================
         // Note: The behaviour of the second control point is as yet not determined. It may change as test presents the functionality requiered 
 
-        copy : function(){
+        copy(){
             return (new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), this.cp2 === undefined ? null : this.cp2.copy()))._setSpan(this._subStart,this._subEnd);
         },
-        setAs : function(bezier){
+        setAs(bezier){
             this.p1.x = bezier.p1.x;
             this.p1.y = bezier.p1.y;
             this.p2.x = bezier.p2.x;
@@ -7810,14 +7942,14 @@ groover.geom = (function (){
             }
             return this;   
         },
-        _setSpan : function(f,t){ // Span is used when a bezier is sliced or cut. This allows calculations to still be relative to the origin bezier. The span is the start and end position of this bezier on the original bezier it was derived from.
+        _setSpan(f,t){ // Span is used when a bezier is sliced or cut. This allows calculations to still be relative to the origin bezier. The span is the start and end position of this bezier on the original bezier it was derived from.
             this._subStart = f;
             this._subEnd = t;
             return this;
         },            
-        toString : function(precision){
+        toString(precision){
             var str;
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";
             if(this.isEmpty()){
                 return "Bezier : "+l+"( Empty )";
             }
@@ -7828,7 +7960,7 @@ groover.geom = (function (){
             str += " API incomplete )";
             return str; // returns String
         },
-        getHash : function(){ // returns a unique hash value for the lines current state
+        getHash(){ // returns a unique hash value for the lines current state
             var hash = 0;
             if(!isNaN(this.id)){
                 hash += this.id;
@@ -7841,7 +7973,7 @@ groover.geom = (function (){
             } 
             return Math.round(hash  % 0xFFFFFFFF);
         },    
-        replace : function(id, prim){  // replaces vec with id === id with the supplied vec
+        replace(id, prim){  // replaces vec with id === id with the supplied vec
             if(id !== undefined){
                 if(prim !== undefined && prim.type === "Vec"){
                     if(this.p1.id === id){
@@ -7860,7 +7992,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        getAllIdsAsArray : function(array){
+        getAllIdsAsArray(array){
             if(array === undefined){
                 array = [];
             }
@@ -7876,11 +8008,11 @@ groover.geom = (function (){
             }
             return array;
         },        
-        empty : function(){
+        empty(){
             this.p1.x = this.p1.y = this.p2.x = this.p2.y = Infinity;
             return this;
         },
-        isEmpty : function(){
+        isEmpty(){
             if(this.p1 === undefined || this.p2 === undefined || this.cp1 === undefined){
                 return true;
             }
@@ -7888,7 +8020,7 @@ groover.geom = (function (){
                 return true;
             }            
         },
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
@@ -7897,7 +8029,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
             this.p1.x = (dest.p1.x - from.p1.x) * amount + from.p1.x;
             this.p1.y = (dest.p1.y - from.p1.y) * amount + from.p1.y;
             this.p2.x = (dest.p2.x - from.p2.x) * amount + from.p2.x;
@@ -7910,33 +8042,33 @@ groover.geom = (function (){
             }
             return this;
         },          
-        isQuadratic : function(){  // returns true if this is a quadratic
+        isQuadratic(){  // returns true if this is a quadratic
             if(this.cp2 === undefined && !this.isEmpty()){
                 return true;
             }
             return false;
         },
-        isCubic : function(){ // returns true if this is a cubic 
+        isCubic(){ // returns true if this is a cubic 
             if(this.cp2 !== undefined && !this.cp2.isEmpty() && !this.isEmpty()){
                 return true;
             }            
             return false;
         },
-        description : function(){
-            var lable = this.lableStr !== undefined ? "'"+this.lableStr+"'" : "";
+        description(){
+            var label = this.labelStr !== undefined ? "'"+this.labelStr+"'" : "";
             var id = this.id !== undefined ? "id : "+this.id : "";
-            var desc =  "Bezier "+lable+" " + id + " properties : ["+(this.isCubic()?"Cubic":"Quadratic") + "] ";
+            var desc =  "Bezier "+label+" " + id + " properties : ["+(this.isCubic()?"Cubic":"Quadratic") + "] ";
             desc += "Length (approx) : " + this.approxLength();
             return desc;
         },
-        leng : function(){
+        leng(){
             if(this.cp2 === undefined){
                 return this.getLength()
             }
             return this.approxLength();
             
         },
-        asVecArray : function(vecArray, instance){ // if instance === true then an instance of each vec is created, else a copy of each vec is created
+        asVecArray(vecArray, instance){ // if instance === true then an instance of each vec is created, else a copy of each vec is created
             if(vecArray === undefined){
                 vecArray =  new VecArray();
             }
@@ -7954,7 +8086,7 @@ groover.geom = (function (){
             }
             return vecArray;
         },          
-        asBox : function(box){  // returns the bounding box. If box is defined then will add to the bounds of box
+        asBox(box){  // returns the bounding box. If box is defined then will add to the bounds of box
             if(box === undefined){
                 var box = new Box();
             }
@@ -8012,7 +8144,7 @@ groover.geom = (function (){
             }
             return box;
         },
-        asSimple : function(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
+        asSimple(obj){ // returns the box as a simple object with left,right,bottom,top,width,height
             if(obj === undefined){
                 obj = {};
             }
@@ -8031,7 +8163,7 @@ groover.geom = (function (){
             }
             return obj;
         },
-        fromSimple : function(obj){
+        fromSimple(obj){
             this.p1.x = obj.x1 === undefined ? 0 : obj.x1;
             this.p1.y = obj.y1 === undefined ? 0 : obj.y1;
             this.cp1.x = obj.x2 === undefined ? 1 : obj.x2;
@@ -8048,7 +8180,7 @@ groover.geom = (function (){
             }
             return this;
         },          
-        interceptsAsVecArray : function(bezier,threshold,vecArray){ // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
+        interceptsAsVecArray(bezier,threshold,vecArray){ // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
                                                          // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
                                                          //     Note: threshold does not apply to quad on quad intercepts. Its perfect
                                                          // [vecArray] the VecArray to hold the results. Creates a new VecArray if not supplied
@@ -8065,7 +8197,7 @@ groover.geom = (function (){
             }
             return vecArray;
         },
-        interceptBezier_QonQ : function(bez1,vecArray){ // Quadratic to quadratic bezier intercepts
+        interceptBezier_QonQ(bez1,vecArray){ // Quadratic to quadratic bezier intercepts
             // rArray 
             if(vecArray === undefined){
                 vecArray = new VecArray();
@@ -8154,7 +8286,7 @@ groover.geom = (function (){
             
             return vecArray;
         },        
-        interceptsAsPositions : function(bezier,threshold,array,array1){ // Finds the intercept points between this bezier and the given bezier. this is an approximate solution only
+        interceptsAsPositions(bezier,threshold,array,array1){ // Finds the intercept points between this bezier and the given bezier. this is an approximate solution only
                                                          // warning this function is computationally and memory intensive. Finds the intercept points if any of this bezier and the given
                                                          // [threshold] optional and is the the rectangular limit of the test. Intercepts will within this horizontal and vertical distance apart.
                                                          // [array] the array to hold the results. Creates a new array if not supplied
@@ -8215,7 +8347,7 @@ groover.geom = (function (){
             b2.interceptsAsPositions(b4, threshold, array);
             return array;
         },        
-        lineInterceptPos : function(line){ // find position of intercept point and puts them in u,u1,u2 geom registers
+        lineInterceptPos(line){ // find position of intercept point and puts them in u,u1,u2 geom registers
             var dir = line.dir();
             bez.setAs(this);
             v1.setAs(line.p1).mult(-1);
@@ -8228,7 +8360,7 @@ groover.geom = (function (){
             u2 = -Infinity;
             return this;
         },
-        interceptLine : function(line,vecArray){  // finds the interception points of the line and the bezier. vecArray is optional and will contain the points
+        interceptLine(line,vecArray){  // finds the interception points of the line and the bezier. vecArray is optional and will contain the points
             if(vecArray === undefined){
                 vecArray = new VecArray();
             }
@@ -8238,7 +8370,7 @@ groover.geom = (function (){
             if(u2 >= 0 && u2 <= 1){ vecArray.push(this.vecAt(u2));}
             return vecArray
         },
-        interceptLineSeg : function(line,vecArray){ // finds the interception points of the line segment and the bezier. vecAttay is optional. If given then the points are added to it. if not then a new vec array is created. Returns VecArray
+        interceptLineSeg(line,vecArray){ // finds the interception points of the line segment and the bezier. vecAttay is optional. If given then the points are added to it. if not then a new vec array is created. Returns VecArray
             var p;
             if(vecArray === undefined){
                 vecArray = new VecArray();
@@ -8264,7 +8396,7 @@ groover.geom = (function (){
             }
             return vecArray;
         },
-        sliceWithLine : function(line,right,primArray){ // returns the primitive array containing segments left or right of the line. if right is true then returns segments right of the line. if false then segments left of the line. [primArray] optional if given the segments are push onto it. else a new primitive array is created. Returns PrimitiveArray
+        sliceWithLine(line,right,primArray){ // returns the primitive array containing segments left or right of the line. if right is true then returns segments right of the line. if false then segments left of the line. [primArray] optional if given the segments are push onto it. else a new primitive array is created. Returns PrimitiveArray
             var me,p;
             function getLeft(start,end){
                 if(start === 0){ return a; }
@@ -8292,7 +8424,7 @@ groover.geom = (function (){
             }
             return primArray;
         },
-        asQuadratic : function(){
+        asQuadratic(){
             if(this.cp2 === undefined){
                 return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy());
             }
@@ -8300,7 +8432,7 @@ groover.geom = (function (){
             v1.y = (this.cp1.y + this.cp2.y)/2;
             return new Bezier(this.p1.copy(), this.p2.copy(), v1.copy());
         },
-        asCubic : function(extraVec){ // this is just a stub for now until I workout the best solution for the missing point
+        asCubic(extraVec){ // this is just a stub for now until I workout the best solution for the missing point
             if(this.cp2 === undefined){
                 if(extraVec === undefined){
                     var v = this.p2.copy().sub(this.p1).mult(1/3);
@@ -8311,7 +8443,7 @@ groover.geom = (function (){
             }
              return new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), this.cp2.copy());
         },
-        translate : function(vec){ // moves the bezier
+        translate(vec){ // moves the bezier
             this.p1.x += vec.x;
             this.p1.y += vec.y;
             this.p2.x += vec.x;
@@ -8324,7 +8456,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        scale : function(scale){
+        scale(scale){
             this.p1.x  *= scale;
             this.p1.y  *= scale;
             this.p2.x  *= scale;
@@ -8338,7 +8470,7 @@ groover.geom = (function (){
             return this;
             
         },
-        rotate : function(rotation){ // rotates the bezier
+        rotate(rotation){ // rotates the bezier
             a = Math.cos(rotation);
             b = Math.sin(rotation);
             c = this.p1.x;
@@ -8362,7 +8494,7 @@ groover.geom = (function (){
             }
             return this; // returns this
         },        
-        fromCircle : function(circle,quadrant){ // matches the circle's quadrant 0,1,2,3 Quadrant 0 is bottom right then clockwise around
+        fromCircle(circle,quadrant){ // matches the circle's quadrant 0,1,2,3 Quadrant 0 is bottom right then clockwise around
             if(quadrant === undefined){
                 quadrant = 0;
             }else{
@@ -8409,10 +8541,10 @@ groover.geom = (function (){
             }                
             return this;
         },
-        fromArc : function(arc){ // stub
+        fromArc(arc){ // stub
             return this;
         },
-        fromVecArray : function(type,vecArray,instance){ // type = "cubic" or "quadratic". Point order is start control points then end. Creates from current position in vecArray and only if there are enough vecs. Instance if true uses the reference to vecs, if false makes a copy of vecs
+        fromVecArray(type,vecArray,instance){ // type = "cubic" or "quadratic". Point order is start control points then end. Creates from current position in vecArray and only if there are enough vecs. Instance if true uses the reference to vecs, if false makes a copy of vecs
             if(type === "quadratic"){
                 if(vecArray.remaining() >= 3){
                     if(instance){
@@ -8443,10 +8575,10 @@ groover.geom = (function (){
             }
             return this;
         },
-        fromTriangle : function(triangle){ // stub
+        fromTriangle(triangle){ // stub
             return this;
         },
-        asRectangle : function(rectangle){ // returns a rectangle that is aligned to the line between the end points and contains the whole bezier
+        asRectangle(rectangle){ // returns a rectangle that is aligned to the line between the end points and contains the whole bezier
             if(rectangle === undefined){
                 rectangle = new Rectangle();
             }
@@ -8497,10 +8629,10 @@ groover.geom = (function (){
             }
             return rectangle;
         },
-        fromBox : function(box){ // stub
+        fromBox(box){ // stub
             return this;
         },
-        segment : function(fromPos,toPos,retBezier){
+        segment(fromPos,toPos,retBezier){
             if(fromPos === 0 && toPos === 1){
                 if(retBezier === undefined){
                     return this.copy();
@@ -8511,7 +8643,7 @@ groover.geom = (function (){
             return retBezier.splitAt((toPos-fromPos) / (1 - fromPos),true,retBezier);
              
         },
-        splitAt : function(position,start,retBezier){ // splits the bezier returning a new bezier starting or ending at position. If start is true then return the first section from p1 to position else returns the end section from position to p2
+        splitAt(position,start,retBezier){ // splits the bezier returning a new bezier starting or ending at position. If start is true then return the first section from p1 to position else returns the end section from position to p2
             if(retBezier === undefined){
                 if(this.cp2 !== undefined){ retBezier = new Bezier("cubic"); }
                 else{ retBezier = new Bezier("quadratic"); }
@@ -8591,12 +8723,12 @@ groover.geom = (function (){
             }
             return retBezier;              
         },
-        normalise : function(){ // normalises the bezier. 
+        normalise(){ // normalises the bezier. 
             this._subStart = 0;
             this._subEnd = 1;
             return this;        
         },
-        reverse : function() { // reverses the direction of the bezier (Untested and not sure if this has the correct logic)
+        reverse() { // reverses the direction of the bezier (Untested and not sure if this has the correct logic)
             var temp;
             if(this.cp2 === undefined){
                 temp = this.p1;
@@ -8613,7 +8745,7 @@ groover.geom = (function (){
             return this;
             
         },
-        getLocalExtrema : function(axisX, solution){ // gets the local extrema (max and min for axis) if they exist within the domain 0 <= p <= 1
+        getLocalExtrema(axisX, solution){ // gets the local extrema (max and min for axis) if they exist within the domain 0 <= p <= 1
                                                      // axisX is true return the xAxis results else the Y axis
                                                      // solution if true returns the 2nd solution There can be 2 solutions for 3rd order. Does not apply to 2nd order and will return the same result
                                                      // the first and second results can also be found in geom  registers u,u1
@@ -8637,7 +8769,7 @@ groover.geom = (function (){
             }
             return u;
         },
-        getLength : function(){    // returns a calculated length rather than approx length, only for 2nd order bezier
+        getLength(){    // returns a calculated length rather than approx length, only for 2nd order bezier
               if(this.cp2 !== undefined){ // currently does not support 3rd order cubic
                   return undefined;
               }
@@ -8657,7 +8789,7 @@ groover.geom = (function (){
               c = 2 * Math.sqrt(c);
               return (a1 * c1 + u * b * (c1 - c) + a * Math.log((2 * u + u1 + c1) / (u1 + c))) / (4 * a1);
         },          
-        getControlPoint : function(which){ // returns the control point for "start" or "end" defaults to end
+        getControlPoint(which){ // returns the control point for "start" or "end" defaults to end
             if(which === "start"){
                 return this.cp1;
             }
@@ -8666,7 +8798,7 @@ groover.geom = (function (){
             }
             return this.cp2;
         },
-        findPositionOfVec : function(vec,resolution,pos){  // temp stub until I decide on the best way to do this. Finds position on curve in terms of uint dist, if pos is given then that point is used to search around at (resolution/4) ^ 2
+        findPositionOfVec(vec,resolution,pos){  // temp stub until I decide on the best way to do this. Finds position on curve in terms of uint dist, if pos is given then that point is used to search around at (resolution/4) ^ 2
             // translate curve to make vec the origin 
             v1.x = this.p1.x - vec.x;
             v1.y = this.p1.y - vec.y;
@@ -8723,7 +8855,7 @@ groover.geom = (function (){
             }
             return pos;
         },
-        distFrom : function(vec){
+        distFrom(vec){
             this.findPositionOfVec(vec); // this function sets d as the distance from the bezier or infinity id not found
             c1 = d;
             if(c1 === Infinity){
@@ -8732,7 +8864,7 @@ groover.geom = (function (){
             }
             return c1;
         },
-        fitPointCenter : function(vec){  // adjusts the control point to fit the vec on the curve. Only works for quadratic curves for the time being
+        fitPointCenter(vec){  // adjusts the control point to fit the vec on the curve. Only works for quadratic curves for the time being
             if(this.cp2 === undefined){
                 v1.x = (this.p2.x + this.p1.x) / 2;
                 v1.y = (this.p2.y + this.p1.y) / 2;
@@ -8741,7 +8873,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        fitPointAt : function(pos,vec){  // WARNING THIS IS NOT WORKING and a mess dont use// adjusts the control point to fit the vec on the curve at position pos. 0 <= Pos <= 1 on the curve else outside the curve . Only works for quadratic curves for the time being
+        fitPointAt(pos,vec){  // WARNING THIS IS NOT WORKING and a mess dont use// adjusts the control point to fit the vec on the curve at position pos. 0 <= Pos <= 1 on the curve else outside the curve . Only works for quadratic curves for the time being
             if(this.cp2 === undefined){
                 v1.x = (this.p2.x - this.p1.x) * pos + this.p1.x;
                 v1.y = (this.p2.y - this.p1.y) * pos + this.p1.y;
@@ -8768,7 +8900,7 @@ groover.geom = (function (){
             }
             return this;*/
         },
-        vecAt : function(position,limit,vec){ // returns the location on the curve at position. if limit true then position is clamped 0<=p<=1
+        vecAt(position,limit,vec){ // returns the location on the curve at position. if limit true then position is clamped 0<=p<=1
             if(vec === undefined){
                 vec = new Vec();
             }
@@ -8827,10 +8959,10 @@ groover.geom = (function (){
             vec.y = v1.y + (v2.y - v1.y) * c;
             return vec;     
         }, 
-        unitAlong : function(unit,vec){
+        unitAlong(unit,vec){
             return this.vecAt(unit,false,vec);
         },
-        length : function(){ // Accurate length for quadratic curves. Approximation for cubic
+        length(){ // Accurate length for quadratic curves. Approximation for cubic
                              // Cubics call this.approxLength and uses a resolution of 1000
                              // if you wish higher resolution call approxLength directly
             if(this.cp2 === undefined){
@@ -8852,10 +8984,10 @@ groover.geom = (function (){
             }
             return this.approxLength(1000);
         },   
-        unitDistOfClosestPoint : function(vec){ 
+        unitDistOfClosestPoint(vec){ 
             return this.findPositionOfVec(vec);//,Math.floor(a/10));        
         },
-        tangentAsVec : function( position,limit, retVec ) {  // returns the normalised tangent at position
+        tangentAsVec( position,limit, retVec ) {  // returns the normalised tangent at position
             if(retVec === undefined){ retVec = new Vec(); }
             if(limit){ position = Math.min(1, Math.max(0, position)); }
             if(this.cp2 === undefined){
@@ -8876,14 +9008,14 @@ groover.geom = (function (){
             retVec.y /= u;
             return retVec;                 
         },
-        normalAsVec : function(position, limit, retVec) { // returns the normalise norm at position
+        normalAsVec(position, limit, retVec) { // returns the normalise norm at position
              retVec = this.tangentAsVec(position, retVec);
              a = retVec.x;
              retVec.x = -retVec.y;
              retVec.y = a;
              return retVec;
         },
-        normalAsLine : function(position, limit, retLine) { // return the normal at position as a unit line. limit if true limits the position to 0<=p<=1
+        normalAsLine(position, limit, retLine) { // return the normal at position as a unit line. limit if true limits the position to 0<=p<=1
             if(retLine === undefined){
                 retLine = new Line();
             }
@@ -8893,7 +9025,7 @@ groover.geom = (function (){
             retLine.p2.y += retLine.p1.y;
             return retLine;            
         },
-        tangentAsLine : function(position, limit, retLine) {// return the tangent at position as a unit line. limit if true limits the position to 0<=p<=1
+        tangentAsLine(position, limit, retLine) {// return the tangent at position as a unit line. limit if true limits the position to 0<=p<=1
             if(retLine === undefined){
                 retLine = new Line();
             }
@@ -8903,7 +9035,7 @@ groover.geom = (function (){
             retLine.p2.y += retLine.p1.y;
             return retLine;            
         },
-        snapToBezier : function(bez, fromStart, toStart , coplanar, equalScale) { // snaps the end/start of this bezier to another. from = true then snaps to the start of the bez, else snaps the end, to === true snaps this start, else snaps end if coplanar = true moves the appropreat control point so that it is co linear with the othe bezier control point, equalScale, moves the appropreate control point so that it equal length
+        snapToBezier(bez, fromStart, toStart , coplanar, equalScale) { // snaps the end/start of this bezier to another. from = true then snaps to the start of the bez, else snaps the end, to === true snaps this start, else snaps end if coplanar = true moves the appropreat control point so that it is co linear with the othe bezier control point, equalScale, moves the appropreate control point so that it equal length
             if(fromStart){
                 v1.x = bez.p1.x;
                 v1.y = bez.p1.y;
@@ -8962,7 +9094,7 @@ groover.geom = (function (){
       
             return this;
         },
-        snapToBezierPos : function(bez, pos , tangentAmount) { // snaps the at pos to bez if tangent !== 0 then that is multipled to get the control point   
+        snapToBezierPos(bez, pos , tangentAmount) { // snaps the at pos to bez if tangent !== 0 then that is multipled to get the control point   
             bez.vecAt(pos,true,v1);
             this.p1.x = v1.x;
             this.p1.y = v1.y;
@@ -8975,7 +9107,7 @@ groover.geom = (function (){
             }
             return this;
         },        
-        getInterpolationArray : function(resolution,array){ // get Interpolation Array. This returns an array of curve positions separated by a distance of one pixel
+        getInterpolationArray(resolution,array){ // get Interpolation Array. This returns an array of curve positions separated by a distance of one pixel
                                                       // this is an approximation and dependent on the value of resolution
                                                       // solution is optional and if omitted will default of 100. It represents one 8th of the sampling size to find the pixel distance values
                                                       // array is optional and is the array that will hold the result
@@ -9009,7 +9141,7 @@ groover.geom = (function (){
             array.length = e;
             return array;
         },
-        approxLength : function(resolution){
+        approxLength(resolution){
             if(resolution === undefined || resolution === Infinity){
                 resolution = 100;
             }
@@ -9036,17 +9168,17 @@ groover.geom = (function (){
         yAxis : undefined,
         origin : undefined,
         type:"Transform",
-        copy : function(){
+        copy(){
             return new Transform(this.xAxis.copy(),this.yAxis.copy(),this.origin.copy());
         },
-        reset : function(){  // sets the matrix to the identity matrix
+        reset(){  // sets the matrix to the identity matrix
             this.xAxis.x = this.yAxis.y = 1;
             this.xAxis.y = this.yAxis.x = this.origin.x = this.origin.y = 0;
             return this;
         },
-        toString : function(precision){
+        toString(precision){
             var str;
-            var l = this.lableStr === undefined ? "": "'"+this.lableStr+"' ";
+            var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";
             if(this.isEmpty()){
                 return "Transform : "+l+"( Empty )";
             }
@@ -9060,12 +9192,12 @@ groover.geom = (function (){
             str += ")";
             return str; // returns String
         },  
-        setIdentity : function(){  // sets the matrix to the identity matrix
+        setIdentity(){  // sets the matrix to the identity matrix
             this.xAxis.x = this.yAxis.y = 1;
             this.xAxis.y = this.yAxis.x = this.origin.x = this.origin.y = 0;
             return this;
         },
-        hasId : function(id){ // returns true if this, or any of the points has the id,
+        hasId(id){ // returns true if this, or any of the points has the id,
             if(this.id === id){
                 return true;
             }
@@ -9074,7 +9206,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        isEmpty : function(){
+        isEmpty(){
             if(this.xAxis === undefined || this.yAxis === undefined || this.origin === undefined){
                 return true;                
             }
@@ -9083,13 +9215,13 @@ groover.geom = (function (){
             }
             return false;            
         },
-        empty : function(){ 
+        empty(){ 
             this.xAxis.empty();
             this.yAxis.empty();
             this.origin.empty();
             return this;            
         },
-        asVecArray : function(va, instance) { // currently this just returns a new or passed vecArray with the origin only. Though may consider passing the axis
+        asVecArray(va, instance) { // currently this just returns a new or passed vecArray with the origin only. Though may consider passing the axis
             if(va === undefined){
                 va = new VecArray();
             }
@@ -9100,7 +9232,7 @@ groover.geom = (function (){
             va.push(this.origin.copy());
             return va;
         },
-        asArray : function(array){ // returns an array containing the matrix. array is optional if not included the array will be created
+        asArray(array){ // returns an array containing the matrix. array is optional if not included the array will be created
             if(array === undefined){
                 array = [];
             }
@@ -9112,7 +9244,7 @@ groover.geom = (function (){
             array[5] = this.origin.y;
             return array;
         },
-        asSimple : function(obj){ // returns an object using the alphabet naming convention a,b,c,d,e,f. Obj is optional if supplied will be used else a new one is created.
+        asSimple(obj){ // returns an object using the alphabet naming convention a,b,c,d,e,f. Obj is optional if supplied will be used else a new one is created.
             if(obj === undefined){
                 obj = {};
             }
@@ -9124,7 +9256,7 @@ groover.geom = (function (){
             obj.f = this.origin.y;
             return obj;
         },
-        fromSimple : function(obj){
+        fromSimple(obj){
             this.xAxis.x  = obj.a === undefined ? 1 : obj.a;
             this.xAxis.y  = obj.b === undefined ? 0 : obj.b;
             this.yAxis.x  = obj.c === undefined ? 0 : obj.c;
@@ -9133,7 +9265,7 @@ groover.geom = (function (){
             this.origin.y = obj.f === undefined ? 0 : obj.f; 
             return this;
         },
-        applyToCoordinate : function(x, y, point){
+        applyToCoordinate(x, y, point){
             if(point !== undefined){
                 point.x = x * this.xAxis.x + y * this.yAxis.x + this.origin.x;
                 point.y = x * this.xAxis.y + y * this.yAxis.y + this.origin.y;
@@ -9144,13 +9276,13 @@ groover.geom = (function (){
                 y : x * this.xAxis.y + y * this.yAxis.y + this.origin.y
             };
         },
-        applyToVec : function(vec){
+        applyToVec(vec){
             vx = vec.x * this.xAxis.x + vec.y * this.yAxis.x + this.origin.x;
             vec.y = vec.x * this.xAxis.y + vec.y * this.yAxis.y + this.origin.y;
             vec.x = vx;
             return vec;
         },
-        applyToLine : function(line){
+        applyToLine(line){
             v1x = line.p1;
             vx = v1x.x * this.xAxis.x + v1x.y * this.yAxis.x + this.origin.x;
             v1x.y = v1x.x * this.xAxis.y + v1x.y * this.yAxis.y + this.origin.y;
@@ -9161,7 +9293,7 @@ groover.geom = (function (){
             v1x.x = vx;
             return line;
         },
-        applyToRectangle : function(rectangle){
+        applyToRectangle(rectangle){
             v1x = rectangle.line.p1;
             vx = v1x.x * this.xAxis.x + v1x.y * this.yAxis.x + this.origin.x;
             v1x.y = v1x.x * this.xAxis.y + v1x.y * this.yAxis.y + this.origin.y;
@@ -9172,17 +9304,17 @@ groover.geom = (function (){
             v1x.x = vx;
             return rectangle;
         },
-        applyToCircle : function(circle){
+        applyToCircle(circle){
             v1x = circle.center;
             vx = v1x.x * this.xAxis.x + v1x.y * this.yAxis.x + this.origin.x;
             v1x.y = v1x.x * this.xAxis.y + v1x.y * this.yAxis.y + this.origin.y;
             v1x.x = vx;
             return circle;
         },
-        applyToArc : function(arc){ // need to define what this should do. So does nothing ATM
+        applyToArc(arc){ // need to define what this should do. So does nothing ATM
             return arc;
         },
-        applyToTriangle : function(triangle){
+        applyToTriangle(triangle){
             v1x = triangle.p1;
             vx = v1x.x * this.xAxis.x + v1x.y * this.yAxis.x + this.origin.x;
             v1x.y = v1x.x * this.xAxis.y + v1x.y * this.yAxis.y + this.origin.y;
@@ -9197,7 +9329,7 @@ groover.geom = (function (){
             v1x.x = vx;
             return triangle;
         },
-        applyToVecArray : function(vecArray){
+        applyToVecArray(vecArray){
             var i,len = vecArray.length;
             var xdx,xdy,ydx,ydy,ox,oy;
             xdx = this.xAxis.x;
@@ -9215,10 +9347,10 @@ groover.geom = (function (){
             
             return vecArray;
         },
-        applyToPrimitiveArray : function(primitiveArray){ // Not yet implemented. returns the primitive array
+        applyToPrimitiveArray(primitiveArray){ // Not yet implemented. returns the primitive array
             return primitiveArray;
         },
-        fitRectange : function(rectangle,width,height){ // create a transform that will fit width and height 
+        fitRectange(rectangle,width,height){ // create a transform that will fit width and height 
                                                         // within the rectangle so that transformed 0,0 is rectangle top left
                                                         // and width, height is at rectangle bottom right
             v1.x = rectangle.top.p2.x - rectangle.top.p1.x;
@@ -9231,7 +9363,7 @@ groover.geom = (function (){
             this.origin.y = rectangle.top.p1.y;
             return this;
         },
-        fitLine : function(line,length,height){ // create a transform that fits length to a line where
+        fitLine(line,length,height){ // create a transform that fits length to a line where
                                                 // the origin (0,0) is at the line start and (length,0) is
                                                 // at the line end.
                                                 // -height/2 is above the line and height/2 is below
@@ -9245,24 +9377,24 @@ groover.geom = (function (){
             this.origin.x = line.p1.x;
             this.origin.y = line.p1.y;           
         },
-        mirrorX : function(){ // mirror the transform along its xAxis. 
+        mirrorX(){ // mirror the transform along its xAxis. 
             this.xAxis.x = -this.xAxis.x;
             this.xAxis.y = -this.xAxis.y;        
             return this;
         },
-        mirrorY : function(){ // mirror the transform along its yAxis. 
+        mirrorY(){ // mirror the transform along its yAxis. 
             this.yAxis.x = -this.yAxis.x;
             this.yAxis.y = -this.yAxis.y;        
             return this;
         },
-        mirrorXY : function(){ // mirror the transform along its x and y Axis. 
+        mirrorXY(){ // mirror the transform along its x and y Axis. 
             this.xAxis.x = -this.xAxis.x;
             this.xAxis.y = -this.xAxis.y;        
             this.yAxis.x = -this.yAxis.x;
             this.yAxis.y = -this.yAxis.y;        
             return this;
         },
-        rotate90 :function(){ // rotates the transform 90 deg clockwise
+        rotate90 :function (){ // rotates the transform 90 deg clockwise
             v1.x = this.xAxis.x;
             v1.y = this.xAxis.y;        
             this.xAxis.x = -this.yAxis.y;
@@ -9271,14 +9403,14 @@ groover.geom = (function (){
             this.yAxis.y = v1.x;        
             return this;
         },
-        isometric : function(){  // creates an isometric projection keeps the origin
+        isometric(){  // creates an isometric projection keeps the origin
             this.xAxis.x = 1;
             this.xAxis.y = 0.5;
             this.yAxis.x = -1;
             this.yAxis.y = 0.5;        
             return this;
         },
-        normalisePixelArea : function(){ // scales the transformation so that the area of a pixel
+        normalisePixelArea(){ // scales the transformation so that the area of a pixel
                                          // is 1
             var scale = 1 / Math.sqrt(
                  (xAxis.x * ( xAxis.y + yAxis.y ) + ( xAxis.x + yAxis.x ) * yAxis.y) - 
@@ -9291,7 +9423,7 @@ groover.geom = (function (){
             return this;
                                          
         },
-        isIdentity : function(){
+        isIdentity(){
             if(Math.abs(this.origin.x) > EPSILON){ return false; }
             if(Math.abs(this.origin.y) > EPSILON){ return false; }
             if(Math.abs(this.xAxis.y) > EPSILON){ return false; }
@@ -9300,7 +9432,7 @@ groover.geom = (function (){
             if(Math.abs(this.yAxis.y - 1) > EPSILON){ return false; }
             return true;            
         },
-        setFastlerp : function(from, dest){ // sets up fast lerp by pre decomposing from and destination transforms.
+        setFastlerp(from, dest){ // sets up fast lerp by pre decomposing from and destination transforms.
             var fl = this.fastLerp = [];
             fl[0] = Math.atan2(from.xAxis.y,from.xAxis.x)
             fl[1] = Math.atan2(-from.yAxis.x,from.yAxis.y) - fl[0];
@@ -9317,7 +9449,7 @@ groover.geom = (function (){
             fl[11] = dest.origin.y - fl[5];
             return this;
         },
-        fastLerp : function(amount){
+        fastLerp(amount){
             var fl = this.fastLerp;
             if(fl === undefined){
                 return this;
@@ -9334,7 +9466,7 @@ groover.geom = (function (){
             this.origin.y = fl[4] + fl[11] * amount;     
             return this;            
         },
-        lerp : function(from, dest, amount){
+        lerp(from, dest, amount){
             var fromComp = from.decompose();
             var destComp = dest.decompose();
             this.recompose( {
@@ -9347,7 +9479,7 @@ groover.geom = (function (){
             });
             return this;
         },
-        asInverseTransform : function(transform){  // creates a new or uses supplied transform to return the inverse of this matrix
+        asInverseTransform(transform){  // creates a new or uses supplied transform to return the inverse of this matrix
             if(transform === undefined){
                 transform = new Transform();
             }
@@ -9370,7 +9502,7 @@ groover.geom = (function (){
             return transform;
             
         },
-        invert: function() { // inverts the transform 
+        invert: function () { // inverts the transform 
             if (this.xAxis.y === 0 && this.yAxis.x === 0 && this.xAxis.x !== 0 && this.yAxis.y !== 0) {                
                 this.xAxis.x = 1 / this.xAxis.x;
                 this.xAxis.y = 0;
@@ -9395,10 +9527,10 @@ groover.geom = (function (){
             this.origin.y = v3.y;
             return this;
         },        
-        determinant : function(){ // returns the determinant of the matrix. I like to call it the axis cross product as it is identical to the cross product of x, and y axis
+        determinant(){ // returns the determinant of the matrix. I like to call it the axis cross product as it is identical to the cross product of x, and y axis
             return this.xAxis.x * this.yAxis.y - this.xAxis.y * this.yAxis.x;
         },
-        mult : function(transform){
+        mult(transform){
             var tt = transform;
             var t = this;
             v1.x = tt.xAxis.x * t.xAxis.x + tt.yAxis.x * t.xAxis.y;
@@ -9415,7 +9547,7 @@ groover.geom = (function (){
             this.origin.y = v3.y;
             return this;
         },
-        rotate : function(angle){
+        rotate(angle){
             var xdx = Math.cos(angle);
             var xdy = Math.sin(angle);
             
@@ -9434,7 +9566,7 @@ groover.geom = (function (){
             this.origin.y = v3.y;
             return this;
         },
-        scaleUniform : function(scale){
+        scaleUniform(scale){
             this.xAxis.x *= scale;
             this.xAxis.y *= scale;
             this.yAxis.x *= scale;
@@ -9443,7 +9575,7 @@ groover.geom = (function (){
             this.origin.y *= scale;
             return this;            
         },
-        scaleAtPoint  : function(scale,vec){ //scales the transform keeping the location argument vec at the same  screen pos
+        scaleAtPoint (scale,vec){ //scales the transform keeping the location argument vec at the same  screen pos
             v1.x = (vec.x * this.xAxis.x + vec.y * this.yAxis.x + this.origin.x);
             v1.y = (vec.x * this.xAxis.y + vec.y * this.yAxis.y + this.origin.y);              
             this.xAxis.x *= scale;
@@ -9458,7 +9590,7 @@ groover.geom = (function (){
             this.origin.y -= v2.y - v1.y;            
             return this;            
         },
-        scale : function(scaleX,scaleY){
+        scale(scaleX,scaleY){
             this.xAxis.x *= scaleX;
             this.xAxis.y *= scaleY;
             this.yAxis.x *= scaleX;
@@ -9467,19 +9599,19 @@ groover.geom = (function (){
             this.origin.y *= scaleY;
             return this;                        
         },
-        scaleX : function(scaleX){
+        scaleX(scaleX){
             this.xAxis.x *= scaleX;
             this.yAxis.x *= scaleX;
             this.origin.x *= scaleX;
             return this;                        
         },
-        scaleY : function(scaleY){
+        scaleY(scaleY){
             this.xAxis.y *= scaleY;
             this.yAxis.y *= scaleY;
             this.origin.y *= scaleY;
             return this;                        
         },
-        shear : function(sx, sy){
+        shear(sx, sy){
             v1.x = this.xAxis.x + this.yAxis.x * sy;
             v1.y = this.xAxis.y + this.yAxis.y * sy;
             v2.x = this.xAxis.x * sx + this.yAxis.x;
@@ -9490,30 +9622,30 @@ groover.geom = (function (){
             this.yAxis.y = v2.y;
             return this;
         },
-        shearX : function(sx){
+        shearX(sx){
             this.yAxis.x += this.xAxis.x * sx;
             this.yAxis.y += this.xAxis.y * sx;
             return this;
         },
-        shearY : function(sy){
+        shearY(sy){
             this.xAxis.x += this.yAxis.x * sy;
             this.xAxis.y += this.yAxis.y * sy;
             return this;
         },
-        translate : function(x,y){
+        translate(x,y){
             this.origin.x +=  x;
             this.origin.y +=  y;
             return this;            
         },
-        translateX : function(x){
+        translateX(x){
             this.origin.x += x;
             return this;            
         },
-        translateY : function(y){
+        translateY(y){
             this.origin.y += y;
             return this;            
         },
-        setAs : function (transform) {
+        setAs(transform) {
             this.xAxis.x = transform.xAxis.x;
             this.xAxis.y = transform.xAxis.y;
             this.yAxis.x = transform.yAxis.x;
@@ -9522,35 +9654,35 @@ groover.geom = (function (){
             this.origin.y = transform.origin.y;
             return this;
         },
-        setContextTransform : function(ctx){
+        setContextTransform(ctx){
             ctx.setTransform(this.xAxis.x,this.xAxis.y,this.yAxis.x,this.yAxis.y,this.origin.x,this.origin.y);
             return this;
         },
-        multiplyContextTransform : function(ctx){
+        multiplyContextTransform(ctx){
             ctx.transform(this.xAxis.x,this.xAxis.y,this.yAxis.x,this.yAxis.y,this.origin.x,this.origin.y);
             return this;
         },
-        setOrigin : function(vec){
+        setOrigin(vec){
             this.origin.x = vec.x;
             this.origin.y = vec.y;
             return this;
         },
-        negateOrigin : function(){
+        negateOrigin(){
             this.origin.x = -this.origin.x;
             this.origin.y = -this.origin.y;
             return this;
         },
-        setXAxis : function(vec){
+        setXAxis(vec){
             this.xAxis.x = vec.x;
             this.xAxis.y = vec.y;
             return this;
         },
-        setYAxis : function(vec){
+        setYAxis(vec){
             this.yAxis.x = vec.x;
             this.yAxis.y = vec.y;
             return this;
         },
-        setAxisAngles : function(angleX, angleY){
+        setAxisAngles(angleX, angleY){
             vx = Math.hypot(this.xAxis.x, this.xAxis.y);
             vy = Math.hypot(this.yAxis.x, this.yAxis.y);
             this.xAxis.x = Math.cos(angleX) * vx;
@@ -9559,29 +9691,29 @@ groover.geom = (function (){
             this.yAxis.y = Math.sin(angleY) * vy;
             return this;
         },
-        setXAxisAngle : function(angle){
+        setXAxisAngle(angle){
             vx = Math.hypot(this.xAxis.x, this.xAxis.y);
             this.xAxis.x = Math.cos(angle) * vx;
             this.xAxis.y = Math.sin(angle) * vx;
             return this;
         },
-        setYAxisAngle : function(angle){
+        setYAxisAngle(angle){
             vy = Math.hypot(this.yAxis.x, this.yAxis.y);
             this.yAxis.x = Math.cos(angle) * vy;
             this.yAxis.y = Math.sin(angle) * vy;
             return this;
         },
-        skew : function(){ // returns the skew angle
+        skew(){ // returns the skew angle
             return Math.atan2(-this.yAxis.x,this.yAxis.y) -  Math.atan2(this.xAxis.y,this.xAxis.x) ;            
         },
-        setSkew : function(angle){ // sets the skew angle
+        setSkew(angle){ // sets the skew angle
             var scaleY = Math.hypot(this.yAxis.y, this.yAxis.x);
             var rot = Math.atan2(this.xAxis.y, this.xAxis.x) + MPI90 + angle;
             this.yAxis.x = Math.cos(rot) * scaleY;
             this.yAxis.y = Math.sin(rot) * scaleY;
             return this;
         },   
-        recompose : function(composit){ // creates a matrix from a decomposed matrix
+        recompose(composit){ // creates a matrix from a decomposed matrix
                                         // rotation (direction of xAxis)
                                         // skew (offset from +90deg of yAxis. ie skew = 0 then yAxis is 90deg from xAxis)
                                         // scaleX scale of xAxis
@@ -9595,10 +9727,10 @@ groover.geom = (function (){
             this.origin.y = composit.originY;
             return this;
         },
-        decomposeScale : function(){ //returns the current scale of the transform. This assumes the scale is uniform
+        decomposeScale(){ //returns the current scale of the transform. This assumes the scale is uniform
             return Math.hypot(this.xAxis.y,this.xAxis.x);
         },
-        decomposeType : function(type){ // returns the decomposed item dependent on type. ["rotation","scale","scalex","scaley","skew"]);
+        decomposeType(type){ // returns the decomposed item dependent on type. ["rotation","scale","scalex","scaley","skew"]);
             type = type.toLowerCase();
             switch(type){
                 case "rotation":
@@ -9613,7 +9745,7 @@ groover.geom = (function (){
             }
             return this.decompose();
         },
-        decompose : function(){
+        decompose(){
             var r;
             return {
                 rotation : (r = Math.atan2(this.xAxis.y, this.xAxis.x)),
@@ -9624,7 +9756,7 @@ groover.geom = (function (){
                 originY : this.origin.y
             };
         },
-        asSVG : function(svgMatrix){
+        asSVG(svgMatrix){
             if(svgMatrix === undefined){
                 if( ! ( svgMatrix = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix() )){
                     return undefined;
