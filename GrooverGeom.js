@@ -4358,43 +4358,66 @@ groover.geom = (function (){
             this.fromPoints(tp.vecs[0],tp.vecs[1]);
             return this;    // returns this.
         },
-		fitCircleToLine(arcCircle,line,left = true){  // {arcCircle} is moved to fit the corner made by the intercept of the {line} and this circle if possible. if left === true then circle is fitted to the left else to the right.
+		fitCircleToLine(arcCircle,line,left = true, outside = true){  // {arcCircle} is moved to fit the corner made by the intercept of the {line} and this circle if possible. if left === true then circle is fitted to the left else to the right. {outside} if true then circle is fitted outside this circle else it is inside if it can fit. (if no fit can be found then an empty circle or arc is set
 			var circle = arcCircle.circle ? arcCircle.circle : arcCircle;
 			a = line.distFromPointDir(this.circle.center); // Uses registers from this call v1 is line as vec, v3 is point on line closest to circle center line._leng is length of line
-
-			b = this.circle.radius + circle.radius;
-			if(left){
-				c = circle.radius - a;
-				a1 = Math.sqrt(b * b - c * c);
-				v1.x /= line._leng;
-				v1.y /= line._leng;
-				v3.x += a1 * v1.x;
-				v3.y += a1 * v1.y;
-				circle.center.x = v3.x - circle.radius * v1.y;				
-				circle.center.y = v3.y + circle.radius * v1.x;
-				this.start =  ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
-				if(arcCircle.circle){
-					arcCircle.end = ((Math.atan2(-v1.x,v1.y) % MPI2) + MPI2) % MPI2;
-					arcCircle.start = (((this.start  + Math.PI) % MPI2) + MPI2) % MPI2;
+			v1.x /= line._leng;
+			v1.y /= line._leng;
+			if(outside){
+				b = this.circle.radius + circle.radius;
+				if(left){
+					c = circle.radius - a;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;
+					circle.center.x = v3.x - circle.radius * v1.y;				
+					circle.center.y = v3.y + circle.radius * v1.x;
+					this.start =  ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
+					if(arcCircle.circle){
+						arcCircle.end = ((Math.atan2(-v1.x,v1.y) % MPI2) + MPI2) % MPI2;
+						arcCircle.start = (((this.start  + Math.PI) % MPI2) + MPI2) % MPI2;
+					}
+				}else{
+					c = circle.radius + a;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;					
+					circle.center.x = v3.x + circle.radius * v1.y;				
+					circle.center.y = v3.y - circle.radius * v1.x;
+					this.end = ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
+					if(arcCircle.circle){
+						arcCircle.start = ((Math.atan2(v1.x,-v1.y) % MPI2) + MPI2) % MPI2;
+						arcCircle.end = (((this.end  + Math.PI) % MPI2) + MPI2) % MPI2;
+					}
 				}
-				
-				
-			}else{
-				c = a + circle.radius;
-				a1 = Math.sqrt(b * b - c * c);
-				v1.x /= line._leng;
-				v1.y /= line._leng;
-				v3.x += a1 * v1.x;
-				v3.y += a1 * v1.y;					
-				circle.center.x = v3.x + circle.radius * v1.y;				
-				circle.center.y = v3.y - circle.radius * v1.x;
-				this.end = ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
-				if(arcCircle.circle){
-					arcCircle.start = ((Math.atan2(v1.x,-v1.y) % MPI2) + MPI2) % MPI2;
-					arcCircle.end = (((this.end  + Math.PI) % MPI2) + MPI2) % MPI2;
+			} else {
+				b = this.circle.radius - circle.radius;
+				if(left){
+					c = a - circle.radius;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;					
+					circle.center.x = v3.x - circle.radius * v1.y;				
+					circle.center.y = v3.y + circle.radius * v1.x;
+					this.start =  ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
+					if(arcCircle.circle){
+						arcCircle.start = ((Math.atan2(-v1.x,v1.y) % MPI2) + MPI2) % MPI2;
+						arcCircle.end = ((this.start % MPI2) + MPI2) % MPI2;
+					}
+				}else{
+					c = a + circle.radius;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;					
+					circle.center.x = v3.x + circle.radius * v1.y;				
+					circle.center.y = v3.y - circle.radius * v1.x;
+					this.end = ((Math.atan2(circle.center.y-this.circle.center.y,circle.center.x-this.circle.center.x) % MPI2) + MPI2) % MPI2;
+					if(arcCircle.circle){
+						arcCircle.end = ((Math.atan2(v1.x,-v1.y) % MPI2) + MPI2) % MPI2;
+						arcCircle.start = ((this.end % MPI2) + MPI2) % MPI2;
+					}
 				}
 			}
-
 			return this;
 		},		
 		getTangentsToCircle(arcCircle,retLineR,retLineL){ // Sets the lines and end points to the tangent joining the two circles that make the arcs
@@ -5204,24 +5227,45 @@ groover.geom = (function (){
 			}
 			return this;
 		},
-		fitCircleToLine(circle,line,left = true){  // {circle} is moved to fit the corner made by the intercept of the {line} and this circle if possible. if left === true then circle is fitted to the left else to the right.
+		fitCircleToLine(circle,line,left = true,outside = true){  // {circle} is moved to fit the corner made by the intercept of the {line} and this circle if possible. if left === true then circle is fitted to the left else to the right.
 			a = line.distFromPointDir(this.center); // Uses registers from this call v1 is line as vec, v3 is point on line closest to circle center line._leng is length of line
-			b = this.radius + circle.radius;
-			if(left){
-				c = circle.radius - a;
-				a1 = Math.sqrt(b * b - c * c);
-				v1.x /= line._leng;
-				v1.y /= line._leng;
-				circle.center.x = v3.x + a1 * v1.x - circle.radius * v1.y;				
-				circle.center.y = v3.y + a1 * v1.y + circle.radius * v1.x;
+			v1.x /= line._leng;
+			v1.y /= line._leng;
+			if(outside){
+				b = this.radius + circle.radius;
+				if(left){
+					c = circle.radius - a;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;						
+					circle.center.x = v3.x - circle.radius * v1.y;				
+					circle.center.y = v3.y + circle.radius * v1.x;
+				}else{
+					c = a + circle.radius;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;						
+					circle.center.x = v3.x + circle.radius * v1.y;				
+					circle.center.y = v3.y - circle.radius * v1.x;
+				}
 			}else{
-				c = a + circle.radius;
-				a1 = Math.sqrt(b * b - c * c);
-				v1.x /= line._leng;
-				v1.y /= line._leng;
-				circle.center.x = v3.x + a1 * v1.x + circle.radius * v1.y;				
-				circle.center.y = v3.y + a1 * v1.y - circle.radius * v1.x;
-			}
+				b = this.circle.radius - circle.radius;
+				if(left){
+					c = a - circle.radius;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;					
+					circle.center.x = v3.x - circle.radius * v1.y;				
+					circle.center.y = v3.y + circle.radius * v1.x;
+				}else{
+					c = a + circle.radius;
+					a1 = Math.sqrt(b * b - c * c);
+					v3.x += a1 * v1.x;
+					v3.y += a1 * v1.y;					
+					circle.center.x = v3.x + circle.radius * v1.y;				
+					circle.center.y = v3.y - circle.radius * v1.x;
+				}
+			}			
 			return this;
 		},
         reflectLine(line){ // WTF sorry will fix in time
