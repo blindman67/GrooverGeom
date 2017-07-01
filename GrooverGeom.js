@@ -129,13 +129,13 @@ groover.geom = (function (){
     if(typeof GROOVER_GEOM_INCLUDE_MATH !== "undefined" && GROOVER_GEOM_INCLUDE_MATH === true){
         // some math extensions 
         Math.triPh = triPh;
-        Math.triCosPh = function (a,b,c){ // return the cosine of the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opisite the length c
+        Math.triCosPh = function (a,b,c){ // return the cosine of the angle pheta of a triangle given length of sides a,b,c. Pheta is the angle opposite the length c
             return (c * c - (a * a + b * b)) / (-2 * a * b);
         }
-        Math.triLenC = function (a,b,pheta){ // return the length of side C given the length of two sides a,b and the angle opisite the edge C
+        Math.triLenC = function (a,b,pheta){ // return the length of side C given the length of two sides a,b and the angle opposite the edge C
             return Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(pheta));
         }
-        Math.triLenC2 = function (a,b,pheta){ // return the length squared of side C given the length of two sides a,b and the angle opisite the edge C
+        Math.triLenC2 = function (a,b,pheta){ // return the length squared of side C given the length of two sides a,b and the angle opposite the edge C
             return a*a + b*b - 2*a*b*Math.cos(pheta);
         }
         Math.smallestAngleBetween = smallestAngleBetween;
@@ -4426,6 +4426,48 @@ groover.geom = (function (){
 			}
 			return this;
 		},		
+		fitCircleToCircles(arcCircle1,arcCircle2, left = true){ // circle1 is inside this circle. Fit circle 2 so to touch both at the tangents. If left is true then circle2 is placed left of the line from this circle to circle1. else to the right
+			var circle1 = arcCircle1.circle ? arcCircle1.circle : arcCircle1;
+			var circle2 = arcCircle2.circle ? arcCircle2.circle : arcCircle2;
+			v1.x = circle1.center.x - this.circle.center.x;
+			v1.y = circle1.center.y - this.circle.center.y;
+			a = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+			b = this.circle.radius - circle2.radius;
+			c = circle1.radius + circle2.radius;
+			c1 = Math.acos((c * c - (a * a + b * b)) / (-2 * a * b));
+			d = Math.atan2(v1.y,v1.x); // angle to circle1
+			d += left ? c1 : -c1; // move to direction of circle2
+			circle2.center.x = this.circle.center.x + Math.cos(d) * b;
+			circle2.center.y = this.circle.center.y + Math.sin(d) * b;
+			v2.x = circle1.center.x - circle2.center.x;
+			v2.y = circle1.center.y - circle2.center.y;
+			if(left){
+				this.start = ((d % MPI2) + MPI2) % MPI2;
+				if(arcCircle2.circle){
+					arcCircle2.end = this.start;
+					arcCircle2.start = d1 = ((Math.atan2(v2.y,v2.x) % MPI2) + MPI2) % MPI2;
+				}else{
+					d1 = ((Math.atan2(v2.y,v2.x) % MPI2) + MPI2) % MPI2;
+				}
+				if(arcCircle1.circle){
+					arcCircle1.end = (d1 + MPI)% MPI2;
+				}
+			}else{
+				this.end = ((d % MPI2) + MPI2) % MPI2;
+				if(arcCircle2.circle){
+					arcCircle2.start = this.end;
+					arcCircle2.end = d1 = ((Math.atan2(v2.y,v2.x) % MPI2) + MPI2) % MPI2;
+				}else{
+					d1 = ((Math.atan2(v2.y,v2.x) % MPI2) + MPI2) % MPI2;
+				}
+				if(arcCircle1.circle){
+					arcCircle1.start = (d1 + MPI)% MPI2;
+				}
+			}
+		
+			return this;
+		
+		},
 		getTangentsToCircle(arcCircle,retLineR,retLineL){ // Sets the lines and end points to the tangent joining the two circles that make the arcs
 			var circle = arcCircle.circle ? arcCircle.circle : arcCircle;
 			v1.x = circle.center.x - this.circle.center.x; 
