@@ -4015,7 +4015,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        fromVec3(vec1, vec2, vec3){ // creates an arc that fits the three vectors if posible If points are on a line then an empty arc is returned
+        fromVec3(vec1, vec2, vec3){ // creates an arc that fits the three vectors if possible If points are on a line then an empty arc is returned
             // This function uses Geom registers v1
             // v1 is the center of the circle if return is not empty 
             this.circle.fromVec3(vec1, vec2, vec3);
@@ -4044,7 +4044,7 @@ groover.geom = (function (){
             }
             return this;
         },
-        fromTriangle(triangle){// positions and sets radius to fit all 3 points of the triangle if posible. If not returns empty circle
+        fromTriangle(triangle){// positions and sets radius to fit all 3 points of the triangle if possible. If not returns empty circle
             return this.fromVec3(triangle.p1,triangle.p2,triangle.p3);
         },    
         fromTangentAt(where, tangentVec){ // fits the arc so that it has the tangent at start or end depending on arg where. The start and end points are not move only the circle center and radius are moved to fit
@@ -4099,6 +4099,12 @@ groover.geom = (function (){
             this.end = c;
             return this; // returns this.
         },        
+        reverse(){ // switch start and end angles
+            c = this.start;
+            this.start = this.end;
+            this.end = c;
+            return this; // returns this.
+        },        
         fromPoints(p1,p2,p3){
             if(p3 === undefined){
                 this.start = this.circle.angleOfPoint(p1);
@@ -4112,7 +4118,7 @@ groover.geom = (function (){
             this.end = Math.max(a1,a2,a3);
             return this;
         },
-        setRadius(number){ // set the radius of this to the {anumber}
+        setRadius(number){ // set the radius of this to the {number}
             this.circle.radius = number;
             return this; // returns this.
         },
@@ -4124,7 +4130,7 @@ groover.geom = (function (){
             this.circle.radius *= number;
             return this; // returns this.            
         },
-        setCenter(vec){  // sets the center of this to the {avec}
+        setCenter(vec){  // sets the center of this to the {vec}
             this.circle.center.x = vec.x;
             this.circle.center.y = vec.y;
             return this; // returns this.
@@ -4140,7 +4146,7 @@ groover.geom = (function (){
             this.end = ((this.end % MPI2) + MPI2) % MPI2;
             return this; // returns this.
         },
-        towards(vec){ // Changes the arc if needed to bend towards the {avec}
+        towards(vec){ // Changes the arc if needed to bend towards the {vec}
             a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
             b = ((this.start % MPI2) + MPI2) % MPI2;
             e = ((this.end % MPI2) + MPI2) % MPI2;
@@ -4159,7 +4165,7 @@ groover.geom = (function (){
             this.end = c;
             return this; // returns this.
         },
-        away(vec){ // Changes the arc if needed to bend away from the {avec}
+        away(vec){ // Changes the arc if needed to bend away from the {vec}
             a = ((this.circle.angleOfPoint(vec) % MPI2) + MPI2) % MPI2;
             b = ((this.start % MPI2) + MPI2) % MPI2;
             e = ((this.end % MPI2) + MPI2) % MPI2;
@@ -4213,7 +4219,7 @@ groover.geom = (function (){
             vec.y = this.circle.center.y + Math.sin(c) * this.circle.radius;
             return vec
         },
-        unitPosAsVec(unit,vec){ // legacy  dont use
+        unitPosAsVec(unit,vec){ // legacy  don't use
             console.warning("Geom.Arc.unitPosAsVec has depreciated use unitAlong instead.");
             return this.unitAlong(unit, vec);
         },
@@ -4260,11 +4266,11 @@ groover.geom = (function (){
             }
             return retLine            
         },
-        startFromVec(vec){ // sets the start as the angle from this arcs center to the pooint described by vec
+        startFromVec(vec){ // sets the start as the angle from this arcs center to the point described by vec
             this.start = Math.atan2(vec.y - this.circle.center.y,vec.x - this.circle.center.x);
             return this;
         },
-        endFromVec(vec){ // sets the start as the angle from this arcs center to the pooint described by  vec
+        endFromVec(vec){ // sets the start as the angle from this arcs center to the point described by  vec
             this.end = Math.atan2(vec.y - this.circle.center.y,vec.x - this.circle.center.x);
             return this;
         },
