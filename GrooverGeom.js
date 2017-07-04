@@ -7310,35 +7310,36 @@ groover.geom = (function (){
 			v3.x = box.left;
 			v3.y = box.top;
 			if(this.isPointInside(v3)) { return true }
-            va.x = this.top.p1.x - v2.y * this.aspect; 
-            va.y = this.top.p1.y + v2.x * this.aspect;			
-			if(box.isPointInside(va)) { return true }
-            vb.x = va.x + v2.x; 
-            vb.y = va.y + v2.y;			
-			if(box.isPointInside(vb)) { return true }
+            l2.p2.x = this.top.p1.x - v2.y * this.aspect; 
+            l2.p2.y = this.top.p1.y + v2.x * this.aspect;			
+			if(box.isPointInside(l2.p2)) { return true }
+            l2.p1.x = l2.p2.x + v2.x; 
+            l2.p1.y = l2.p2.y + v2.y;			
+			if(box.isPointInside(l2.p1)) { return true }
 			v3.x = box.right;
 			if(this.isPointInside(v3)) { return true }
 			v3.y = box.bottom;
 			if(this.isPointInside(v3)) { return true }
 			v3.x = box.left;
 			if(this.isPointInside(v3)) { return true }
+			// box may not have been normalized hence the Math.min(box.top,box.bottom)
+			if(Math.min(box.top,box.bottom) > Math.max(this.top.p1.y, this.top.p2.y, l2.p1.y, l2.p2.y)) { return false }
+			if(Math.max(box.top,box.bottom) < Math.min(this.top.p1.y, this.top.p2.y, l2.p1.y, l2.p2.y)) { return false }
+			if(Math.min(box.left,box.right) > Math.max(this.top.p1.x, this.top.p2.x, l2.p1.x, l2.p2.x)) { return false }
+			if(Math.max(box.left,box.right) < Math.min(this.top.p1.x, this.top.p2.x, l2.p1.x, l2.p2.x)) { return false }
 			l1.p1.x = box.left;
 			l1.p1.y = box.top;
 			l1.p2.x = box.right;
 			l1.p2.y = box.top;
-			l2.p1.x = vb.x;
-			l2.p1.y = vb.y;
-			l2.p2.x = va.x;
-			l2.p2.y = va.y;
 			l3.p1.x = this.top.p1.x;
 			l3.p1.y = this.top.p1.y;
-			l3.p2.x = va.x;
-			l3.p2.y = va.y;
+			l3.p2.x = l2.p2.x;
+			l3.p2.y = l2.p2.y;
 			l4.p1.x = this.top.p2.x;
 			l4.p1.y = this.top.p2.y;
-			l4.p2.x = vb.x;
-			l4.p2.y = vb.y;
-			
+			l4.p2.x = l2.p1.x;
+			l4.p2.y = l2.p1.y;
+
 			if(this.top.isLineSegIntercepting(l1) || l2.isLineSegIntercepting(l1) ) { return true }
 			if(l3.isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l1) ) { return true }
 			l1.p1.x = box.left;
