@@ -627,7 +627,8 @@ groover.geom = (function (){
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
     var vx,vy,v1x,v1y,u,u1,u2,c,c1,a,a1,b,b1,d,d1,e,e1;  
     var l1,l2,l3,l4,l5;//,la,lb,lc,ld,le,lr1,lr2;  //  have not found these useful as yet may return them but want to keep the number of closure variable as low as possible
-    var bez; // a bezier that is used to a temp for some bezier functions.
+    var box1;
+	var bez; // a bezier that is used to a temp for some bezier functions.
     var rArray; // an internal register array
     var rArrayLen;
     const namedRegisters = {
@@ -664,6 +665,7 @@ groover.geom = (function (){
         l3 = new Line();
         l4 = new Line();
         l5 = new Line();
+		box1 = new Box();
         bez = new Bezier("cubic");
         rArray = [0,0,0,0,0,0,0,0,0,0];
 
@@ -675,15 +677,8 @@ groover.geom = (function (){
             v5 : v5,
             l1 : l1,
             array : rArray,   
-            getNamedRegList(){
-                return namedRegisters;
-            },
-            get(name){
-                if(namedRegisters[name] !== undefined){
-                    return namedRegisters[name]();
-                }
-                return undefined;
-            }
+            getNamedRegList() {  return namedRegisters },
+            get(name) { if(namedRegisters[name] !== undefined){ return namedRegisters[name]() } }
         };
         this.primitiveTypes = [ // list of primitives
             "PrimitiveArray",
@@ -3623,20 +3618,27 @@ groover.geom = (function (){
             this.y /= 2;
             return this; // returns this
         },
-        setLeng(number){  // Sets the length (magnitude) of this vec to the {anumber}.
+        setLeng(number){  // Sets the length (magnitude) of this vec to the {number}.
             var l = Math.hypot(this.x,this.y);
             this.x = (this.x / l) * number;
             this.y = (this.y / l) * number;
             this._leng = number;
             return this; // returns this
         },
-        setDir(number){ // Sets the direction of this by {anumber} in radians. This function does not cahnge the magnitude of this vec.
+		setDistFrom(distance,vec){ // working 7/17
+			v1.x = this.x - vec.x;
+			v1.y = this.y - vec.y;
+			u = distance / Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+			this.x = vec.x + v1.x * u;
+			this.y = vec.y + v1.y * u;
+		},
+        setDir(number){ // Sets the direction of this by {number} in radians. This function does not change the magnitude of this vec.
             this._leng  = this.leng();
             this.x = Math.cos(number) * this._leng;
             this.y = Math.sin(number) * this._leng;
             return this;  // returns this
         },
-        rotate(number){ // Rotates this by {anumber}
+        rotate(number){ // Rotates this by {number}
             this._leng = Math.hypot(this.x,this.y);
             this._dir = (number += Math.atan2(this.y,this.x));
             this.x = Math.cos(number) * this._leng;
@@ -3778,30 +3780,18 @@ groover.geom = (function (){
             return Math.min(c1, this.endAsVec(v1).distFrom(vec));
             
         },
-        asBox(box){
-            if(box === undefined){
-                var box = new Box();
-            }
-            var a = this.copy().normalise();
-            box.env (a.circle.center.x + Math.cos(a.start) * a.circle.radius, a.circle.center.y + Math.sin(a.start) * a.circle.radius );
-            box.env (a.circle.center.x + Math.cos(a.end) * a.circle.radius, a.circle.center.y + Math.sin(a.end) * a.circle.radius );
-            var s = a.start;
-            var e = a.end;
-            if(s > e){
-                s -= MPI2;
-            }            
-            if(s <= 0 && e >= 0){
-                box.env ( a.circle.center.x + a.circle.radius)
-            }
-            if((s <= -MPI && e >= -MPI) || (s <= MPI && e >= MPI)){
-                box.env ( a.circle.center.x - a.circle.radius);
-            }
-            if(s <= MPI90 && e >= MPI90){
-                box.env (undefined, a.circle.center.y + a.circle.radius)
-            }
-            if((s <= MPI270 && e >= MPI270) || (s <= -MPI90 && e >= -MPI90)){
-                box.env (undefined, a.circle.center.y - a.circle.radius)
-            }
+        asBox(box  = new Box()){
+
+            this.normalise();
+            box.env (this.circle.center.x + Math.cos(this.start) * this.circle.radius, this.circle.center.y + Math.sin(this.start) * this.circle.radius );
+            box.env (this.circle.center.x + Math.cos(this.end) * this.circle.radius, this.circle.center.y + Math.sin(this.end) * this.circle.radius );
+            var s = this.start;
+            var e = this.end;
+            if(s > e){ s -= MPI2 }            
+            if(s <= 0 && e >= 0) { box.env ( this.circle.center.x + this.circle.radius) }
+            if((s <= -MPI && e >= -MPI) || (s <= MPI && e >= MPI)) { box.env ( this.circle.center.x - this.circle.radius) }
+            if(s <= MPI90 && e >= MPI90) { box.env (undefined, this.circle.center.y + this.circle.radius) }
+            if((s <= MPI270 && e >= MPI270) || (s <= -MPI90 && e >= -MPI90)) { box.env (undefined, this.circle.center.y - this.circle.radius) }
             return box;
         },
         asVecArray(vecArray, instance){
@@ -4281,7 +4271,30 @@ groover.geom = (function (){
             this.startFromVec(vec1).endFromVec(vec2);
             return this;
         },
-        sweapLeng(){
+        isAngleToPointBetween(point){ // not complete
+			a = (Math.atan2(point.y - this.circle.center.y, point.x - this.circle.center.x) + MPI2) % MPI2;
+			b = ((this.start % MPI2) + MPI2 ) % MPI2;
+			c = ((this.end % MPI2) + MPI2 ) % MPI2;
+			if(this.direction){ return !(a >= b && a <= c) }
+			if(b > c) { c += MPI2 }
+			if(b > a) { a += MPI2 }
+			return a >= b && a <= c;
+		},
+		interceptLineSeg(line,retV1,retV2){
+			this.circle.interceptLineSeg(line,l1);
+			retV1.x = retV2.x = retV1.y = retV2.y = undefined;
+			if(!l1.p1.isEmpty() && this.isAngleToPointBetween(l1.p1)){
+				retV1.x = l1.p1.x;
+				retV1.y = l1.p1.y;
+			}
+			if(!l1.p2.isEmpty() && this.isAngleToPointBetween(l1.p2)){
+				retV2.x = l1.p2.x;
+				retV2.y = l1.p2.y;
+			}
+			return retV1;
+			
+		},
+		sweapLeng(){
             a = ((this.start % MPI2) + MPI2) % MPI2;
             e = ((this.end % MPI2) + MPI2) % MPI2;
             if(a > e){
@@ -7384,6 +7397,32 @@ groover.geom = (function (){
 				if(Math.sqrt(a1 * a1 + b1 * b1) > circle.radius){ return false }
 			}
             return true;
+        },
+        isArcTouching(arc){ // Not complete Not tested
+			if(this.isPointInside(arc.startAsVec(va)) || this.isPointInside(arc.endAsVec(va))){ return true }
+		    if(this.isCircleTouching(arc.circle)) { 
+				arc.interceptLineSeg(this.top,va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return true }
+				arc.interceptLineSeg(this.bottomLine(l2),va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return true }
+				arc.interceptLineSeg(this.leftLine(l2),va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return true }
+				arc.interceptLineSeg(this.rightLine(l2),va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return true }
+			}
+
+            return false;
+        },
+        isArcInside(arc){ // Not complete Not tested
+		    if(this.isCircleInside(arc.circle)) { return true }
+			arc.endsAsVec(l1.p1,l1.p2);
+			if(this.isLineInside(l1)){
+				// may still be outside
+				return true;
+			}
+			arc.asBox(box1.irrate());
+			if(this.isBoxInside(box1)) { return true }
+            return false;
         },
         isPointInside(vec){ // Tested working 7/17
             v1.x = vec.x - this.top.p1.x
