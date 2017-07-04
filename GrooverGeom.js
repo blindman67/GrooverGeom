@@ -2769,17 +2769,17 @@ groover.geom = (function (){
             l1.p1.y = this.p1.y;
             l1.p2.x = this.p2.x;
             l1.p2.y = this.p2.y;           
-            if(line.isLineSegsIntercepting(l1)){
+            if(line.isLineSegIntercepting(l1)){
                 return true;
             }
             l1.p1.x = this.p3.x;
             l1.p1.y = this.p3.y;
-            if(line.isLineSegsIntercepting(l1)){
+            if(line.isLineSegIntercepting(l1)){
                 return true;
             }
             l1.p2.x = this.p1.x;
             l1.p2.y = this.p1.y;
-            if(line.isLineSegsIntercepting(l1)){
+            if(line.isLineSegIntercepting(l1)){
                 return true;
             }
             return false;            
@@ -4791,6 +4791,12 @@ groover.geom = (function (){
             }
             return true;
         },
+        isLineTouching(line){ // returns true is this circle is in contact with the line false if not
+            if(line.distFrom(this.center) > this.radius){
+                return false
+            }
+            return true;
+        },
         isRectangleInside(rectangle){ // return true if rectangle is inside the circle false if not
             // This function uses V1 and v2
             // Only if this function can v1 and v2 be considered valid
@@ -6152,7 +6158,7 @@ groover.geom = (function (){
             return rVec;
 
         },
-        isLineSegsIntercepting(line){ // Returns true if the line intercepts this line segment
+        isLineSegIntercepting(line){ // Returns true if the line intercepts this line segment
             // this function uses V1,V2,V3,V4 where
             // v1 is the vector of this line
             // v2 is the vector of line
@@ -7302,142 +7308,64 @@ groover.geom = (function (){
             }            
             return true;         
         },
-        isCircleInside(circle){  // need improvement
-            var x,y,x1,y1,x2,y2,l,l1
-            // get top as vec
-            x2 = this.top.p2.x - this.top.p1.x;
-            y2 = this.top.p2.y - this.top.p1.y;            
-            l = Math.hypot(x2,y2);
-            // if the radius is greater then the length of a side then can not fit.
-            if( l / 2 < circle.radius || (l * this.aspect) / 2 < circle.radius){
-                return false;
-            }    
-
-            // check if circle center is inside.            
-            x = circle.center.x - this.top.p1.x
-            y = circle.center.y - this.top.p1.y
-            if(x2 * y - y2 * x < 0 || -y2 * y - x2 * x > 0){
-                return false;
-            }
-            // get vec relative to bottom right
-            x1 = circle.center.x - (this.top.p2.x - y2 * this.aspect); 
-            y1 = circle.center.y - (this.top.p2.y + x2 * this.aspect);
-            if(x2 * y1 - y2 * x1 > 0 || -y2 * y1 - x2 * x1 < 0){
-                return false;
-            }            
-            
-            // find the distance of the circle center from the top
-            l1 = (x * x2 + y * y2) / (l * l);
-            l1 = Math.hypot(x2 * l1 - x, y2 * l1 - y);
-            if(l1 < circle.radius || (l * this.aspect) - l1 < circle.radius){
-                return false;
-            }
-            // find the distance of the circle center from the left
-            l1 = (x * -y2 + y * x2) / (l * l);
-            l1 = Math.hypot(-y2 * l1 - x, x2 * l1 - y);
-            if(l1 < circle.radius || l  - l1 < circle.radius){
-                return false;
-            }            
-            return true;
-            
+        isCircleInside(circle){  // Tested working 7/17
+		    if(this.isCircleTouching(circle)){
+				if(a < u - circle.radius && b < u1 - circle.radius){ return true }
+			}
+			return false;
         },
-        isCircleTouching(circle){
-            // get center
+        isCircleTouching(circle){ // Tested working 7/17
             vc.x = this.top.p1.x + (v1.x = (this.top.p2.x - this.top.p1.x) / 2);
             vc.y = this.top.p1.y + (v1.y = (this.top.p2.y - this.top.p1.y) / 2);
-            vc.x += -v1.y * this.aspect;
-            vc.y += v1.x * this.aspect;
-            // get width
-            u = Math.hypot(v1.x,v1.y)
-
-            // make circle center relative to rectange center
-            v2.x = circle.center.x - vc.x;
-            v2.y = circle.center.y - vc.y;
-
-            // dot product of horizontal center line and circle center div length of line 
-            // goves distance from vetical center line
-            if(Math.abs((v2.x * v1.x + v2.y * v1.y) / u ) > circle.radius + u){
-                return false;
-            }
-            // do same for vertical line
-            if(Math.abs((v2.x * -v1.y + v2.y * v1.x) / u ) > circle.radius + u  * this.aspect){
-                return false;
-            }
+            v3.x = -v1.y * this.aspect;
+            v3.y = v1.x * this.aspect;
+            u1 = (u = Math.hypot(v1.x,v1.y)) * this.aspect;
+            v2.x = circle.center.x - (vc.x + v3.x);
+            v2.y = circle.center.y - (vc.y + v3.y);
+            if((a = Math.abs((v2.x * v1.x + v2.y * v1.y) / u )) > circle.radius + u){ return false }
+            if((b = Math.abs((v2.x * v3.x + v2.y * v3.y) / u1 )) > circle.radius + u1){ return false }
+			if( a > u && b > u1){
+				a1 = a - u;
+				b1 = b - u1;
+				if(Math.sqrt(a1 * a1 + b1 * b1) > circle.radius){ return false }
+			}
             return true;
         },
-        isPointInside(vec){
-            var x1,y1,x2,y2;
-            // get vec relative to top left
-            x1 = vec.x - this.top.p1.x
-            y1 = vec.y - this.top.p1.y
-            // get top as vec
-            x2 = this.top.p2.x - this.top.p1.x;
-            y2 = this.top.p2.y - this.top.p1.y;
-            if(x2 * y1 - y2 * x1 < 0 || -y2 * y1 - x2 * x1 > 0){
-                return false;
-            }
-            // get vec relative to bottom right
-            x1 = vec.x - (this.top.p2.x - y2 * this.aspect); 
-            y1 = vec.y - (this.top.p2.y + x2 * this.aspect);
-            if(x2 * y1 - y2 * x1 > 0 || -y2 * y1 - x2 * x1 < 0){
-                return false;
-            }
+        isPointInside(vec){ // Tested working 7/17
+            v1.x = vec.x - this.top.p1.x
+            v1.y = vec.y - this.top.p1.y
+            v2.x = this.top.p2.x - this.top.p1.x;
+            v2.y = this.top.p2.y - this.top.p1.y;
+            if(v2.x * v1.y - v2.y * v1.x < 0 || -v2.y * v1.y - v2.x * v1.x > 0){return false }
+            v1.x = vec.x - (this.top.p2.x - v2.y * this.aspect); 
+            v1.y = vec.y - (this.top.p2.y + v2.x * this.aspect);
+            if(v2.x * v1.y - v2.y * v1.x > 0 || -v2.y * v1.y - v2.x * v1.x < 0){ return false }
             return true;
 
         },
-        isLineInside(line){
-            var x1,y1,x2,y2,x,y;
-             // get top as vec
-            x2 = this.top.p2.x - this.top.p1.x;
-            y2 = this.top.p2.y - this.top.p1.y;   
-            // get start of line relative to top left
-            x1 = line.p1.x - this.top.p1.x
-            y1 = line.p1.y - this.top.p1.y
-            // is start of line above or to the left of the top and left edges
-            if(x2 * y1 - y2 * x1 < 0 || -y2 * y1 - x2 * x1 > 0){
-                return false;
-            }
-            // get end of line relative to top left
-            x1 = line.p2.x - this.top.p1.x
-            y1 = line.p2.y - this.top.p1.y
-            // is end of line above or to the left of the top and left edges
-            if(x2 * y1 - y2 * x1 < 0 || -y2 * y1 - x2 * x1 > 0){
-                return false;
-            }
-
-
-            // get start of line relative to bottom right
-            x1 = line.p1.x - (x = (this.top.p2.x - y2 * this.aspect)); 
-            y1 = line.p1.y - (y = (this.top.p2.y + x2 * this.aspect));
-            // is start of line below or to the right of the bottom and right edges
-            if(x2 * y1 - y2 * x1 > 0 || -y2 * y1 - x2 * x1 < 0){
-                return false;
-            }
-            x1 = line.p2.x - x; 
-            y1 = line.p2.y - y;
-            // is end of line below or to the right of the bottom and right edges
-            if(x2 * y1 - y2 * x1 > 0 || -y2 * y1 - x2 * x1 < 0){
-                return false;
-            }            
-            return true;            
-
+		isPointTouching(vec){ // Tested working 7/17
+			return this.isPointInside(vec);
+		},
+        isLineInside(line){ // Tested working 7/17
+			if(this.isPointInside(line.p1)){
+				v1.x = line.p2.x - this.top.p1.x
+				v1.y = line.p2.y - this.top.p1.y
+				if(v2.x * v1.y - v2.y * v1.x < 0 || -v2.y * v1.y - v2.x * v1.x > 0){return false }
+				v1.x = line.p2.x - (this.top.p2.x - v2.y * this.aspect); 
+				v1.y = line.p2.y - (this.top.p2.y + v2.x * this.aspect);
+				if(v2.x * v1.y - v2.y * v1.x > 0 || -v2.y * v1.y - v2.x * v1.x < 0){ return false }
+				return true;				
+			}
+			return false;
         },
-        isLineTouching(line){
-             var rll,rlb,rlr;
-            if(this.top.isLineSegIntercepting(line)){
-                return true;
-            }
-            if(this.leftLine().isLineSegIntercepting(line)){
-                return true;
-            }
-            if(this.bottomLine().isLineSegIntercepting(line)){
-                return true;
-            }
-            if(this.rightLine().isLineSegIntercepting(line)){
+        isLineTouching(line){  // Tested working 7/17
+			if(this.top.isLineSegIntercepting(line) ||
+              this.leftLine().isLineSegIntercepting(line) ||			
+			  this.bottomLine().isLineSegIntercepting(line) ||
+			  this.rightLine().isLineSegIntercepting(line) ) {
                 return true;
             }
             return this.isLineInside(line);
-            
         },
         setTransform :function (ctx){   // temp location of this function
             if(ctx === undefined || ctx === null){
