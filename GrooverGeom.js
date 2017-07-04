@@ -626,7 +626,7 @@ groover.geom = (function (){
     // Do not return them.
     var v1,v2,v3,v4,v5,va,vb,vc,vd,ve,vr1,vr2; // Vec registers
     var vx,vy,v1x,v1y,u,u1,u2,c,c1,a,a1,b,b1,d,d1,e,e1;  
-    var l1,l2; //,l2,l3,l4,l5,la,lb,lc,ld,le,lr1,lr2;  //  have not found these useful as yet may return them but want to keep the number of closure variable as low as possible
+    var l1,l2,l3,l4,l5;//,la,lb,lc,ld,le,lr1,lr2;  //  have not found these useful as yet may return them but want to keep the number of closure variable as low as possible
     var bez; // a bezier that is used to a temp for some bezier functions.
     var rArray; // an internal register array
     var rArrayLen;
@@ -661,6 +661,9 @@ groover.geom = (function (){
         vr2 = new Vec();
         l1 = new Line();
         l2 = new Line();
+        l3 = new Line();
+        l4 = new Line();
+        l5 = new Line();
         bez = new Bezier("cubic");
         rArray = [0,0,0,0,0,0,0,0,0,0];
 
@@ -7274,40 +7277,90 @@ groover.geom = (function (){
             }                        
             return true;                        
         },
-        isBoxInside(box){ // Needs improvment
-            var x1,y1,x2,y2,x3,y3,x4,y4,x5,t1,t2,a1,a2;
-            x2 = this.top.p2.x - this.top.p1.x;
-            y2 = this.top.p2.y - this.top.p1.y;
-            x1 = box.left - this.top.p1.x
-            y1 = box.top - this.top.p1.y
-            x5 = box.right - this.top.p1.x
-            if ( x2 * y1 - y2 * x1 < 0 || 
-                -y2 * y1 - x2 * x1 > 0 ||
-                 x2 * y1 - y2 * x5 < 0 || 
-                -y2 * y1 - x2 * x5 > 0 ) {
-                return false;
-            }         
-            x4 = box.left - (x3 = this.top.p2.x - y2 * this.aspect); 
-            y4 = box.top - (y3 = this.top.p2.y + x2 * this.aspect);
-            t1 = box.right - x3; 
-            y1 = box.bottom - this.top.p1.y
-            t2 = box.bottom - y3;
-            if ( (a1 = x2 * y4) - y2 * x4 > 0 || 
-                 (a2 = -y2 * y4) - x2 * x4 < 0 ||
-                 a1 - y2 * t1 > 0 ||
-                 a2 - x2 * t1 < 0 ||
-                 (a1 = x2 * y1) - y2 * x1 < 0 || 
-                 (a2 = -y2 * y1) - x2 * x1 > 0 ||
-                 a1 - y2 * x5 < 0 || 
-                 a2 - x2 * x5 > 0 ||
-                 (a1 = x2 * t2) - y2 * x4 > 0 ||
-                 (a2 = -y2 * t2 - x2) * x4 < 0 || 
-                 a1 - y2 * t1 > 0 || 
-                 a2 - x2 * t1 < 0 ) {
-                return false;
-            }            
-            return true;         
+        isBoxInside(box){ // 7/17 working
+			v3.x = box.left;
+			v3.y = box.top;
+			if(this.isPointInside(v3)){
+				v1.x = box.right - this.top.p1.x
+				v1.y = box.top - this.top.p1.y
+				if(v2.x * v1.y - v2.y * v1.x < 0 || -v2.y * v1.y - v2.x * v1.x > 0){return false }
+				v1.x = box.right - (this.top.p2.x - v2.y * this.aspect); 
+				v1.y = box.top - (this.top.p2.y + v2.x * this.aspect);
+				if(v2.x * v1.y - v2.y * v1.x > 0 || -v2.y * v1.y - v2.x * v1.x < 0){ return false }
+				v1.x = box.right - this.top.p1.x
+				v1.y = box.bottom - this.top.p1.y
+				if(v2.x * v1.y - v2.y * v1.x < 0 || -v2.y * v1.y - v2.x * v1.x > 0){return false }
+				v1.x = box.right - (this.top.p2.x - v2.y * this.aspect); 
+				v1.y = box.bottom - (this.top.p2.y + v2.x * this.aspect);
+				if(v2.x * v1.y - v2.y * v1.x > 0 || -v2.y * v1.y - v2.x * v1.x < 0){ return false }
+				v1.x = box.left - this.top.p1.x
+				v1.y = box.bottom - this.top.p1.y
+				if(v2.x * v1.y - v2.y * v1.x < 0 || -v2.y * v1.y - v2.x * v1.x > 0){return false }
+				v1.x = box.left - (this.top.p2.x - v2.y * this.aspect); 
+				v1.y = box.bottom - (this.top.p2.y + v2.x * this.aspect);
+				if(v2.x * v1.y - v2.y * v1.x > 0 || -v2.y * v1.y - v2.x * v1.x < 0){ return false }
+				return true;				
+				
+			}
+			return false;
         },
+		isBoxTouching(box){  // 7/17 working
+			if(box.isPointInside(this.top.p1)) { return true }
+			if(box.isPointInside(this.top.p2)) { return true }
+			v3.x = box.left;
+			v3.y = box.top;
+			if(this.isPointInside(v3)) { return true }
+            va.x = this.top.p1.x - v2.y * this.aspect; 
+            va.y = this.top.p1.y + v2.x * this.aspect;			
+			if(box.isPointInside(va)) { return true }
+            vb.x = va.x + v2.x; 
+            vb.y = va.y + v2.y;			
+			if(box.isPointInside(vb)) { return true }
+			v3.x = box.right;
+			if(this.isPointInside(v3)) { return true }
+			v3.y = box.bottom;
+			if(this.isPointInside(v3)) { return true }
+			v3.x = box.left;
+			if(this.isPointInside(v3)) { return true }
+			l1.p1.x = box.left;
+			l1.p1.y = box.top;
+			l1.p2.x = box.right;
+			l1.p2.y = box.top;
+			l2.p1.x = vb.x;
+			l2.p1.y = vb.y;
+			l2.p2.x = va.x;
+			l2.p2.y = va.y;
+			l3.p1.x = this.top.p1.x;
+			l3.p1.y = this.top.p1.y;
+			l3.p2.x = va.x;
+			l3.p2.y = va.y;
+			l4.p1.x = this.top.p2.x;
+			l4.p1.y = this.top.p2.y;
+			l4.p2.x = vb.x;
+			l4.p2.y = vb.y;
+			
+			if(this.top.isLineSegIntercepting(l1) || l2.isLineSegIntercepting(l1) ) { return true }
+			if(l3.isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l1) ) { return true }
+			l1.p1.x = box.left;
+			l1.p1.y = box.bottom;
+			l1.p2.x = box.right;
+			l1.p2.y = box.bottom;		
+            if(this.top.isLineSegIntercepting(l1) || l2.isLineSegIntercepting(l1) ) { return true }			
+			if(l3.isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l1) ) { return true }
+			l1.p1.x = box.left;
+			l1.p1.y = box.top;
+			l1.p2.x = box.left;
+			l1.p2.y = box.bottom;		
+			if(this.top.isLineSegIntercepting(l1) || l2.isLineSegIntercepting(l1) ) { return true }			
+			if(l3.isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l1) ) { return true }
+			l1.p1.x = box.right;
+			l1.p1.y = box.top;
+			l1.p2.x = box.right;
+			l1.p2.y = box.bottom;		
+			if(this.top.isLineSegIntercepting(l1) || l2.isLineSegIntercepting(l1) ) { return true }			
+			if(l3.isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l1) ) { return true }
+			return false;
+		},
         isCircleInside(circle){  // Tested working 7/17
 		    if(this.isCircleTouching(circle)){
 				if(a < u - circle.radius && b < u1 - circle.radius){ return true }
@@ -7702,9 +7755,11 @@ groover.geom = (function (){
            return this;
         },
         isVecInside(vec){
-            if(vec.x >= this.left && vec.x <= this.right && vec.y >= this.top && vec.y <= this.bottom){
-                return true;
-            }
+            if(vec.x >= this.left && vec.x <= this.right && vec.y >= this.top && vec.y <= this.bottom){ return true }
+            return false;
+        },
+        isPointInside(point){
+            if(point.x >= this.left && point.x <= this.right && point.y >= this.top && point.y <= this.bottom){ return true }
             return false;
         },
         isVecArrayInside(vecArray){
@@ -7892,15 +7947,22 @@ groover.geom = (function (){
             this.left = Infinity;
             this.right = -Infinity;
             return this; // returns this.
-        },
-        env(x, y){
+        },        
+		env(x, y){
             if(y !== undefined && y !== null){
                 this.top = Math.min(y,this.top);
                 this.bottom = Math.max(y,this.bottom);
             }
             if(x !== undefined && x !== null){
-                this.left = Math.min(x,this.left);
-                this.right = Math.max(x,this.right);
+				if(x.type === "Vec"){
+					this.left = Math.min(x.x,this.left);
+					this.right = Math.max(x.x,this.right);
+					this.top = Math.min(x.y,this.top);
+					this.bottom = Math.max(x.y,this.bottom);
+				}else{
+					this.left = Math.min(x,this.left);
+					this.right = Math.max(x,this.right);
+				}
             }
             return this; // returns this.
         },
