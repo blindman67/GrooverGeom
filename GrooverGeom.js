@@ -2241,7 +2241,7 @@ groover.geom = (function (){
         area(){
             return Math.abs( this.p1.cross(this.p2) + this.p2.cross(this.p3) + this.p3.cross(this.p1) );
         },
-        perimiter: function (){
+        perimiter(){
             this.lengthAllQuick();            
             return a + b + c;
         },
@@ -2660,24 +2660,16 @@ groover.geom = (function (){
             
             return undefined;
         },
-        isRectangleInside(rectangle){
-            if(!this.isVecInside(rectangle.top.p1)){
-                return false;
-            }
-            if(!this.isVecInside(rectangle.top.p2)){
-                return false;
-            }
+        isRectangleInside(rectangle){ // returns true is the rectangle touches the triangle; currently only valid for clockwise triangles
+            if(!this.isVecInside(rectangle.top.p1)) { return false }
+            if(!this.isVecInside(rectangle.top.p2)) { return false }
             rectangle.heightVec(v5);
             va.x = rectangle.top.p1.x + v5.x;
             va.y = rectangle.top.p1.y + v5.y;
-            if(!this.isVecInside(va)){
-                return false;
-            }
+            if(!this.isVecInside(va)) { return false }
             va.x = rectangle.top.p2.x + v5.x;
             va.y = rectangle.top.p2.y + v5.y;
-            if(!this.isVecInside(va)){
-                return false;
-            }
+            if(!this.isVecInside(va)) { return false }
             return true;
         },
         isBoxInside(box){
@@ -2685,69 +2677,44 @@ groover.geom = (function (){
             v1.y = box.top - this.p1.y;
             v2.x = this.p2.x-this.p1.x;
             v2.y = this.p2.y-this.p1.y;
-            if((v2.x * v1.y - v2.y * v1.x) < 0){
-                return false;
-            }
+            if((v2.x * v1.y - v2.y * v1.x) < 0) { return false }
             v1.x = box.left - this.p2.x;
             v1.y = box.top - this.p2.y;
             v3.x = this.p3.x-this.p2.x;
             v3.y = this.p3.y-this.p2.y;
-            if((v3.x * v1.y - v3.y * v1.x) < 0){
-                return false;
-            }
+            if((v3.x * v1.y - v3.y * v1.x) < 0) { return false }
             v1.x = box.left - this.p3.x;
             v1.y = box.top - this.p3.y;
             v4.x = this.p1.x-this.p3.x;
             v4.y = this.p1.y-this.p3.y;
-            if((v4.x * v1.y - v4.y * v1.x) < 0){
-                return false;
-            }          
-            
+            if((v4.x * v1.y - v4.y * v1.x) < 0) { return false }
             v1.x = box.right - this.p1.x;
             v1.y = box.top - this.p1.y;
-            if((v2.x * v1.y - v2.y * v1.x) < 0){
-                return false;
-            }
+            if((v2.x * v1.y - v2.y * v1.x) < 0) { return false }
             v1.x = box.right - this.p2.x;
             v1.y = box.top - this.p2.y;
-            if((v3.x * v1.y - v3.y * v1.x) < 0){
-                return false;
-            }
+            if((v3.x * v1.y - v3.y * v1.x) < 0) { return false }
             v1.x = box.right - this.p3.x;
             v1.y = box.top - this.p3.y;
-            if((v4.x * v1.y - v4.y * v1.x) < 0){
-                return false;
-            }            
+            if((v4.x * v1.y - v4.y * v1.x) < 0) { return false }          
             v1.x = box.right - this.p1.x;
             v1.y = box.bottom - this.p1.y;
-            if((v2.x * v1.y - v2.y * v1.x) < 0){
-                return false;
-            }
+            if((v2.x * v1.y - v2.y * v1.x) < 0) { return false }
             v1.x = box.right - this.p2.x;
             v1.y = box.bottom - this.p2.y;
-            if((v3.x * v1.y - v3.y * v1.x) < 0){
-                return false;
-            }
+            if((v3.x * v1.y - v3.y * v1.x) < 0) { return false }
             v1.x = box.right - this.p3.x;
             v1.y = box.bottom - this.p3.y;
-            if((v4.x * v1.y - v4.y * v1.x) < 0){
-                return false;
-            }               
+            if((v4.x * v1.y - v4.y * v1.x) < 0) { return false }              
             v1.x = box.left - this.p1.x;
             v1.y = box.bottom - this.p1.y;
-            if((v2.x * v1.y - v2.y * v1.x) < 0){
-                return false;
-            }
+            if((v2.x * v1.y - v2.y * v1.x) < 0) { return false }
             v1.x = box.left - this.p2.x;
             v1.y = box.bottom - this.p2.y;
-            if((v3.x * v1.y - v3.y * v1.x) < 0){
-                return false;
-            }
+            if((v3.x * v1.y - v3.y * v1.x) < 0) { return false }
             v1.x = box.left - this.p3.x;
             v1.y = box.bottom - this.p3.y;
-            if((v4.x * v1.y - v4.y * v1.x) < 0){
-                return false;
-            }               
+            if((v4.x * v1.y - v4.y * v1.x) < 0) { return false }              
             return true;
         },
         isTriangleInside(triangle){
@@ -3379,7 +3346,7 @@ groover.geom = (function (){
             // all done
             return this;
         },
-        setAs: function (triangle){
+        setAs(triangle){
             this.p1.x = triangle.p1.x;
             this.p1.y = triangle.p1.y;
             this.p2.x = triangle.p2.x;
@@ -4271,16 +4238,16 @@ groover.geom = (function (){
             this.startFromVec(vec1).endFromVec(vec2);
             return this;
         },
-        isAngleToPointBetween(point){ // not complete
+        isAngleToPointBetween(point){ // if the angle from arc center to point is between the start and end angles or the arc
 			a = (Math.atan2(point.y - this.circle.center.y, point.x - this.circle.center.x) + MPI2) % MPI2;
 			b = ((this.start % MPI2) + MPI2 ) % MPI2;
 			c = ((this.end % MPI2) + MPI2 ) % MPI2;
-			if(this.direction){ return !(a >= b && a <= c) }
 			if(b > c) { c += MPI2 }
 			if(b > a) { a += MPI2 }
+			if(this.direction){ return !(a >= b && a <= c) }
 			return a >= b && a <= c;
 		},
-		interceptLineSeg(line,retV1,retV2){
+		interceptLineSeg(line,retV1,retV2){ // returns 0,1 or 2 intercept points of line seg and this. Points are empty if no intercept
 			this.circle.interceptLineSeg(line,l1);
 			retV1.x = retV2.x = retV1.y = retV2.y = undefined;
 			if(!l1.p1.isEmpty() && this.isAngleToPointBetween(l1.p1)){
@@ -7417,11 +7384,16 @@ groover.geom = (function (){
 		    if(this.isCircleInside(arc.circle)) { return true }
 			arc.endsAsVec(l1.p1,l1.p2);
 			if(this.isLineInside(l1)){
-				// may still be outside
+				arc.interceptLineSeg(this.top,va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return false }
+				arc.interceptLineSeg(this.bottomLine(l2),va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return false }
+				arc.interceptLineSeg(this.leftLine(l2),va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return false }
+				arc.interceptLineSeg(this.rightLine(l2),va,vb);
+				if(!va.isEmpty() || ! vb.isEmpty()){ return false }
 				return true;
 			}
-			arc.asBox(box1.irrate());
-			if(this.isBoxInside(box1)) { return true }
             return false;
         },
         isPointInside(vec){ // Tested working 7/17
@@ -7459,6 +7431,35 @@ groover.geom = (function (){
                 return true;
             }
             return this.isLineInside(line);
+        },
+		isTriangleInside(triangle){
+			if(this.isPointInside(triangle.p1) && this.isPointInside(triangle.p2) && this.isPointInside(triangle.p3)){
+				return true;
+			}			
+		},
+        isTriangleTouching(triangle){  // Tested working 7/17
+			if(this.isPointInside(triangle.p1) || this.isPointInside(triangle.p2) || this.isPointInside(triangle.p3)) { return true }
+			if(triangle.isRectangleInside(this)){ return true }
+			l1.p1.x = triangle.p1.x;
+			l1.p1.y = triangle.p1.y;
+			l1.p2.x = triangle.p2.x;
+			l1.p2.y = triangle.p2.y;
+			if(this.top.isLineSegIntercepting(l1)) { return true }
+			l2.p1.x = triangle.p2.x;
+			l2.p1.y = triangle.p2.y;
+			l2.p2.x = triangle.p3.x;
+			l2.p2.y = triangle.p3.y;
+			if(this.top.isLineSegIntercepting(l2)) { return true }
+			l3.p1.x = triangle.p3.x;
+			l3.p1.y = triangle.p3.y;
+			l3.p2.x = triangle.p1.x;
+			l3.p2.y = triangle.p1.y;
+			if(this.top.isLineSegIntercepting(l3)) { return true }
+			if(this.leftLine(l4).isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l2) || l4.isLineSegIntercepting(l3)) { return true }
+			if(this.rightLine(l4).isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l2) || l4.isLineSegIntercepting(l3)) { return true }
+			if(this.bottomLine(l4).isLineSegIntercepting(l1) || l4.isLineSegIntercepting(l2) || l4.isLineSegIntercepting(l3)) { return true }
+			return false;
+
         },
         setTransform :function (ctx){   // temp location of this function
             if(ctx === undefined || ctx === null){
