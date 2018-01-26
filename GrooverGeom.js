@@ -3401,13 +3401,8 @@ groover.geom = (function (){
         _leng : null,  // optimising result for length  
         _dir : null,  // optimising result for direction  
         type : "Vec",
-        copy(){  // Creates a copy of this
-            return new Vec(this.x,this.y);  // returns a new `this`
-        },
-        asSimple(obj){ // returns the vec as a simple object with left,right,bottom,top,width,height
-            if(obj === undefined){
-                obj = {};
-            }
+        copy(){  return new Vec(this.x, this.y) }, // Creates a copy of this
+        asSimple(obj  = {}){ // returns the vec as a simple object with left,right,bottom,top,width,height
             obj.x = this.x;
             obj.y = this.y;
             return obj;
@@ -3421,19 +3416,15 @@ groover.geom = (function (){
                                 // the precision can also be changed. The default is 6;
             var l = this.labelStr === undefined ? "": "'"+this.labelStr+"' ";                                
             var id = this.id === undefined ? "": "'"+this.id+"' ";                                
-            if(this.isEmpty()){
-                return "Vec : '"+l+"' id : "+id+" ( Empty )";
-            }
-            if(precision === undefined || precision === null){
-                precision = geom.defaultPrecision;
-            }
+            if(this.isEmpty()) { return "Vec : '"+l+"' id : "+id+" ( Empty )" }
+            if(precision === undefined || precision === null) { precision = geom.defaultPrecision }
             return "Vec: '"+l+"' id : "+id+" ("+ this.x.toFixed(precision) + ", "+this.y.toFixed(precision) + ")"; // returns String
         },        
         getHash(){ // creates a 32bit hashID of the current state. Use this to determine if there has been a change
             if(!isNaN(this.id)){
-                return Math.floor((this.id+this.x*this.x + this.y * this.y + Math.atan2(this.y,this.x)) % 0xFFFFFFFF);
+                return Math.floor((this.id + this.x * this.x + this.y * this.y + Math.atan2(this.y,this.x)*0xFFFFFFF) % 0xFFFFFFFF);
             }
-            return Math.floor((this.x*this.x + this.y * this.y + Math.atan2(this.y,this.x)) % 0xFFFFFFFF);
+            return Math.floor((this.x*this.x + this.y * this.y + Math.atan2(this.y,this.x)*0xFFFFFFF) % 0xFFFFFFFF);
         },
         setAs(vec,num){  // Sets this vec to the values in the {avec} or if two args then assumed to be numbers x and y
             if(num === undefined){
@@ -3445,36 +3436,17 @@ groover.geom = (function (){
             }
             return this;  // Returns the existing this
         }, 
-        hasId(id){ // returns true if this, or any of the points has the id,
-            if(this.id === id){
-                return true;
-            }
-            return false;
-        },
-        getAllIdsAsArray(array){ // returns an array with this id 
-            if(array === undefined){
-                array = [];
-            }
-            if(array.indexOf(this.id)=== -1){
-                array.push(this.id);
-            }
+        hasId(id){ return this.id === id }, // returns true if this, or any of the points has the id,
+        getAllIdsAsArray(array  = []){ // returns an array with this id 
+            if(array.indexOf(this.id) === -1) { array.push(this.id) }
             return array;
         },  
-        asVecArray(vecArray, instance){ // returns a vec array containing a copy of this. If instance is true then the reference to this is added 
-            if(vecArray === undefined){
-                vecArray =  new VecArray();
-            }
-            if(instance){
-                vecArray.push(this);                
-                return vecArray;                
-            }
-            vecArray.push(this.copy());
+        asVecArray(vecArray  =  new VecArray(), instance = false){ // returns a vec array containing a copy of this. If instance is true then the reference to this is added 
+            if (instance) { vecArray.push(this) }             
+            else { vecArray.push(this.copy()) }
             return vecArray;
         }, 
-        asBox(box){  // returns the bounding box that envelops this vec
-            if(box === undefined){
-                var box = new Box();  // {obox} is created if not supplied
-            }
+        asBox(box = new Box()){  // returns the bounding box that envelops this vec
             box.env (this.x, this.y);
             return box;  // returns box
         },
@@ -3487,29 +3459,14 @@ groover.geom = (function (){
             }
             return false;  
         },
-        isZero(){
-            if(this.x === 0 && this.y === 0){
-                return true;
-            }
-            return false;
-        },
-        empty(){
+        isZero(){ return (this.x === 0 && this.y === 0) },
+        empty(){  // empties the vec by setting x and y to infinity
             this.y = this.x = Infinity;
             return this;
         },
-        isSame(vec){ // Returns true if the {avec} is the same as this
-            if(vec.x === this.x && vec.y === this.y){
-                return true;
-            }
-            return false; // returns boolean            
-        },
-        isSameE(vec){ // Returns true if the {avec} is the same as this. Uses EPSILON 
-            if(Math.hypot(vec.x-this.x,vec.y-this.y) < EPSILON){
-                return true;
-            }
-            return false; // returns boolean            
-        },
-        lerp(from,dest,amount){
+        isSame(vec){ return (vec.x === this.x && vec.y === this.y) }, // Returns true if the {avec} is the same as this
+        isSameE(vec){ return Math.sqrt((vec.x-this.x) ** 2,(vec.y-this.y) ** 2) < EPSILON },// Returns true if the {avec} is the same as this. Uses EPSILON 
+        lerp(from, dest,amount){
             this.x = (dest.x-from.x) * amount + from.x;
             this.y = (dest.y-from.y) * amount + from.y;
             return this;
@@ -3517,8 +3474,8 @@ groover.geom = (function (){
         vectorToPolar(){ // converts the this to a polar vector. Warning there is no flag to indicate this is a pokar. It is up to the API code to track what the vec represents
             v1.x = this.x;
             v1.y = this.y;
-            this.x = Math.hypot(v1.y,v1.x);
-            this.y = Math.atan2(v1.y,v1.x);            
+            this.x = Math.hypot(v1.x * v1.x + v1.y * v1.y);
+            this.y = Math.atan2(v1.y, v1.x);            
             return this;
         },
         polarToVector(){ // converts from polar to a vector
@@ -3532,6 +3489,12 @@ groover.geom = (function (){
             this.x += vec.x;
             this.y += vec.y;
             return this;    // returns this
+        },
+        addLeng(number){
+            u = number / Math.sqrt(this.x * this.x + this.y * this.y);
+            this.x += this.x * u;
+            this.y += this.y * u;
+            return this;
         },
         sub(vec){  // subtracts {avec} from this
             this.x -= vec.x;
@@ -3553,137 +3516,145 @@ groover.geom = (function (){
             this.y = - this.y;
             return this; // returns this
         },
-        r90(){
+        r90() {
             var x = this.x;
             this.x = - this.y;
             this.y = x;
             return this; // returns this
         },
-        rN90(){
+        rN90() {
             var x = this.x;
             this.x = this.y;
             this.y = -x;
             return this; // returns this
         },
-        r180(){
+        r180() {
             this.x = - this.x;
             this.y = - this.y;
             return this; // returns this
         },
-        fromPolar(dir, distance){ // set the vec from polar coordinates
+        fromPolar(dir, distance) { // set the vec from polar coordinates
             this.x = Math.cos(dir) * distance;
             this.y = Math.sin(dir) * distance;
             return this;
         },
-        addPolar(dir, distance){ // adds polar coords to the vec
+        addPolar(dir, distance) { // adds polar coords to the vec
             this.x += Math.cos(dir) * distance;
             this.y += Math.sin(dir) * distance;
             return this;
         },
-        half(){
+        half() {
             this.x /= 2;
             this.y /= 2;
             return this; // returns this
         },
-        setLeng(number){  // Sets the length (magnitude) of this vec to the {number}.
-            var l = Math.hypot(this.x,this.y);
-            this.x = (this.x / l) * number;
-            this.y = (this.y / l) * number;
+        setLeng(number) {  // Sets the length (magnitude) of this vec to the {number}.
+            u = number / Math.sqrt(this.x * this.x + this.y * this.y);
+            this.x = this.x * u;
+            this.y = this.y * u;
             this._leng = number;
             return this; // returns this
         },
-		setDistFrom(distance,vec){ // working 7/17
+		setDistFrom(distance,vec) { // moves this along line from this to vec so that  it is  distance  from vec
 			v1.x = this.x - vec.x;
 			v1.y = this.y - vec.y;
 			u = distance / Math.sqrt(v1.x * v1.x + v1.y * v1.y);
 			this.x = vec.x + v1.x * u;
 			this.y = vec.y + v1.y * u;
 		},
-        setDir(number){ // Sets the direction of this by {number} in radians. This function does not change the magnitude of this vec.
-            this._leng  = this.leng();
-            this.x = Math.cos(number) * this._leng;
-            this.y = Math.sin(number) * this._leng;
+        setDir(radians) { // Sets the direction of this by {radians} in radians. This function does not change the magnitude of this vec.
+            u = this._leng  = Math.sqrt(this.x * this.x + this.y * this.y);
+            this.x = Math.cos(radians) * u;
+            this.y = Math.sin(radians) * u;
             return this;  // returns this
         },
-        rotate(number){ // Rotates this by {number}
-            this._leng = Math.hypot(this.x,this.y);
-            this._dir = (number += Math.atan2(this.y,this.x));
-            this.x = Math.cos(number) * this._leng;
-            this.y = Math.sin(number) * this._leng;
+        rotate(radians) { // Rotates around (0,0) this by {radians}
+            u = this._leng  = Math.sqrt(this.x * this.x + this.y * this.y);
+            this._dir = (radians += Math.atan2(this.y,this.x));
+            this.x = Math.cos(radians) * u;
+            this.y = Math.sin(radians) * u;
             return this;  // returns this
         },
-        magnitude(){
-            return Math.hypot(this.x,this.y);  // returns the magnitude of this as a Number
-        },
-        leng(){
-            return Math.hypot(this.x,this.y);  // returns the length (magnitude) of this as a Number
-        },
-        leng2(){
-            return this.x*this.x + this.y * this.y; // returns the length squared of this
-        },
-        dir(){
-            return Math.atan2(this.y,this.x);  // returns the direction of this in radians.
-        },
-        mid(vec){ // sets the vector to the mid point
+        magnitude() { return this._leng  = Math.sqrt(this.x * this.x + this.y * this.y) },  // returns the magnitude of this as a Number
+        leng() { return this._leng  = Math.sqrt(this.x * this.x + this.y * this.y) },
+        leng2() { return this.x * this.x + this.y * this.y },
+        dir() { return this._dir = Math.atan2(this.y, this.x) },
+        mid() { // sets the vector to the mid point, eg divide by 2
             this.x /= 2;
             this.y /= 2;
             return this;
         },
-        norm(){ // normalises this to be a unit length.
-            u = Math.hypot(this.x,this.y);
+        norm() { // normalises this to be a unit length.
+            u =  Math.sqrt(this.x * this.x + this.y * this.y);
             this.x /= u;
             this.y /= u;
+            this._leng = 1;
             return this; // returns this 
         },
-        dot(vec){  // get the dot product of this and {avec}
-            return this.x * vec.x + this.y * vec.y; // returns number
+        dot(vec) { return this.x * vec.x + this.y * vec.y },  // get the dot product of this and {avec}
+        dotUnit(vec) { return (this.x * vec.x + this.y * vec.y) / (this.x * this.x + this.y * this.y) }, // returns the dot product of this and vec divided by the magnitude of this
+        cross(vec) { return this.x * vec.y - this.y * vec.x }, // get the cross product of this and the {avec}
+        crossUnit(vec) { return (this.x * vec.y - this.y * vec.x) / (this.x * this.x + this.y * this.y) },  // returns the dot product of this and vec divided by the magnitude of this
+        dotNorm(vec) { // get the dot product of the normalised this and {avec}          
+            u = Math.sqrt(this.x * this.x + this.y * this.y);;
+            u1 = Math.sqrt(vec.x * vec.x + vec.y * vec.y);;
+            return (this.x / u) * (vec.x / u1) + (this.y / u) * (vec.y / u1);
         },
-        dotUnit(vec){  // returns the dot product of this and vec divided by the magnitude of this
-            return (this.x * vec.x + this.y * vec.y) / (this.x * this.x + this.y * this.y);
+        crossNorm(vec) { // get the cross product of the normalised this and the {avec}       
+            u = Math.sqrt(this.x * this.x + this.y * this.y);;
+            u1 = Math.sqrt(vec.x * vec.x + vec.y * vec.y);;
+            return (this.x / u) * (vec.y / u1) - (this.y / u) * (vec.x / u1);
         },
-        cross(vec){ // get the cross product of this and the {avec}
-            return this.x * vec.y - this.y * vec.x; // returns number
+        angleBetween(vec) { // get the angle between this and the {avec}          
+            u = Math.sqrt(this.x * this.x + this.y * this.y);
+            u1 = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+            v1.x = this.x / u;
+            v1.y = this.y / u;
+            v2.x = vec.x / u1;
+            v2.y = vec.y / u1;
+            c = Math.asin(v1.x * v2.y - v1.y * v2.x);
+            d = -v1.y * v2.y - v1.x * v2.x;
+            if(d > 0){
+                if(c > 0){
+                    return Math.PI - c;
+                }
+                return -Math.PI - c;
+            }
+            return c;
         },
-        crossUnit(vec){  // returns the dot product of this and vec divided by the magnitude of this
-            return (this.x * vec.y - this.y * vec.x) / (this.x * this.x + this.y * this.y);
+        distFrom(vec) { // get the distance from this to the vec
+            v1.x = this.x-vec.x;
+            v1.y = this.y-vec.y;
+            return Math.sqrt(v1.x * v1.x + v1.y * v1.y); // returns number
         },
-        dotNorm(vec){ // get the dot product of the normalised this and {avec}          
-            a = Math.hypot(this.x,this.y);
-            b = Math.hypot(vec.x,vec.y);
-            return (this.x / a) * (vec.x / b) + (this.y / a) * (vec.y / b);
-        },
-        crossNorm(vec){ // get the cross product of the normalised this and the {avec}       
-            a = Math.hypot(this.x,this.y);
-            b = Math.hypot(vec.x,vec.y);
-            return (this.x / a) * (vec.y / b) - (this.y / a) * (vec.x / b);
-        },
-        angleBetween(vec){ // get the angle between this and the {avec}          
-            a = Math.hypot(this.x, this.y);
-            b = Math.hypot(vec.x, vec.y);
-            return Math.asin((this.x / a) * (vec.y / b) - (this.y / a) * (vec.x / b)); // returns number as radians
-        },
-        distFrom(vec){ // get the distance from this to the vec
-            return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
-        },
-        distTo(vec){ // get the distance from this to the vec
-            return Math.hypot(this.x-vec.x,this.y-vec.y); // returns number
+        distTo(vec) { // get the distance from this to the vec
+            v1.x = this.x-vec.x;
+            v1.y = this.y-vec.y;
+            return Math.sqrt(v1.x * v1.x + v1.y * v1.y); // returns number
         },   
-        distAlongNorm(vec){ // similar to Line.distFrom buut this assumes that the vec is the line and the argument vec is the point
+        distAlongNorm(vec) { // similar to Line.distFrom buut this assumes that the vec is the line from (0,0) and the argument vec is the point
             u = (vec.x * this.x + vec.y * this.y)/(this.y * this.y + this.x * this.x);
-            return Math.hypot(this.x * u - vec.x, this.y * u - vec.y);
+            return Math.sqrt((this.x * u - vec.x) ** 2, (this.y * u - vec.y) ** 2);
         },
-        angleTo(vec){  // Get the direction from this to the vec
-            return Math.atan2(vec.y - this.y,vec.x-this.x); // returns number as radians
-        },
-        scale(scale){
+        angleTo(vec) { return Math.atan2(vec.y - this.y, vec.x-this.x) }, // Get the direction from this to the vec
+        scale(scale) {
             this.x *= scale;
             this.y *= scale;
         },
-        translate(vec){
+        interceptX(X){  // the y coordinates the vector intercepts the x coordinate X
+            if(this.x === 0){ return Infinity }
+            return (this.y / this.x) * X;            
+        },
+        interceptY(Y){  // the x coordinates the vector intercepts the y coordinate Y
+            if(this.y === 0){ return Infinity }
+            return (this.x / this.y) * Y;            
+        },
+        
+        translate(vec) {
             this.x += vec.x;
             this.y += vec.y;
         },
-        transform(transform){
+        transform(transform) {
             vx = this.x * transform.xAxis.x + this.y * transform.yAxis.x + transform.origin.x;
             this.y = this.x * transform.xAxis.y + this.y * transform.yAxis.y + transform.origin.y;
             this.x = vx;
@@ -3715,18 +3686,7 @@ groover.geom = (function (){
             }
             return false;
         },
-        // getAllIdsAsArray(array){
-            // if(array === undefined){
-                // array = [];
-            // }
-            // if(array.indexOf(this.id)=== -1){
-                // array.push(this.id);
-            // }
-            // if(array.indexOf(this.circle.center.id)=== -1){
-                // array.push(this.circle.center.id);
-            // }
-            // return array;
-        // },  
+ 
         distFrom(vec){ // returns the distance from the vec of the arc
             a1 = this.circle.center.angleTo(vec);
             a1 = ((a1 % MPI2) + MPI2) % MPI2;
@@ -3750,14 +3710,20 @@ groover.geom = (function (){
         asBox(box  = new Box()){
 
             this.normalise();
-            box.env (this.circle.center.x + Math.cos(this.start) * this.circle.radius, this.circle.center.y + Math.sin(this.start) * this.circle.radius );
-            box.env (this.circle.center.x + Math.cos(this.end) * this.circle.radius, this.circle.center.y + Math.sin(this.end) * this.circle.radius );
+            box.env (
+                this.circle.center.x + Math.cos(this.start) * this.circle.radius, 
+                this.circle.center.y + Math.sin(this.start) * this.circle.radius 
+            );
+            box.env (
+                this.circle.center.x + Math.cos(this.end) * this.circle.radius, 
+                this.circle.center.y + Math.sin(this.end) * this.circle.radius 
+            );
             var s = this.start;
             var e = this.end;
             if(s > e){ s -= MPI2 }            
             if(s <= 0 && e >= 0) { box.env ( this.circle.center.x + this.circle.radius) }
             if((s <= -MPI && e >= -MPI) || (s <= MPI && e >= MPI)) { box.env ( this.circle.center.x - this.circle.radius) }
-            if(s <= MPI90 && e >= MPI90) { box.env (undefined, this.circle.center.y + this.circle.radius) }
+            if(s <= MPI90 && e >= MPI90 || (s <= -MPI270 && e >= -MPI270)) { box.env (undefined, this.circle.center.y + this.circle.radius) }
             if((s <= MPI270 && e >= MPI270) || (s <= -MPI90 && e >= -MPI90)) { box.env (undefined, this.circle.center.y - this.circle.radius) }
             return box;
         },
@@ -5678,7 +5644,7 @@ groover.geom = (function (){
             return rect;           
 
         },
-        isVecLeft(vec){ // Is the {avec} to the left of this line.Left is left of screen when looking at it and the line moves down.
+        isVecLeft(vec){ // Is the {vec} to the left of this line.Left is left of screen when looking at it and the line moves down.
             if((this.p2.x - this.p1.x) * (vec.y - this.p1.y) - (this.p2.y - this.p1.y) * (vec.x - this.p1.x) <= 0){
                 return true;
             }
@@ -5961,8 +5927,8 @@ groover.geom = (function (){
             v1.y = this.p2.y - this.p1.y;
             v2.x = line.p2.x - line.p1.x;
             v2.y = line.p2.y - line.p1.y;
-            a = Math.hypot(v1.x,v1.y);
-            b = Math.hypot(v2.x,v2.y);
+            a = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            b = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
             v1.x /= a;
             v1.y /= a;
             v2.x /= b;
@@ -6088,8 +6054,8 @@ groover.geom = (function (){
             v2.x = line.p2.x - line.p1.x; // line to vector arg line
             v2.y = line.p2.y - line.p1.y;
             var c = v1.x * v2.y - v1.y * v2.x; // cross of the two vectors
-            if(c !== 0){  // rather than us EPSILON let small values through 
-                v3.x = this.p1.x - line.p1.x; // vector of the differance between the starts of both lines;
+            if(c !== 0){  // rather than use EPSILON let small values through 
+                v3.x = this.p1.x - line.p1.x; // vector of the difference between the starts of both lines;
                 v3.y = this.p1.y - line.p1.y;
                 v4.x = (v1.x * v3.y - v1.y * v3.x) / c;
                 v4.y = u = (v2.x * v3.y - v2.y * v3.x) / c; // unit distance of intercept point on line
@@ -6203,13 +6169,15 @@ groover.geom = (function (){
             // u is unit dist along this line for close point. That means v4.x <0 or v4.y > 0 and the point is not on this line segment
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            this._leng = Math.hypot(v1.y,v1.x);
+            this._leng = u = Math.sqrt(v1.y * v1.y + v1.x * v1.x);
             v2.x = point.x - this.p1.x;
             v2.y = point.y - this.p1.y;
-            u = (v2.x * v1.x + v2.y * v1.y)/(this._leng * this._leng);
+            u = (v2.x * v1.x + v2.y * v1.y)/(u * u);
             v3.x = this.p1.x + v1.x * u;
             v3.y = this.p1.y + v1.y * u;
-            return Math.hypot(v3.y - point.y, v3.x - point.x);
+            a = v3.x - point.x;
+            b = v3.y - point.y;
+            return Math.sqrt(a * a + b * b);
         },        
         distFromDir(point){ // same as distFrom but adds a sign to indicate if the line is left (negative) or right (positive)
             // this call fromDist Refer to that function for calc vars used.
@@ -6225,27 +6193,26 @@ groover.geom = (function (){
             c = v1.x * v2.y - v1.y * v2.x;
             return c < 0 ? -d : d;
         },
-        lineTo(p, rLine){  // returns the line from vec p to the closest point on the line
-            var l;
+        lineToVec(vec, rLine){  // returns the line from vec p to the closest point on the line
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            this._leng = l = Math.hypot(v1.y,v1.x);
-            v2.x = p.x - this.p1.x;
-            v2.y = p.y - this.p1.y;
-            l = (v2.x * v1.x + v2.y * v1.y)/(l * l);
+            this._leng = u = Math.sqrt(v1.y * v1.y + v1.x * v1.x);
+            v2.x = vec.x - this.p1.x;
+            v2.y = vec.y - this.p1.y;
+            u = (v2.x * v1.x + v2.y * v1.y)/(u * u);
             if(rLine === undefined){
                 return new Line(
-                    p.copy(),
+                    vec.copy(),
                     new Vec(
-                        v1.x * l + this.p1.x,
-                        v1.y * l + this.p1.y
+                        v1.x * u + this.p1.x,
+                        v1.y * u + this.p1.y
                     )
-                )
+                );
             }
-            rLine.p1.x = p.x;
-            rLine.p1.y = p.y;
-            rLine.p2.x = v1.x * l + this.p1.x;
-            rLine.p2.y = v1.y * l + this.p1.y;
+            rLine.p1.x = vec.x;
+            rLine.p1.y = vec.y;
+            rLine.p2.x = v1.x * u + this.p1.x;
+            rLine.p2.y = v1.y * u + this.p1.y;
             return rLine;
         },
         getDistOfPoint(vec){ // returns the distance of a point on the line from the start. If the point is not on the line then the distance is the distance with the line roated to align to the point.
@@ -6296,22 +6263,50 @@ groover.geom = (function (){
             return (v2.x * v1.x + v2.y * v1.y) / (v1.y * v1.y + v1.x * v1.x);
         },
         closestPoint(vec, rVec){ // returns the point on the line that is closest to the point vec
-            var l;
             v1.x = this.p2.x - this.p1.x;
             v1.y = this.p2.y - this.p1.y;
-            this._leng = l = Math.hypot(v1.y,v1.x);
+            this._leng = u = Math.sqrt(v1.y * v1.y + v1.x * v1.x);
             v2.x = vec.x - this.p1.x;
             v2.y = vec.y - this.p1.y;
-            l = (v2.x * v1.x + v2.y * v1.y)/(l * l);
+            u = (v2.x * v1.x + v2.y * v1.y)/(u * u);
             if(rVec === undefined){
                 return new Vec(
-                    v1.x * l + this.p1.x,
-                    v1.y * l + this.p1.y
-                );
-                
+                    v1.x * u + this.p1.x,
+                    v1.y * u + this.p1.y
+                );                
             }
-            rVec.x = v1.x * l + this.p1.x;
-            rVec.y = v1.y * l + this.p1.y;
+            rVec.x = v1.x * u + this.p1.x;
+            rVec.y = v1.y * u + this.p1.y;
+            return rVec;
+
+        },
+        closestPointOnSeg(vec, rVec){ // returns the point on the line that is closest to the point vec
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            this._leng = u = Math.sqrt(v1.y * v1.y + v1.x * v1.x);
+            if(u <= 0){
+                if (rVec === undefined) { return new Vec(this.p1) }
+                rVec.x = this.p1.x;
+                rVec.y = this.p1.y;
+                return rVec;
+            }
+            if(u >= 1){
+                if (rVec === undefined) { return new Vec(this.p2) }
+                rVec.x = this.p2.x;
+                rVec.y = this.p2.y;
+                return rVec;
+            }
+            v2.x = vec.x - this.p1.x;
+            v2.y = vec.y - this.p1.y;
+            u = (v2.x * v1.x + v2.y * v1.y)/(u * u);
+            if(rVec === undefined){
+                return new Vec(
+                    v1.x * u + this.p1.x,
+                    v1.y * u + this.p1.y
+                );
+            }
+            rVec.x = v1.x * u + this.p1.x;
+            rVec.y = v1.y * u + this.p1.y;
             return rVec;
 
         },
@@ -6372,15 +6367,33 @@ groover.geom = (function (){
             retLine.p2.y += v1.x;
             return retLine;
         },
-        mirrorLine(line){
-            var p1 = this.closestPoint(line.p1);
-            var p2 = this.closestPoint(line.p2);
-            
-            p1.x -=  (line.p1.x - p1.x);
-            p1.y -=  (line.p1.y - p1.y);
-            p2.x -=  (line.p2.x - p2.x);
-            p2.y -=  (line.p2.y - p2.y);
-            return new Line(p1,p2);
+        mirrorLine(line,retLine){ // returns the line mirrored around this line. rLine is set to the mirror if given else a new line is created
+            this.closestPoint(line.p1,v3);
+            this.closestPoint(line.p2,v4);
+            if(retLine === undefined){
+                return new Line(
+                    new Vec(
+                        v3.x - (line.p1.x - v3.x),
+                        v3.y - (line.p1.y - v3.y) 
+                    ),
+                    new Vec(
+                        v4.x - (line.p2.x - v4.x),
+                        v4.y - (line.p2.y - v4.y)
+                    )
+                );
+            }
+            retLine.p1.x = v3.x - (line.p1.x - v3.x);
+            retLine.p1.y = v3.y - (line.p1.y - v3.y);
+            retLine.p2.x = v4.x - (line.p2.x - v4.x);
+            retLine.p2.y = v4.y - (line.p2.y - v4.y);
+            return retLine;
+        },
+        mirrorVec(vec,retVec){ // returns the vec mirrored around this line. rLine is set to the mirror if given else a new line is created
+            this.closestPoint(vec,v3);            
+            if (retVec === undefined) { return new Vec( v3.x - (vec.x - v3.x),  v3.y - (vec.y - v3.y) )  }
+            retVec.x = v3.x - (vec.x - v3.x);
+            retVec.y = v3.y - (vec.y - v3.y);
+            return retVec;
         },
         setStartEndUnit(start,end){ // this function moves the end points to start and end keeping the direction. start and end are in unit lengths where 0 is the start and 1 is the end call this function with 0,1 makes not change 1,0 reverses the line
             v1.x = this.p2.x - this.p1.x;
@@ -6542,7 +6555,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this;
         },
-        offset( distance ){ // moves the line along its normal (to the lines right) by distance
+        offset( distance ){ // moves the line along its normal (to the line's right) by distance
             // this function uses Geom registers v1, v2
             // v1 is the vector of the distance moved;
             // v2.x is scaled normal distance to move
@@ -6559,7 +6572,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this;
         },
-        offsetUnit( unitDistance ){ // moves the line along its normal (to the lines right) by unitDistance. A unit is the length of the line
+        offsetUnit( unitDistance ){ // moves the line along its normal (to the line's right) by unitDistance. A unit is the length of the line
             // this function uses Geom registers v1
             // v1 is the vector of the distance moved;
             v1.y = (this.p2.x - this.p1.x) * unitDist;
@@ -6570,7 +6583,7 @@ groover.geom = (function (){
             this.p2.y += v1.y;
             return this;
         },
-        midLine(l1){ // this is bad must find a better way
+        /*midLine(l1){ // this is bad must find a better way
             var len;
             var p = this.intercept(l1);
             var v1 = l1.asVec().setLeng(len = this.leng());
@@ -6581,7 +6594,7 @@ groover.geom = (function (){
             var v3 = v1.copy().sub(v2).half().add(v2);
             return new Line(p, p.copy().add(v3.sub(p).setLeng(len)));
             
-        },
+        },*/
         scale(scale){
             this.p1.x *= scale;
             this.p1.y *= scale;
@@ -8038,8 +8051,11 @@ groover.geom = (function (){
         // for cubic F(t) = a(1-t)^3 + 3bt(1-t)^2 + 3c(1-t)t^2 + dt^3 = a+(-2a+3b)t+(2a-6b+3c)t^2+(-a+3b-3c+d)t^3
         // The derivative  = -3a(1-t)^2+b(3(1-t)^2-6(1-t)t)+c(6(1-t)t-3t^2) +3dt^2
         // The 2nd derivative = 6*(1-t)*(c - 2*b + a) + 6*t*(d - 2*c + b)
+        // From Math.js next two lines are first and second derivatives (have not checked if this is correct)
+        // 3(d-3)t^2 - 3a(1-t)^2 + -(6bt(1-t)) + 3b(1-t)^2 + 6c(1-t)t
+        // 6(a+6)(1-t) - (6b(1-t)-6bt) + 6(d-9)t + -(6b(1-t))
         //======================================================================================
-        // Note: The behaviour of the second control point is as yet not determined. It may change as test presents the functionality requiered 
+        // Note: The behaviour of the second control point is as yet not determined. It may change as test presents the functionality required 
 
         copy(){
             return (new Bezier(this.p1.copy(), this.p2.copy(), this.cp1.copy(), this.cp2 === undefined ? null : this.cp2.copy()))._setSpan(this._subStart,this._subEnd);
@@ -8237,7 +8253,7 @@ groover.geom = (function (){
             }else{
                 
                 // Improved method for quadratic. Sorry untested so I have left tested code below
-                v1.x = this.p2.x - this.p1.x; // get x range
+                /*v1.x = this.p2.x - this.p1.x; // get x range
                 v1.y = this.p2.y - this.p1.y; // get y range
                 v2.x = this.cp1.x - this.p1.x; // get x control point offset
                 v2.y = this.cp1.y - this.p1.y; // get x control point offset
@@ -8251,9 +8267,9 @@ groover.geom = (function (){
                 }
                 if (u1 < 0 || u1 > 1) { // same as x
                     v3.y = v2.y * v2.y / (2 * v2.y - v1.y) + this.p1.y; // get the x maxima
-                }
+                }*/
                 
-                /* Known OK tested code in case code above fails and need quick fix.
+                // Known OK tested code in case code above fails and need quick fix.
                 solveBezier2(this.p1.x, this.cp1.x, this.p2.x);
                 if(u >= 0 && u <= 1){
                     this.vecAt(u,false,v3);
@@ -8263,7 +8279,7 @@ groover.geom = (function (){
                 if(u >= 0 && u <= 1){
                     this.vecAt(u,false,v4);
                     box.env(v4.x,v4.y);
-                } */               
+                }                
             }
             return box;
         },
@@ -8953,10 +8969,11 @@ groover.geom = (function (){
                     a *= a;  
                     vx = v1.x * a + v3.x * b + v2.x * c;
                     vy = v1.y * a + v3.y * b + v2.y * c;
-                    e = Math.hypot(vx,vy);
+                    e = Math.sqrt(vx * vx + vy * vy);
                     if(e < d ){
                         pos = i;
                         d = e;
+
                     }
                 }
             }else{
@@ -8969,21 +8986,29 @@ groover.geom = (function (){
                     c *= i; 
                     vx = v1.x * a + v3.x * b + v4.x * b1 + v2.x * c;
                     vy = v1.y * a + v3.y * b + v4.y * b1 + v2.y * c;
-                    e = Math.hypot(vx,vy);
+                    e = Math.sqrt(vx * vx + vy * vy);
                     if(e < d ){
                         pos = i;
                         d = e;
+
                     }
                 }
             }
             return pos;
         },
         distFrom(vec){
-            this.findPositionOfVec(vec); // this function sets d as the distance from the bezier or infinity id not found
+            u = this.findPositionOfVec(vec); // this function sets d as the distance from the bezier or infinity id not found
             c1 = d;
             if(c1 === Infinity){
                 c1 = this.p1.distFrom(vec);
-                return Math.min(c1,this.p2.distFrom(vec));
+                if((c = this.p2.distFrom(vec)) < c1){
+                    u = 1;
+                    v5.setAs(this.p2);
+                    return c;
+                }
+                u = 0;
+                v5.setAs(this.p1);
+                return c1;
             }
             return c1;
         },

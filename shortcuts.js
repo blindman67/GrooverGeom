@@ -1,0 +1,12 @@
+"use strict";
+const GG = groover.geom;
+const C = function(p1,r){ return new GG.Circle(p1,r);};
+const L = function(p1,p2){ return new GG.Line(p1,p2);};
+const V = function(x,y){ return new GG.Vec(x,y);};
+const A = function(c,s,e){ return new GG.Arc(c,s,e);};
+const B = function(p1,p2,cp1,cp2){ return new GG.Bezier(p1,p2,cp1,cp2);};
+const T = function(p1,p2,p3){ return new GG.Triangle(p1,p2,p3);};
+const Tf = function(ax,ay,o){ return new GG.Transform(ax,ay,o);};
+const R = function(l,a){ return new GG.Rectangle(l,a);};
+const VA = function(){ return new GG.VecArray();};
+const PA = function(){ return new GG.PrimitiveArray();};        
