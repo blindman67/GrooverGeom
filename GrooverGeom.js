@@ -3490,8 +3490,8 @@ groover.geom = (function (){
             this.y += vec.y;
             return this;    // returns this
         },
-        addLeng(number){
-            u = number / Math.sqrt(this.x * this.x + this.y * this.y);
+        addLeng(length){
+            u = length / Math.sqrt(this.x * this.x + this.y * this.y);
             this.x += this.x * u;
             this.y += this.y * u;
             return this;
@@ -5802,7 +5802,7 @@ groover.geom = (function (){
             return false;
         },        
         leng(){
-            return Math.hypot(this.p2.y - this.p1.y, this.p2.x - this.p1.x);
+            return ((this.p2.y - this.p1.y) ** 2 +  (this.p2.x - this.p1.x) ** 2) ** 0.5;
         },
         leng2(){ // length squared
             return Math.pow(this.p2.x-this.p1.x,2) + Math.pow(this.p2.y-this.p1.y,2);
@@ -5861,6 +5861,22 @@ groover.geom = (function (){
         crossBack(){
             return this.p2.x * this.p1.y - this.p2.y * this.p1.x;            
         },
+        crossLine(line){  // cross product of vector representing this line and vector representing line
+            return  (this.p2.x - this.p1.x) * (line.p2.y - line.p1.y) - (this.p2.y - this.p1.y) * (line.p2.x - line.p1.x);
+        },
+        crossLineNorm(line){  // cross product of vector representing this line and vector representing line
+            v1.x = this.p2.x - this.p1.x;
+            v1.y = this.p2.y - this.p1.y;
+            v2.x = line.p2.x - line.p1.x;
+            v2.y = line.p2.y - line.p1.y;
+            d = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            d1 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+            v1.x /= d;
+            v1.y /= d;
+            v2.x /= d1;
+            v2.y /= d1;
+            return v1.x * v2.y - v1.y * v2.x;
+        },        
         mult(num){
             this.p1.x *= num;
             this.p1.y *= num;
